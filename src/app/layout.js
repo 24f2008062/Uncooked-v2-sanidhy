@@ -1,5 +1,6 @@
 import { Inter, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import ScrollToTop from "@/components/layout/ScrollToTop";
 import "./globals.css";
 
 const inter = Inter({
@@ -55,6 +56,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300">
         <ThemeProvider>
+          <ScrollToTop />
           {children}
         </ThemeProvider>
       </body>
