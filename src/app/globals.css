@@ -1,0 +1,737 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   UNCOOKED PORTAL — DESIGN SYSTEM
+   Inspired by Luma's premium dark aesthetic
+   Cross-browser compatible: Chrome, Firefox, Safari, Edge
+   Responsive: 320px → 2560px+
+   ============================================================================ */
+
+:root {
+  /* Core Backgrounds */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-card: #1a1a1a;
+  --bg-card-hover: #222222;
+  --bg-elevated: #2a2a2a;
+
+  /* Text */
+  --text-primary: #f5f5f5;
+  --text-secondary: #a0a0a0;
+  --text-muted: #666666;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-active: rgba(255, 255, 255, 0.25);
+
+  /* Accent Gradients (Luma-style pink → orange → gold) */
+  --gradient-accent: linear-gradient(135deg, #ff6b9d, #f97316, #eab308);
+  --gradient-warm: linear-gradient(135deg, #ec4899, #f97316);
+  --gradient-cool: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+  --gradient-cta: linear-gradient(135deg, #f472b6 0%, #fb923c 50%, #fbbf24 100%);
+
+  /* Accent Colors */
+  --accent-pink: #f472b6;
+  --accent-orange: #fb923c;
+  --accent-gold: #fbbf24;
+  --accent-indigo: #818cf8;
+  --accent-emerald: #34d399;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(26, 26, 26, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-blur: 20px;
+
+  /* Shadows */
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.6);
+  --shadow-glow-pink: 0 0 40px rgba(244, 114, 182, 0.15);
+  --shadow-glow-orange: 0 0 40px rgba(251, 146, 60, 0.15);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Spacing */
+  --nav-height: 64px;
+  --section-padding-x: clamp(16px, 4vw, 48px);
+  --content-max-width: min(1200px, 90vw);
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Font fallback */
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+}
+
+[data-theme="light"] {
+  /* Core Backgrounds */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f4f5;
+  --bg-card: #e4e4e7;
+  --bg-card-hover: #d4d4d8;
+  --bg-elevated: #ffffff;
+
+  /* Text */
+  --text-primary: #09090b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+
+  /* Borders */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.15);
+  --border-active: rgba(0, 0, 0, 0.25);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.06);
+
+  /* Font fallback */
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--bg-primary);
+  --color-secondary: var(--bg-secondary);
+  --color-card: var(--bg-card);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-hover: var(--border-hover);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ============================================================================
+   BASE STYLES + CROSS-BROWSER RESETS
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+}
+
+::selection {
+  background: rgba(244, 114, 182, 0.3);
+  color: white;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ============================================================================
+   RESPONSIVE CONTENT CONTAINER
+   Scales from mobile (320px) to ultrawide (2560px+)
+   ============================================================================ */
+
+.content-container {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--section-padding-x);
+  padding-right: var(--section-padding-x);
+}
+
+/* Wider container for larger screens */
+@media (min-width: 1536px) {
+  :root {
+    --content-max-width: min(1400px, 85vw);
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --content-max-width: min(1600px, 80vw);
+  }
+}
+
+@media (min-width: 2560px) {
+  :root {
+    --content-max-width: min(1800px, 70vw);
+  }
+}
+
+/* ============================================================================
+   GRADIENT TEXT UTILITIES
+   Cross-browser safe with fallback colors
+   ============================================================================ */
+
+.gradient-text {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent; /* Fallback for older browsers */
+}
+
+.gradient-text-warm {
+  background: var(--gradient-warm);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.gradient-text-cool {
+  background: var(--gradient-cool);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.gradient-text-cta {
+  background: var(--gradient-cta);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================================================
+   GLASSMORPHISM UTILITIES
+   Safari-safe backdrop-filter
+   ============================================================================ */
+
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+/* Touch devices: remove hover transform to prevent sticky hover */
+@media (hover: none) and (pointer: coarse) {
+  .glass-card:hover {
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   BUTTON STYLES
+   Touch-friendly with minimum 44px tap targets (WCAG 2.5.5)
+   ============================================================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 500;
+  background: white;
+  color: black;
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.btn-primary:hover {
+  background: #e5e5e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  background: #d4d4d4;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-active);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Touch devices: remove hover transform */
+@media (hover: none) and (pointer: coarse) {
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   FLOATING CARD ANIMATIONS (Hero Section)
+   Uses will-change for GPU acceleration, reduced motion support
+   ============================================================================ */
+
+@keyframes float-1 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-12px) rotate(1deg); }
+  66% { transform: translateY(6px) rotate(-0.5deg); }
+}
+
+@keyframes float-2 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(10px) rotate(-1deg); }
+  75% { transform: translateY(-8px) rotate(0.5deg); }
+}
+
+@keyframes float-3 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  40% { transform: translateY(-15px) rotate(1.5deg); }
+  80% { transform: translateY(5px) rotate(-1deg); }
+}
+
+.float-animation-1 {
+  animation: float-1 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.float-animation-2 {
+  animation: float-2 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.float-animation-3 {
+  animation: float-3 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .float-animation-1,
+  .float-animation-2,
+  .float-animation-3 {
+    animation: none;
+  }
+
+  .glass-card:hover {
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   DOT MATRIX PATTERN (Footer CTA background)
+   ============================================================================ */
+
+.dot-matrix {
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.08) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+.dot-matrix-dense {
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.06) 1.2px,
+    transparent 1.2px
+  );
+  background-size: 16px 16px;
+}
+
+/* ============================================================================
+   CARD TILE STYLES (Event cards in hero)
+   ============================================================================ */
+
+.event-tile {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.event-tile:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-elevated);
+  transform: scale(1.03);
+}
+
+.event-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ============================================================================
+   HORIZONTAL SCROLL CAROUSEL
+   Cross-browser touch scrolling
+   ============================================================================ */
+
+.scroll-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+  /* Hide scrollbar across all browsers */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-carousel > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   CATEGORY GRID
+   ============================================================================ */
+
+.category-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  min-height: 44px; /* WCAG touch target */
+}
+
+.category-tile:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .category-tile:hover {
+    transform: none;
+  }
+}
+
+.category-tile .icon {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   NAVBAR STYLES
+   Fixed position with safe-area insets for notched devices
+   ============================================================================ */
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--section-padding-x);
+  padding-top: env(safe-area-inset-top, 0);
+  transition: all var(--transition-base);
+}
+
+.navbar.scrolled {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.navbar.force-dark-top:not(.scrolled) {
+  --text-primary: #f5f5f5 !important;
+  --text-secondary: #a0a0a0 !important;
+  --text-muted: #666666 !important;
+  --border-subtle: rgba(255, 255, 255, 0.08) !important;
+  --border-hover: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ============================================================================
+   MICRO ANIMATIONS
+   ============================================================================ */
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-scale-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE TYPOGRAPHY
+   Fluid sizing from 320px → 2560px+
+   ============================================================================ */
+
+.text-hero {
+  font-size: clamp(2.5rem, 7vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.text-section-title {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 600;
+}
+
+.text-cta-hero {
+  font-size: clamp(1.75rem, 4.5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+/* ============================================================================
+   RESPONSIVE SECTION SPACING
+   ============================================================================ */
+
+.section-padding {
+  padding-top: clamp(3rem, 6vw, 5rem);
+  padding-bottom: clamp(3rem, 6vw, 5rem);
+  padding-left: var(--section-padding-x);
+  padding-right: var(--section-padding-x);
+}
+
+/* ============================================================================
+   SAFARI-SPECIFIC FIXES
+   ============================================================================ */
+
+/* Safari SVG rendering fix */
+@supports (-webkit-appearance: none) and (stroke-color: transparent) {
+  svg {
+    shape-rendering: geometricPrecision;
+  }
+}
+
+/* Safari position:fixed with transform fix */
+.navbar {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* ============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================ */
+
+/* Extra small devices (phones in portrait, < 375px) */
+@media (max-width: 374px) {
+  :root {
+    --nav-height: 52px;
+    --section-padding-x: 12px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+}
+
+/* Small devices (phones, 375px - 639px) */
+@media (min-width: 375px) and (max-width: 639px) {
+  :root {
+    --nav-height: 56px;
+    --section-padding-x: 16px;
+  }
+}
+
+/* Medium devices (tablets, 640px - 1023px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root {
+    --nav-height: 60px;
+    --section-padding-x: 24px;
+  }
+}
+
+/* Large devices (desktops, 1024px - 1535px) */
+@media (min-width: 1024px) and (max-width: 1535px) {
+  :root {
+    --nav-height: 64px;
+    --section-padding-x: 32px;
+  }
+}
+
+/* Extra large devices (large desktops, 1536px+) */
+@media (min-width: 1536px) {
+  :root {
+    --nav-height: 68px;
+    --section-padding-x: 48px;
+  }
+}
+
+/* iOS Safari bottom safe area for footer */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  footer {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Landscape phone orientation */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero-section {
+    min-height: auto;
+    padding-top: calc(var(--nav-height) + 2rem);
+    padding-bottom: 2rem;
+  }
+}
+
+/* High DPI / Retina displays - sharper borders */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .event-tile,
+  .glass-card,
+  .category-tile {
+    border-width: 0.5px;
+  }
+}
