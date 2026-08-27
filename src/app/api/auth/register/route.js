@@ -5,14 +5,23 @@ import { hashPassword } from "@/server/utils/passwordUtils";
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { fullName, name, email, password } = body;
+    const { fullName, name, email, password, department, location } = body;
 
     const userEmail = email?.toLowerCase().trim();
     const userName = (fullName || name || "").trim();
+    const userDept = (department || location || "").trim();
 
     if (!userEmail || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
+        { status: 400 }
+      );
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userEmail)) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address" },
         { status: 400 }
       );
     }
@@ -45,6 +54,7 @@ export async function POST(req) {
         email: userEmail,
         name: userName || userEmail.split("@")[0],
         fullName: userName,
+        department: userDept || null,
         passwordHash: hashedPassword,
         role: "USER",
       },
