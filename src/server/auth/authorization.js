@@ -5,10 +5,11 @@ import { ROLES, ROLE_PERMISSIONS } from './permissions';
  */
 export function hasPermission(user, permission) {
   if (!user || !user.role) return false;
+  const userRole = user.role.toUpperCase();
   
-  if (user.role === ROLES.SUPER_ADMIN) return true;
+  if (userRole === ROLES.SUPER_ADMIN) return true;
 
-  const permissions = ROLE_PERMISSIONS[user.role] || [];
+  const permissions = ROLE_PERMISSIONS[userRole] || [];
   return permissions.includes(permission);
 }
 
@@ -17,6 +18,8 @@ export function hasPermission(user, permission) {
  */
 export function hasRole(user, allowedRoles = []) {
   if (!user || !user.role) return false;
-  if (user.role === ROLES.SUPER_ADMIN) return true;
-  return allowedRoles.includes(user.role);
+  const userRole = user.role.toUpperCase();
+  if (userRole === ROLES.SUPER_ADMIN) return true;
+  return allowedRoles.map((r) => r.toUpperCase()).includes(userRole);
 }
+
