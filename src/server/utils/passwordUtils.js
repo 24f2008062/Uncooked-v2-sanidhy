@@ -1,4 +1,4 @@
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, scryptSync, pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import bcrypt from "bcryptjs";
 
@@ -19,7 +19,7 @@ export async function hashPassword(password) {
 }
 
 /**
- * Verifies a plaintext password against stored hashes (scrypt, bcrypt, or legacy plaintext).
+ * Verifies a plaintext password against stored hashes (scrypt, bcrypt, colon/dot separated, or legacy plaintext).
  * @param {string} password - Plaintext password input.
  * @param {string} storedHash - Stored hash string.
  * @returns {Promise<boolean>} True if password matches, false otherwise.
@@ -34,12 +34,50 @@ export async function verifyPassword(password, storedHash) {
       return await bcrypt.compare(password, storedHash);
     }
 
-    // 2. Check if storedHash is scrypt ("hash.salt")
-    if (storedHash.includes(".")) {
-      const [hashedPassword, salt] = storedHash.split(".");
-      const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
-      const suppliedPasswordBuf = await scryptAsync(password, salt, 64);
-      return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+    // 2. Check if storedHash is separated by colon (:) or dot (.)
+    const delimiter = storedHash.includes(":") ? ":" : storedHash.includes(".") ? "." : null;
+    if (delimiter) {
+      const parts = storedHash.split(delimiter);
+      if (parts.length === 2) {
+        let salt, expectedHash;
+        // Determine which part is the 32-hex-char salt (16 bytes)
+        if (parts[0].length === 32) {
+          salt = parts[0];
+          expectedHash = parts[1];
+        } else if (parts[1].length === 32) {
+          expectedHash = parts[0];
+          salt = parts[1];
+        } else {
+          expectedHash = parts[0];
+          salt = parts[1];
+        }
+
+        const expectedBuf = Buffer.from(expectedHash, "hex");
+
+        // Try scrypt
+        try {
+          const scryptBuf = await scryptAsync(password, salt, expectedBuf.length);
+          if (expectedBuf.length === scryptBuf.length && timingSafeEqual(expectedBuf, scryptBuf)) {
+            return true;
+          }
+        } catch (err) {}
+
+        // Try pbkdf2 with sha512
+        try {
+          const pbkdf2Buf = pbkdf2Sync(password, salt, 1000, expectedBuf.length, "sha512");
+          if (expectedBuf.length === pbkdf2Buf.length && timingSafeEqual(expectedBuf, pbkdf2Buf)) {
+            return true;
+          }
+        } catch (err) {}
+
+        // Try pbkdf2 with sha256
+        try {
+          const pbkdf2Sha256Buf = pbkdf2Sync(password, salt, 1000, expectedBuf.length, "sha256");
+          if (expectedBuf.length === pbkdf2Sha256Buf.length && timingSafeEqual(expectedBuf, pbkdf2Sha256Buf)) {
+            return true;
+          }
+        } catch (err) {}
+      }
     }
 
     // 3. Fallback direct comparison (for legacy un-hashed dev credentials)
@@ -53,4 +91,5 @@ export async function verifyPassword(password, storedHash) {
     return false;
   }
 }
+
 
