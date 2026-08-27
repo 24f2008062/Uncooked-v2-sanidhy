@@ -1,12 +1,25 @@
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import dotenv from "dotenv";
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  "postgresql://postgres:postgres@localhost:5432/uncooked_db?schema=public";
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: ".env.local" });
+  dotenv.config();
+}
 
-const pool = new Pool({ connectionString });
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.warn("[Prisma] Warning: DATABASE_URL is not defined in environment or .env.local");
+}
+
+const pool = new Pool({
+  connectionString,
+  ssl: connectionString?.includes("supabase") || connectionString?.includes("pooler")
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
 const adapter = new PrismaPg(pool);
 
 const globalForPrisma = globalThis;
