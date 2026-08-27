@@ -1,13 +1,24 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+import dotenv from "dotenv";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 
+dotenv.config({ path: ".env.local" });
+dotenv.config();
+
 const scryptAsync = promisify(scrypt);
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required to seed");
+}
+const pool = new Pool({ connectionString });
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
-  const buf = await scryptAsync(password, salt, 64);
+  const buf = await scryptAsync(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
   return `${buf.toString("hex")}.${salt}`;
 }
 
@@ -170,4 +181,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

@@ -68,10 +68,29 @@ export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
 
-  const handleSubmit = (e) => {
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) return;
-    setIsSubmitted(true);
+    setSubmitError("");
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setSubmitError(payload.error?.message || "Could not send message");
+        return;
+      }
+      setIsSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -124,7 +143,7 @@ export default function ContactPage() {
                     Message Sent Successfully!
                   </h3>
                   <p className="text-sm text-text-secondary max-w-md">
-                    Thank you for contacting Uncooked. Our campus support team will review your inquiry and reply to <span className="text-text-primary font-medium">{formData.email}</span> within 2 hours.
+                    Thank you for contacting Uncooked. We stored your message and will reply to <span className="text-text-primary font-medium">{formData.email}</span>. We do not guarantee a two-hour SLA.
                   </p>
                   <button
                     onClick={() => {
@@ -138,6 +157,7 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {submitError && <p className="text-xs text-red-400">{submitError}</p>}
                   <div>
                     <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
                       Your Name
@@ -199,7 +219,8 @@ export default function ContactPage() {
 
                   <button
                     type="submit"
-                    className="w-full py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
+                    disabled={submitting}
+                    className="w-full py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                     style={{
                       background: "linear-gradient(135deg, #ec4899 0%, #f97316 100%)",
                       boxShadow: "0 10px 25px -5px rgba(249, 115, 22, 0.35)",

@@ -21,7 +21,7 @@ export default function AdminSettingsPage() {
         </div>
         <h3 className="text-base font-bold text-white">Dynamic Configuration Engine</h3>
         <p className="text-xs text-gray-400 max-w-md mx-auto">
-          System settings mutations are restricted to `SUPER_ADMIN` accounts under PostgreSQL RLS policy and permission flag `SETTINGS_WRITE`.
+          Feature-flag storage is not enabled yet. Emergency write-pause lives on the operations dashboard. Super Admin is assigned only via a controlled seed or database grant.
         </p>
       </div>
     </div>

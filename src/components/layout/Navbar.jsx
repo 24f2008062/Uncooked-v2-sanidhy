@@ -87,7 +87,7 @@ export default function Navbar({ forceDarkTop = false }) {
   };
 
   const navLinks = [
-    { label: "Events", href: "/dashboard" },
+    { label: "Events", href: "/events" },
     { label: "Opportunities", href: "/opportunities" },
     { label: "Host an Event", href: "/host" },
     { label: "About", href: "/about" },
@@ -173,6 +173,13 @@ export default function Navbar({ forceDarkTop = false }) {
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
                 <span>Dashboard</span>
+              </Link>
+              <Link
+                href="/profile"
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-[#141414] border border-[#2a2a2a] text-white flex items-center gap-2 hover:border-[var(--accent-orange)] transition-colors"
+              >
+                <User className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
+                <span>Profile</span>
               </Link>
 
               <div className="flex items-center gap-2 pl-2 border-l border-border-subtle">
@@ -269,6 +276,14 @@ export default function Navbar({ forceDarkTop = false }) {
                     >
                       <LayoutDashboard className="w-4 h-4" />
                       Dashboard ({userName})
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileOpen(false)}
+                      className="btn-secondary flex items-center justify-center gap-2"
+                    >
+                      <User className="w-4 h-4" />
+                      Profile
                     </Link>
                     <button
                       onClick={() => {

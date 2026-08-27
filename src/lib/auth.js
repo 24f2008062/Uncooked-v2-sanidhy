@@ -1,6 +1,20 @@
+import { randomUUID } from "crypto";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import { verifyPassword } from "@/server/utils/passwordUtils";
+import { sessionCookieName, sessionCookieOptions } from "@/server/config/authCookies";
+import { LOGIN_LOCKOUT_MS, LOGIN_LOCKOUT_THRESHOLD, SESSION_MAX_AGE_SEC } from "@/server/config/legal";
+
+function requireSecret() {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("NEXTAUTH_SECRET must be set to a random string of at least 32 characters");
+  }
+  if (secret.includes("dev_secret") || secret.includes("change-me")) {
+    throw new Error("NEXTAUTH_SECRET is using an insecure placeholder value");
+  }
+  return secret;
+}
 
 export const authOptions = {
   providers: [
@@ -11,77 +25,95 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("NextAuth authorize attempt for:", credentials?.email);
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Missing email or password credentials");
+          throw new Error("INVALID_CREDENTIALS");
         }
 
         const cleanEmail = credentials.email.toLowerCase().trim();
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: cleanEmail },
+          });
+        } catch {
+          throw new Error("INVALID_CREDENTIALS");
+        }
 
-        // 1. Fetch user from PostgreSQL via Prisma
-        const user = await prisma.user.findUnique({
-          where: { email: cleanEmail },
-        });
+        if (!user || user.deletedAt || !user.passwordHash) {
+          throw new Error("INVALID_CREDENTIALS");
+        }
 
-        if (!user) {
-          console.log("NextAuth: No user found with email:", cleanEmail);
-          throw new Error("Invalid credentials");
+        if (user.disabledAt) {
+          throw new Error("INVALID_CREDENTIALS");
         }
 
         if (user.lockedUntil && user.lockedUntil > new Date()) {
-          console.log("NextAuth: User account locked until:", user.lockedUntil);
-          throw new Error("Account is temporarily locked. Please try again later.");
+          throw new Error("INVALID_CREDENTIALS");
         }
 
-        const passwordToTest = user.passwordHash || user.password;
-
-        if (!passwordToTest) {
-          console.log("NextAuth: No password hash stored for user:", cleanEmail);
-          throw new Error("Account relies on external OAuth login");
-        }
-
-        // 2. Verify password hash
-        const isValid = await verifyPassword(credentials.password, passwordToTest);
-        console.log("NextAuth: Password verification result for", cleanEmail, "->", isValid);
-
+        const isValid = await verifyPassword(credentials.password, user.passwordHash);
         if (!isValid) {
-          // Increment failed login attempts
+          const attempts = (user.failedLoginAttempts || 0) + 1;
+          const lock = attempts >= LOGIN_LOCKOUT_THRESHOLD
+            ? new Date(Date.now() + LOGIN_LOCKOUT_MS)
+            : null;
           await prisma.user.update({
             where: { id: user.id },
-            data: { failedLoginAttempts: { increment: 1 } },
+            data: {
+              failedLoginAttempts: attempts,
+              lockedUntil: lock,
+            },
           });
-          throw new Error("Invalid credentials");
+          throw new Error("INVALID_CREDENTIALS");
         }
 
-        // Reset failed login attempts on successful login
-        if (user.failedLoginAttempts > 0) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { failedLoginAttempts: 0, lockedUntil: null },
-          });
-        }
-
-        console.log("NextAuth: Successful login for", cleanEmail, "Role:", user.role);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+            lastLoginAt: new Date(),
+          },
+        });
 
         return {
           id: user.id,
           email: user.email,
           name: user.name || user.fullName || "Campus User",
           role: user.role || "USER",
+          tokenVersion: user.tokenVersion || 0,
         };
       },
-
     }),
   ],
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: SESSION_MAX_AGE_SEC,
+  },
+  jwt: {
+    maxAge: SESSION_MAX_AGE_SEC,
+  },
+  cookies: {
+    sessionToken: {
+      name: sessionCookieName(),
+      options: sessionCookieOptions(),
+    },
+    csrfToken: {
+      name: process.env.NODE_ENV === "production" ? "__Host-uncooked.csrf-token" : "uncooked.csrf-token",
+      options: { ...sessionCookieOptions(), httpOnly: true },
+    },
+    callbackUrl: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-uncooked.callback-url" : "uncooked.callback-url",
+      options: { sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" },
+    },
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.ver = user.tokenVersion ?? 0;
+        token.jti = randomUUID();
       }
       return token;
     },
@@ -89,6 +121,8 @@ export const authOptions = {
       if (session.user) {
         session.user.id = token.id;
         session.user.role = token.role;
+        session.user.ver = token.ver;
+        session.user.jti = token.jti;
       }
       return session;
     },
@@ -97,5 +131,5 @@ export const authOptions = {
     signIn: "/login",
     error: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET || "uncooked_portal_dev_secret_key_32_characters_long",
+  secret: requireSecret(),
 };

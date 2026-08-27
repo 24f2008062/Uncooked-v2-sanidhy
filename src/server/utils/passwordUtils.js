@@ -1,95 +1,63 @@
-import { scrypt, scryptSync, pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import bcrypt from "bcryptjs";
+import { PASSWORD_MIN_LENGTH } from "@/server/config/legal";
 
 const scryptAsync = promisify(scrypt);
+const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 
-/**
- * Hashes a plaintext password using crypto.scrypt and a random 16-byte hex salt.
- * @param {string} password - The plaintext password to hash.
- * @returns {Promise<string>} The formatted hash string ("hash.salt").
- */
-export async function hashPassword(password) {
+export function validatePasswordPolicy(password) {
   if (!password || typeof password !== "string") {
-    throw new Error("Password must be a non-empty string");
+    return "Password is required";
+  }
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
+  }
+  if (password.length > 128) {
+    return "Password is too long";
+  }
+  if (!/[A-Za-z]/.test(password)) {
+    return "Password must include a letter";
+  }
+  if (!/[0-9]/.test(password)) {
+    return "Password must include a number";
+  }
+  return null;
+}
+
+export async function hashPassword(password) {
+  const policyError = validatePasswordPolicy(password);
+  if (policyError) {
+    throw new Error(policyError);
   }
   const salt = randomBytes(16).toString("hex");
-  const buf = await scryptAsync(password, salt, 64);
+  const buf = await scryptAsync(password, salt, 64, SCRYPT_OPTIONS);
   return `${buf.toString("hex")}.${salt}`;
 }
 
-/**
- * Verifies a plaintext password against stored hashes (scrypt, bcrypt, colon/dot separated, or legacy plaintext).
- * @param {string} password - Plaintext password input.
- * @param {string} storedHash - Stored hash string.
- * @returns {Promise<boolean>} True if password matches, false otherwise.
- */
 export async function verifyPassword(password, storedHash) {
-  if (!password || !storedHash) {
+  if (!password || !storedHash || typeof storedHash !== "string") {
     return false;
   }
-  try {
-    // 1. Check if storedHash is bcrypt ($2a$, $2b$, $2y$)
-    if (storedHash.startsWith("$2a$") || storedHash.startsWith("$2b$") || storedHash.startsWith("$2y$")) {
-      return await bcrypt.compare(password, storedHash);
-    }
 
-    // 2. Check if storedHash is separated by colon (:) or dot (.)
-    const delimiter = storedHash.includes(":") ? ":" : storedHash.includes(".") ? "." : null;
-    if (delimiter) {
-      const parts = storedHash.split(delimiter);
-      if (parts.length === 2) {
-        let salt, expectedHash;
-        // Determine which part is the 32-hex-char salt (16 bytes)
-        if (parts[0].length === 32) {
-          salt = parts[0];
-          expectedHash = parts[1];
-        } else if (parts[1].length === 32) {
-          expectedHash = parts[0];
-          salt = parts[1];
-        } else {
-          expectedHash = parts[0];
-          salt = parts[1];
-        }
-
-        const expectedBuf = Buffer.from(expectedHash, "hex");
-
-        // Try scrypt
-        try {
-          const scryptBuf = await scryptAsync(password, salt, expectedBuf.length);
-          if (expectedBuf.length === scryptBuf.length && timingSafeEqual(expectedBuf, scryptBuf)) {
-            return true;
-          }
-        } catch (err) {}
-
-        // Try pbkdf2 with sha512
-        try {
-          const pbkdf2Buf = pbkdf2Sync(password, salt, 1000, expectedBuf.length, "sha512");
-          if (expectedBuf.length === pbkdf2Buf.length && timingSafeEqual(expectedBuf, pbkdf2Buf)) {
-            return true;
-          }
-        } catch (err) {}
-
-        // Try pbkdf2 with sha256
-        try {
-          const pbkdf2Sha256Buf = pbkdf2Sync(password, salt, 1000, expectedBuf.length, "sha256");
-          if (expectedBuf.length === pbkdf2Sha256Buf.length && timingSafeEqual(expectedBuf, pbkdf2Sha256Buf)) {
-            return true;
-          }
-        } catch (err) {}
-      }
-    }
-
-    // 3. Fallback direct comparison (for legacy un-hashed dev credentials)
-    if (password === storedHash) {
-      return true;
-    }
-
+  // Reject legacy plaintext or unknown formats. Only scrypt "hash.salt" is accepted.
+  const parts = storedHash.split(".");
+  if (parts.length !== 2) {
     return false;
-  } catch (error) {
-    console.error("verifyPassword verification error:", error.message || error);
+  }
+
+  const [hashHex, salt] = parts;
+  if (!hashHex || !salt || salt.length !== 32 || hashHex.length % 2 !== 0) {
+    return false;
+  }
+
+  try {
+    const expected = Buffer.from(hashHex, "hex");
+    const actual = await scryptAsync(password, salt, expected.length, SCRYPT_OPTIONS);
+    if (expected.length !== actual.length) {
+      return false;
+    }
+    return timingSafeEqual(expected, actual);
+  } catch {
     return false;
   }
 }
-
-

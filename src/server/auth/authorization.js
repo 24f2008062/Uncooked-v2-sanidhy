@@ -1,25 +1,20 @@
-import { ROLES, ROLE_PERMISSIONS } from './permissions';
+import { ROLES, ROLE_PERMISSIONS } from "./permissions";
 
-/**
- * Checks if a user has a specific permission
- */
 export function hasPermission(user, permission) {
   if (!user || !user.role) return false;
-  const userRole = user.role.toUpperCase();
-  
+  const userRole = String(user.role).toUpperCase();
   if (userRole === ROLES.SUPER_ADMIN) return true;
-
   const permissions = ROLE_PERMISSIONS[userRole] || [];
   return permissions.includes(permission);
 }
 
-/**
- * Enforces role restriction (throws error or returns boolean)
- */
 export function hasRole(user, allowedRoles = []) {
   if (!user || !user.role) return false;
-  const userRole = user.role.toUpperCase();
+  const userRole = String(user.role).toUpperCase();
   if (userRole === ROLES.SUPER_ADMIN) return true;
-  return allowedRoles.map((r) => r.toUpperCase()).includes(userRole);
+  return allowedRoles.map((r) => String(r).toUpperCase()).includes(userRole);
 }
 
+export function isSuperAdmin(user) {
+  return Boolean(user && String(user.role).toUpperCase() === ROLES.SUPER_ADMIN);
+}

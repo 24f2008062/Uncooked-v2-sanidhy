@@ -30,6 +30,7 @@ export default function Footer() {
       { label: "Events", href: "/events" },
       { label: "Opportunities", href: "/opportunities" },
       { label: "Host an Event", href: "/host" },
+      { label: "Host application", href: "/host/apply" },
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
     ],
@@ -37,6 +38,7 @@ export default function Footer() {
       { label: "Terms", href: "/terms" },
       { label: "Privacy", href: "/privacy" },
       { label: "Security", href: "/security" },
+      { label: "Cookies", href: "/cookies" },
     ],
   };
 

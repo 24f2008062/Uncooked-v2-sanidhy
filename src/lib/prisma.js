@@ -10,25 +10,36 @@ if (!process.env.DATABASE_URL) {
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
-  console.warn("[Prisma] Warning: DATABASE_URL is not defined in environment or .env.local");
+if (!connectionString && process.env.NODE_ENV === "production") {
+  throw new Error("DATABASE_URL is not configured");
 }
 
-const pool = new Pool({
-  connectionString,
-  ssl: connectionString?.includes("supabase") || connectionString?.includes("pooler")
-    ? { rejectUnauthorized: false }
-    : undefined,
-});
-const adapter = new PrismaPg(pool);
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false";
+const useSsl = Boolean(
+  connectionString &&
+    (connectionString.includes("supabase") ||
+      connectionString.includes("pooler") ||
+      connectionString.includes("sslmode=require") ||
+      process.env.DATABASE_SSL === "true")
+);
+
+const pool = connectionString
+  ? new Pool({
+      connectionString,
+      max: 5,
+      ssl: useSsl ? { rejectUnauthorized } : undefined,
+    })
+  : null;
+
+const adapter = pool ? new PrismaPg(pool) : undefined;
 
 const globalForPrisma = globalThis;
 
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    ...(adapter ? { adapter } : {}),
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

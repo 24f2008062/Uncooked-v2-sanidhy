@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import ./tests/register-loader.mjs --test tests/passwordPolicy.test.mjs tests/rateLimit.test.mjs tests/security/unit.test.mjs",
+    "test:security": "node tests/security/http-suite.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
@@ -15,7 +17,7 @@
     "@supabase/supabase-js": "^2.112.4",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
-    "face-api.js": "^0.22.2",
+    "dotenv": "^17.4.2",
     "framer-motion": "^13.1.1",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.34.0",

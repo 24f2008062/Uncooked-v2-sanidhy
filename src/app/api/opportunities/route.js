@@ -1,12 +1,33 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
+import { getClientIp, hashIp } from "@/server/http/ip";
+import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
+import { enforceMutationGuards, requireRoles } from "@/server/http/guards";
+
+function publicOpportunity(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    company: row.company,
+    type: row.type,
+    location: row.location,
+    stipend: row.stipend,
+    description: row.description,
+    deadline: row.deadline,
+    status: row.status,
+    createdAt: row.createdAt,
+  };
+}
 
 export async function GET(req) {
   try {
+    const rl = rateLimit(`rl_opp_get:${hashIp(getClientIp(req))}`, 60, 60_000);
+    if (!rl.ok) {
+      return jsonError("Too many requests. Please try again later.", 429, "RATE_LIMITED", rateLimitHeaders(rl));
+    }
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
-
-    const whereClause = {};
+    const whereClause = { status: "ACTIVE" };
 
     if (type && type !== "All") {
       whereClause.type = { equals: type, mode: "insensitive" };
@@ -15,34 +36,35 @@ export async function GET(req) {
     const opportunities = await prisma.opportunity.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
+      take: 50,
     });
 
-    return NextResponse.json({ opportunities, count: opportunities.length });
+    return jsonOk({ opportunities: opportunities.map(publicOpportunity), count: opportunities.length });
   } catch (error) {
-    console.error("Error fetching opportunities:", error.message || error);
-    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
-      return NextResponse.json(
-        { error: "Database server connection failed. Please check DATABASE_URL in .env.local", opportunities: [], count: 0 },
-        { status: 503 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Failed to fetch opportunities", opportunities: [], count: 0 },
-      { status: 500 }
-    );
+    return safeError(error, "Unable to load opportunities");
   }
 }
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { title, company, type, location, stipend, description } = body;
+    const blocked = await enforceMutationGuards(req, { rateKey: "rl_opp_create", limit: 10, windowMs: 60 * 60 * 1000 });
+    if (blocked) return blocked;
+
+    const auth = await requireRoles(["ORGANIZER"]);
+    if (auth.error) return auth.error;
+
+    const parsed = await readJson(req);
+    if (parsed.error) return parsed.error;
+    const body = parsed.body;
+    const title = String(body.title || "").trim().slice(0, 140);
+    const company = String(body.company || "").trim().slice(0, 120);
+    const type = String(body.type || "").trim().slice(0, 40);
+    const location = String(body.location || "Remote").trim().slice(0, 80);
+    const stipend = String(body.stipend || "").trim().slice(0, 80);
+    const description = String(body.description || "").trim().slice(0, 5000);
 
     if (!title || !company || !type || !description) {
-      return NextResponse.json(
-        { error: "Missing required fields (title, company, type, description)" },
-        { status: 400 }
-      );
+      return jsonError("Title, company, type, and description are required", 400);
     }
 
     const opportunity = await prisma.opportunity.create({
@@ -50,27 +72,15 @@ export async function POST(req) {
         title,
         company,
         type,
-        location: location || "Remote",
-        stipend: stipend || "Unpaid / Disclosed on interview",
+        location,
+        stipend: stipend || null,
         description,
+        createdById: auth.user.id,
       },
     });
 
-    return NextResponse.json(
-      { message: "Opportunity posted successfully", opportunity },
-      { status: 201 }
-    );
+    return jsonOk({ message: "Opportunity posted", opportunity: publicOpportunity(opportunity) }, 201);
   } catch (error) {
-    console.error("Error creating opportunity:", error.message || error);
-    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
-      return NextResponse.json(
-        { error: "Database server connection failed. Please check DATABASE_URL in .env.local" },
-        { status: 503 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Failed to create opportunity" },
-      { status: 500 }
-    );
+    return safeError(error, "Unable to create opportunity");
   }
 }
