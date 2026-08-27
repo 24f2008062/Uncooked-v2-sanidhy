@@ -11,6 +11,8 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.9.1",
+    "@supabase/ssr": "^0.12.5",
+    "@supabase/supabase-js": "^2.112.4",
     "date-fns": "^4.4.0",
     "face-api.js": "^0.22.2",
     "framer-motion": "^13.1.1",
