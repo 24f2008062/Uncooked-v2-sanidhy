@@ -8,6 +8,8 @@ This document outlines the step-by-step development plan for completing the back
 
 ```
  ┌────────────────────────────────────────────────────────┐
+ │ Phase 0: Complete Auth, RBAC Middleware & Security    │  🔐 IMMEDIATE / FOUNDATION
+ ├────────────────────────────────────────────────────────┤
  │ Phase 1: Core Ticketing, QR Scanner & Payment Engine   │  🔥 CRITICAL
  ├────────────────────────────────────────────────────────┤
  │ Phase 2: Host KYC Governance & Opportunities Portal    │  ⚡ HIGH
@@ -17,6 +19,34 @@ This document outlines the step-by-step development plan for completing the back
  │ Phase 4: Real-Time Chat, Bulletins & Recommendation AI │  💬 MEDIUM
  └────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🔐 Phase 0: Complete Auth, RBAC Middleware & Security Hardening (Foundation)
+*Status: Core NextAuth + scrypt hashing implemented; API route protection and recovery flows needed.*
+
+### 0.1 Role-Based Access Control (RBAC) Route Middleware
+- [ ] **Middleware**: `middleware.js` (Next.js App Router Middleware)
+  - Protects `/admin/*` routes (Requires `session.user.role === "SUPER_ADMIN"`).
+  - Protects organizer routes (Requires `session.user.role === "ORGANIZER"` or `"SUPER_ADMIN"`).
+  - Protects `/dashboard`, `/registrations`, and application endpoints (Requires authenticated session).
+  - Automatically redirects unauthorized visitors to `/login?callbackUrl=...`.
+
+### 0.2 Password Reset & Email Verification Flow
+- [ ] **Endpoint**: `POST /api/auth/forgot-password` & `POST /api/auth/reset-password`
+  - Generates secure random verification tokens, stores expiration timestamp.
+  - Sends password reset links via Resend / Nodemailer.
+- [ ] **Endpoint**: `GET /api/auth/verify-email`
+  - Validates email verification tokens and updates `User.emailVerified: new Date()`.
+
+### 0.3 Profile Onboarding Flow
+- [ ] **Endpoint**: `POST /api/user/onboarding`
+  - Saves student department, club association, interests array, and portfolio links.
+  - Sets `User.onboardingCompleted: true`.
+- [ ] **UI Component**: `/onboarding` multi-step setup page for first-time signups.
+
+### 0.4 Google OAuth Production Configuration
+- [ ] **Provider Configuration**: Update `src/lib/auth.js` to enable `GoogleProvider` when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are configured in `.env.local`.
 
 ---
 
@@ -106,6 +136,7 @@ This document outlines the step-by-step development plan for completing the back
 
 | Week / Milestone | Deliverables | Key Output |
 | :--- | :--- | :--- |
+| **Milestone 0** | Phase 0 (RBAC Middleware `middleware.js`, Password Reset Flow, Onboarding API) | Full security guards & account recovery |
 | **Milestone 1** | Phase 1 (QR Check-In Scanner, Razorpay/Stripe Payment Order APIs, Coupon Engine) | End-to-end ticketing & check-in flow live |
 | **Milestone 2** | Phase 2 (Host KYC Review Dashboard, Opportunity Application Submission API) | Verified host ecosystem & student job applications |
 | **Milestone 3** | Phase 3 (Super Admin User Governance, System Telemetry, Support Desk APIs) | Full platform administration console |
