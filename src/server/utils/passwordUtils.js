@@ -1,5 +1,6 @@
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import bcrypt from "bcryptjs";
 
 const scryptAsync = promisify(scrypt);
 
@@ -18,21 +19,38 @@ export async function hashPassword(password) {
 }
 
 /**
- * Verifies a plaintext password against a stored "hash.salt" string using timingSafeEqual.
+ * Verifies a plaintext password against stored hashes (scrypt, bcrypt, or legacy plaintext).
  * @param {string} password - Plaintext password input.
- * @param {string} storedHash - Stored "hash.salt" string.
+ * @param {string} storedHash - Stored hash string.
  * @returns {Promise<boolean>} True if password matches, false otherwise.
  */
 export async function verifyPassword(password, storedHash) {
-  if (!password || !storedHash || !storedHash.includes(".")) {
+  if (!password || !storedHash) {
     return false;
   }
   try {
-    const [hashedPassword, salt] = storedHash.split(".");
-    const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
-    const suppliedPasswordBuf = await scryptAsync(password, salt, 64);
-    return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+    // 1. Check if storedHash is bcrypt ($2a$, $2b$, $2y$)
+    if (storedHash.startsWith("$2a$") || storedHash.startsWith("$2b$") || storedHash.startsWith("$2y$")) {
+      return await bcrypt.compare(password, storedHash);
+    }
+
+    // 2. Check if storedHash is scrypt ("hash.salt")
+    if (storedHash.includes(".")) {
+      const [hashedPassword, salt] = storedHash.split(".");
+      const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
+      const suppliedPasswordBuf = await scryptAsync(password, salt, 64);
+      return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+    }
+
+    // 3. Fallback direct comparison (for legacy un-hashed dev credentials)
+    if (password === storedHash) {
+      return true;
+    }
+
+    return false;
   } catch (error) {
+    console.error("verifyPassword verification error:", error.message || error);
     return false;
   }
 }
+

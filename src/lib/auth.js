@@ -28,12 +28,15 @@ export const authOptions = {
           throw new Error("Account is temporarily locked. Please try again later.");
         }
 
-        if (!user.passwordHash) {
+        const passwordToTest = user.passwordHash || user.password;
+
+        if (!passwordToTest) {
           throw new Error("Account relies on external OAuth login");
         }
 
-        // 2. Verify scrypt password hash
-        const isValid = await verifyPassword(credentials.password, user.passwordHash);
+        // 2. Verify password hash (supports scrypt, bcrypt, and legacy formats)
+        const isValid = await verifyPassword(credentials.password, passwordToTest);
+
 
         if (!isValid) {
           // Increment failed login attempts
