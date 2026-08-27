@@ -30,9 +30,15 @@ export async function GET(req) {
 
     return NextResponse.json({ events, count: events.length });
   } catch (error) {
-    console.error("Error fetching events:", error);
+    console.error("Error fetching events:", error.message || error);
+    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
+      return NextResponse.json(
+        { error: "Database server connection failed. Please check DATABASE_URL in .env.local", events: [], count: 0 },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
-      { error: "Failed to fetch events from database" },
+      { error: "Failed to fetch events from database", events: [], count: 0 },
       { status: 500 }
     );
   }
@@ -70,7 +76,13 @@ export async function POST(req) {
 
     return NextResponse.json({ message: "Event created successfully", event }, { status: 201 });
   } catch (error) {
-    console.error("Error creating event:", error);
+    console.error("Error creating event:", error.message || error);
+    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
+      return NextResponse.json(
+        { error: "Database server connection failed. Please check DATABASE_URL in .env.local" },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to create event" },
       { status: 500 }

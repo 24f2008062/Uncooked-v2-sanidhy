@@ -19,9 +19,15 @@ export async function GET(req) {
 
     return NextResponse.json({ opportunities, count: opportunities.length });
   } catch (error) {
-    console.error("Error fetching opportunities:", error);
+    console.error("Error fetching opportunities:", error.message || error);
+    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
+      return NextResponse.json(
+        { error: "Database server connection failed. Please check DATABASE_URL in .env.local", opportunities: [], count: 0 },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
-      { error: "Failed to fetch opportunities" },
+      { error: "Failed to fetch opportunities", opportunities: [], count: 0 },
       { status: 500 }
     );
   }
@@ -55,7 +61,13 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error creating opportunity:", error);
+    console.error("Error creating opportunity:", error.message || error);
+    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
+      return NextResponse.json(
+        { error: "Database server connection failed. Please check DATABASE_URL in .env.local" },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to create opportunity" },
       { status: 500 }

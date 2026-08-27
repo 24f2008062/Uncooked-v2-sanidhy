@@ -74,9 +74,17 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Registration error:", error.message || error);
+    
+    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
+      return NextResponse.json(
+        { error: "Unable to reach PostgreSQL database. Please ensure DATABASE_URL in .env.local is valid and accessible." },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Internal server error during registration" },
+      { error: error.message || "Internal server error during registration" },
       { status: 500 }
     );
   }
