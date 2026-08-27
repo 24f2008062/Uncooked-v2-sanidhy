@@ -1,5 +1,6 @@
 import { Inter, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import "./globals.css";
 
@@ -55,10 +56,12 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300">
-        <ThemeProvider>
-          <ScrollToTop />
-          {children}
-        </ThemeProvider>
+        <NextAuthProvider>
+          <ThemeProvider>
+            <ScrollToTop />
+            {children}
+          </ThemeProvider>
+        </NextAuthProvider>
       </body>
     </html>
   );

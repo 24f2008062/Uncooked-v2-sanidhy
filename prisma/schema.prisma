@@ -1,0 +1,238 @@
+// Canonical Prisma Schema for Uncooked Portal
+// Document ID: UNC-BE-ARCH-2026-08
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                   String                 @id @default(cuid())
+  role                 String                 @default("USER") // USER, ORGANIZER, SUPER_ADMIN
+  permissions          String?                // Serialized JSON array of permissions
+  name                 String?
+  fullName             String?
+  email                String                 @unique
+  emailVerified        DateTime?
+  passwordHash         String?
+  dob                  String?
+  department           String?
+  clubAssociation      String?
+  interests            String?                // Serialized JSON array of interests
+  preferenceScore      Float                  @default(0)
+  onboardingCompleted  Boolean                @default(false)
+  failedLoginAttempts  Int                    @default(0)
+  lockedUntil          DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  registrations        Registration[]
+  hostApplication      HostApplication?
+  activities           UserActivity[]
+  supportTickets       SupportTicket[]
+  opportunityApps      OpportunityApplication[]
+  auditLogs            AuditLog[]             @relation("AdminAuditLogs")
+}
+
+model Event {
+  id                   String                 @id // Custom slug identifier (e.g. hackathon-2026)
+  title                String
+  type                 String                 // Fest, Party, Hackathon, Workshop, Tech
+  category             String?
+  tags                 String?                // Serialized JSON array of tags
+  keywords             String?                // Serialized JSON array of keywords
+  popularityScore      Float                  @default(0)
+  date                 DateTime
+  location             String
+  zone                 String?                // Campus zone neighborhood
+  city                 String                 @default("Lucknow")
+  state                String                 @default("Uttar Pradesh")
+  country              String                 @default("India")
+  description          String
+  schedule             String?                // Markdown format
+  prizePool            String?                // Markdown format
+  bannerUrl            String?
+  ticketType           String                 @default("Free") // Free or Paid
+  price                Float?
+  capacity             Int
+  waitlistEnabled      Boolean                @default(false)
+  archived             Boolean                @default(false)
+  status               String                 @default("Active") // Active, Completed, Suspended
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  registrations        Registration[]
+  ticketTiers          TicketTier[]
+  coupons              Coupon[]
+  bulletins            BulletinUpdate[]
+  activities           UserActivity[]
+}
+
+model TicketTier {
+  id                   String                 @id @default(cuid())
+  eventId              String
+  name                 String
+  price                Float
+  capacity             Int
+  available            Int
+  description          String?
+  createdAt            DateTime               @default(now())
+
+  event                Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registrations        Registration[]
+}
+
+model Coupon {
+  id                   String                 @id @default(cuid())
+  eventId              String
+  code                 String
+  discountPct          Float
+  maxUses              Int
+  usedCount            Int                    @default(0)
+  expiresAt            DateTime?
+  createdAt            DateTime               @default(now())
+
+  event                Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registrations        Registration[]
+}
+
+model Registration {
+  id                   String                 @id @default(uuid())
+  userId               String
+  eventId              String
+  ticketTierId         String?
+  couponId             String?
+  status               String                 @default("Pending") // Pending, Confirmed, Checked In, Waitlisted, Cancelled
+  checkInStatus        Boolean                @default(false)
+  teamName             String?
+  track                String?
+  registeredAt         DateTime               @default(now())
+
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event                Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketTier           TicketTier?            @relation(fields: [ticketTierId], references: [id])
+  coupon               Coupon?                @relation(fields: [couponId], references: [id])
+}
+
+model HostApplication {
+  id                   String                 @id @default(cuid())
+  userId               String                 @unique
+  organizationName     String
+  organizationType     String                 // College Club, NGO, Company, Independent
+  status               String                 @default("PENDING") // PENDING, APPROVED, REJECTED, INFO_REQUESTED
+  kycProvider          String?
+  kycReferenceId       String?
+  kycStatus            String?
+  documentUrls         String?                // Serialized JSON array
+  notes                String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditLogs            AuditLog[]
+}
+
+model BulletinUpdate {
+  id                   String                 @id @default(cuid())
+  eventId              String
+  title                String
+  content              String
+  createdAt            DateTime               @default(now())
+
+  event                Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model UserActivity {
+  id                   String                 @id @default(cuid())
+  userId               String
+  eventId              String?
+  interactionType      String                 // VIEW, SAVE, REGISTER, SHARE
+  metadata             String?                // Serialized JSON metadata
+  createdAt            DateTime               @default(now())
+
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event                Event?                 @relation(fields: [eventId], references: [id], onDelete: SetNull)
+}
+
+model SupportTicket {
+  id                   String                 @id @default(cuid())
+  userId               String
+  subject              String
+  category             String                 // Ticketing, Host KYC, Technical, Billing
+  status               String                 @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority             String                 @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages             TicketMessage[]
+}
+
+model TicketMessage {
+  id                   String                 @id @default(cuid())
+  ticketId             String
+  senderId             String
+  senderType           String                 // USER or ADMIN
+  content              String
+  createdAt            DateTime               @default(now())
+
+  ticket               SupportTicket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model Opportunity {
+  id                   String                 @id @default(cuid())
+  title                String
+  company              String
+  type                 String                 // Internship, Bounty, Full-time, Contract
+  location             String                 // Remote, On-Campus, Hybrid
+  stipend              String?
+  description          String
+  requirements         String?                // Serialized JSON or markdown
+  deadline             DateTime?
+  status               String                 @default("ACTIVE") // ACTIVE, CLOSED
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  applications         OpportunityApplication[]
+}
+
+model OpportunityApplication {
+  id                   String                 @id @default(cuid())
+  opportunityId        String
+  userId               String
+  resumeUrl            String?
+  coverNote            String?
+  status               String                 @default("PENDING") // PENDING, REVIEWING, SHORTLISTED, REJECTED, ACCEPTED
+  appliedAt            DateTime               @default(now())
+
+  opportunity          Opportunity            @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemTelemetrySnapshot {
+  id                   String                 @id @default(cuid())
+  cpuUsagePct          Float
+  memUsagePct          Float
+  apiLatencyP95        Int
+  dbLatencyMs          Int
+  activeUsers          Int
+  errorRatePct         Float
+  timestamp            DateTime               @default(now())
+}
+
+model AuditLog {
+  id                   String                 @id @default(cuid())
+  adminId              String
+  applicationId        String?
+  action               String
+  previousStatus       String?
+  newStatus            String?
+  details              String?
+  createdAt            DateTime               @default(now())
+
+  admin                User                   @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  application          HostApplication?       @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+}

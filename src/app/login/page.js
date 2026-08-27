@@ -2,21 +2,42 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 import Image from "next/image";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ email: "" });
+  const [errorMsg, setErrorMsg] = useState("");
+  const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // TODO: Integrate authentication
-    setTimeout(() => {
+    setErrorMsg("");
+
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (res?.error) {
+        setErrorMsg(res.error || "Invalid email or password credentials");
+        setLoading(false);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setErrorMsg("Failed to log in. Please try again.");
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -25,7 +46,7 @@ export default function LoginPage() {
       {/* Left Column - Form */}
       <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center px-6 sm:px-12 lg:px-24 py-12 min-h-screen relative overflow-hidden">
         
-        {/* Background glow for left side */}
+        {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
            <div className="absolute top-[10%] -left-32 w-[500px] h-[500px] bg-[rgba(244,114,182,0.04)] rounded-full blur-[100px]" />
            <div className="absolute bottom-[10%] -right-32 w-[500px] h-[500px] bg-[rgba(249,115,22,0.03)] rounded-full blur-[100px]" />
@@ -55,11 +76,19 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {errorMsg && (
+            <div className="mb-4 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           <div className="space-y-4">
-            {/* Google Auth Button - Prominent White */}
+            {/* Google Auth Button */}
             <button
               type="button"
-              className="w-full py-3.5 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-3 transition-all duration-300 bg-white hover:bg-gray-100 text-black shadow-[0_4px_14px_rgba(255,255,255,0.1)] hover:shadow-[0_6px_20px_rgba(255,255,255,0.15)] hover:-translate-y-0.5"
+              onClick={() => signIn("google")}
+              className="w-full py-3.5 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-3 transition-all duration-300 bg-white hover:bg-gray-100 text-black shadow-[0_4px_14px_rgba(255,255,255,0.1)] hover:shadow-[0_6px_20px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 cursor-pointer"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -97,7 +126,7 @@ export default function LoginPage() {
                   required
                   autoComplete="current-password"
                   placeholder="Password"
-                  value={formData.password || ""}
+                  value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="w-full px-5 py-3.5 text-[15px] rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6] group-hover:border-[#333]"
                 />
@@ -106,7 +135,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-60 bg-[var(--accent-orange)] hover:opacity-90 text-white shadow-lg hover:-translate-y-0.5"
+                className="w-full py-3.5 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-60 bg-[var(--accent-orange)] hover:opacity-90 text-white shadow-lg hover:-translate-y-0.5 cursor-pointer"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Login to Account"}
               </button>
@@ -126,7 +155,7 @@ export default function LoginPage() {
         </motion.div>
       </div>
 
-      {/* Right Column - Product Showcase Image */}
+      {/* Right Column - Showcase */}
       <div className="hidden lg:block w-full lg:w-[55%] xl:w-[60%] p-4 lg:p-6">
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
@@ -134,21 +163,16 @@ export default function LoginPage() {
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
           className="w-full h-full min-h-[calc(100vh-3rem)] bg-[#111] border border-[#222] rounded-[32px] flex items-center justify-center relative overflow-hidden"
         >
-          {/* Subtle glowing radial background inside the container */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[90%] bg-[radial-gradient(circle,rgba(249,115,22,0.05)_0%,transparent_60%)] blur-[60px]" />
           
-          {/* Product Showcase Image Container */}
           <div className="relative z-10 w-[85%] h-[85%] border border-[rgba(255,255,255,0.06)] rounded-2xl shadow-2xl overflow-hidden flex flex-col bg-[#0a0a0a]">
-             
-             {/* Mockup Top Bar (Browser/App Header) */}
              <div className="w-full h-12 border-b border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] flex items-center px-4 gap-2 backdrop-blur-md absolute top-0 left-0 right-0 z-20">
                <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
                <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
                <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
              </div>
              
-             {/* Actual Image */}
              <div className="flex-1 relative w-full h-full mt-12">
                <Image 
                  src="/events/EVENT IMAGE.jpg"
