@@ -3,15 +3,44 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sparkles, Moon, Sun } from "lucide-react";
+import { Menu, X, Sparkles, Moon, Sun, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Navbar({ forceDarkTop = false }) {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [supabaseUser, setSupabaseUser] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  // Check Supabase session
+  useEffect(() => {
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) {
+          setSupabaseUser(data.user);
+        }
+      }).catch(() => {});
+
+      const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+        setSupabaseUser(session?.user || null);
+      });
+
+      return () => {
+        authListener?.subscription?.unsubscribe();
+      };
+    } catch (e) {
+      // Supabase credentials not set
+    }
+  }, []);
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -20,7 +49,6 @@ export default function Navbar({ forceDarkTop = false }) {
       const currentScrollY = window.scrollY;
       setScrolled(currentScrollY > 20);
 
-      // Hide navbar when scrolling down past 80px, show when scrolling up
       if (currentScrollY > 80 && currentScrollY > lastScrollY) {
         setVisible(false);
       } else {
@@ -45,6 +73,18 @@ export default function Navbar({ forceDarkTop = false }) {
       document.body.style.overflow = "";
     };
   }, [mobileOpen]);
+
+  const currentUser = session?.user || supabaseUser;
+  const isLoggedIn = !!currentUser;
+  const userName = currentUser?.name || currentUser?.email?.split("@")[0] || "User";
+
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (e) {}
+    await signOut({ callbackUrl: "/" });
+  };
 
   const navLinks = [
     { label: "Events", href: "/dashboard" },
@@ -118,28 +158,59 @@ export default function Navbar({ forceDarkTop = false }) {
         <div className="hidden md:flex items-center gap-3 z-10">
           <button 
             onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-border-subtle transition-colors border border-border-subtle flex items-center justify-center"
+            className="p-2 rounded-full hover:bg-border-subtle transition-colors border border-border-subtle flex items-center justify-center cursor-pointer"
             style={{ color: "var(--text-primary)" }}
             aria-label="Toggle Theme"
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
-          <Link
-            href="/login"
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseEnter={(e) => {
-              e.target.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.color = "var(--text-secondary)";
-            }}
-          >
-            Login
-          </Link>
-          <Link href="/signup" className="btn-primary text-sm">
-            Get Started
-          </Link>
+
+          {isLoggedIn ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-[#141414] border border-[#2a2a2a] text-white flex items-center gap-2 hover:border-[var(--accent-orange)] transition-colors"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
+                <span>Dashboard</span>
+              </Link>
+
+              <div className="flex items-center gap-2 pl-2 border-l border-border-subtle">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#f472b6] to-[#f97316] text-white font-bold text-xs flex items-center justify-center shadow-sm">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-xs font-medium text-gray-300 max-w-[100px] truncate">
+                  {userName}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  title="Sign Out"
+                  className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-colors ml-1 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
+                style={{ color: "var(--text-secondary)" }}
+                onMouseEnter={(e) => {
+                  e.target.style.color = "var(--text-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = "var(--text-secondary)";
+                }}
+              >
+                Login
+              </Link>
+              <Link href="/signup" className="btn-primary text-sm">
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -189,20 +260,45 @@ export default function Navbar({ forceDarkTop = false }) {
                 transition={{ delay: 0.35, duration: 0.3 }}
                 className="flex flex-col gap-3 mt-4"
               >
-                <Link
-                  href="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="btn-secondary"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setMobileOpen(false)}
-                  className="btn-primary"
-                >
-                  Get Started
-                </Link>
+                {isLoggedIn ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                      className="btn-primary flex items-center justify-center gap-2"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard ({userName})
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setMobileOpen(false);
+                        handleLogout();
+                      }}
+                      className="btn-secondary text-red-400 border-red-500/20 flex items-center justify-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="btn-secondary"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      href="/signup"
+                      onClick={() => setMobileOpen(false)}
+                      className="btn-primary"
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
               </motion.div>
             </div>
           </motion.div>
