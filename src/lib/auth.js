@@ -11,32 +11,38 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        console.log("NextAuth authorize attempt for:", credentials?.email);
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Missing email or password credentials");
         }
 
+        const cleanEmail = credentials.email.toLowerCase().trim();
+
         // 1. Fetch user from PostgreSQL via Prisma
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase().trim() },
+          where: { email: cleanEmail },
         });
 
         if (!user) {
+          console.log("NextAuth: No user found with email:", cleanEmail);
           throw new Error("Invalid credentials");
         }
 
         if (user.lockedUntil && user.lockedUntil > new Date()) {
+          console.log("NextAuth: User account locked until:", user.lockedUntil);
           throw new Error("Account is temporarily locked. Please try again later.");
         }
 
         const passwordToTest = user.passwordHash || user.password;
 
         if (!passwordToTest) {
+          console.log("NextAuth: No password hash stored for user:", cleanEmail);
           throw new Error("Account relies on external OAuth login");
         }
 
-        // 2. Verify password hash (supports scrypt, bcrypt, and legacy formats)
+        // 2. Verify password hash
         const isValid = await verifyPassword(credentials.password, passwordToTest);
-
+        console.log("NextAuth: Password verification result for", cleanEmail, "->", isValid);
 
         if (!isValid) {
           // Increment failed login attempts
@@ -55,6 +61,8 @@ export const authOptions = {
           });
         }
 
+        console.log("NextAuth: Successful login for", cleanEmail, "Role:", user.role);
+
         return {
           id: user.id,
           email: user.email,
@@ -62,6 +70,7 @@ export const authOptions = {
           role: user.role || "USER",
         };
       },
+
     }),
   ],
   session: {

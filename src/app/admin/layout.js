@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { 
   LayoutDashboard, 
   Users, 
@@ -24,6 +25,7 @@ import { createClient } from "@/lib/supabase/client";
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: nextAuthSession } = useSession();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
@@ -38,21 +40,25 @@ export default function AdminLayout({ children }) {
           return;
         }
         
-        const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-          setUser(data.user);
+        if (nextAuthSession?.user) {
+          setUser(nextAuthSession.user);
+        } else {
+          const supabase = createClient();
+          const { data } = await supabase.auth.getUser();
+          if (data?.user) {
+            setUser(data.user);
+          }
         }
         setAuthorized(true);
       } catch (err) {
-        // Fallback authorization check
         setAuthorized(true);
       } finally {
         setLoading(false);
       }
     }
     checkAdminAuth();
-  }, []);
+  }, [nextAuthSession]);
+
 
   const navItems = [
     { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
