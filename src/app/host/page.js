@@ -39,8 +39,8 @@ const CATEGORIES = [
 const HOST_FEATURES = [
   {
     icon: <QrCode className="w-6 h-6 text-orange-500" />,
-    title: "100+ Scans/Min Check in",
-    desc: "Offline first QR scanner app so your venue gates never get clogged or backed up.",
+    title: "Signed digital passes",
+    desc: "Attendee passes are HMAC-signed on the server so a copied ID is not enough to fake a ticket.",
   },
   {
     icon: <ShieldCheck className="w-6 h-6 text-emerald-500" />,
@@ -55,7 +55,7 @@ const HOST_FEATURES = [
   {
     icon: <Ticket className="w-6 h-6 text-purple-500" />,
     title: "Zero Friction Ticketing",
-    desc: "Instant digital pass delivery to attendee email, SMS, and wallet passes.",
+    desc: "Signed digital passes issued to the attendee account. Email/SMS/wallet delivery is not enabled in this version.",
   },
 ];
 
@@ -89,9 +89,60 @@ export default function HostPage() {
     if (currentStep > 1) setCurrentStep((prev) => prev - 1);
   };
 
-  const handlePublish = (e) => {
+  const [publishError, setPublishError] = useState("");
+  const [publishBusy, setPublishBusy] = useState(false);
+
+  const handlePublish = async (e) => {
     e.preventDefault();
-    setIsPublished(true);
+    setPublishError("");
+    setPublishBusy(true);
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: eventData.title,
+          type: eventData.category,
+          category: eventData.category,
+          date: `${eventData.date}T10:00:00`,
+          location: eventData.location,
+          description: `Hosted by ${eventData.org}`,
+          ticketType: eventData.ticketType,
+          price: eventData.price,
+          capacity: eventData.capacity,
+        }),
+      });
+      const payload = await res.json();
+      if (res.status === 401) {
+        window.location.href = "/login?redirectTo=/host";
+        return;
+      }
+      if (res.status === 403) {
+        const apply = await fetch("/api/host/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            organizationName: eventData.org || "Campus organization",
+            organizationType: "College Club",
+            notes: `Event draft: ${eventData.title}`,
+          }),
+        });
+        const applyPayload = await apply.json();
+        setPublishError(
+          apply.ok
+            ? "You need host verification before publishing. Your application is pending review."
+            : applyPayload.error?.message || "Only verified organisers can publish events."
+        );
+        return;
+      }
+      if (!res.ok) {
+        setPublishError(payload.error?.message || "Could not publish event");
+        return;
+      }
+      setIsPublished(true);
+    } finally {
+      setPublishBusy(false);
+    }
   };
 
   // Calculations
@@ -128,6 +179,12 @@ export default function HostPage() {
             >
               From hackathons and tech talks to cultural fests and sports leagues — get zero noise ticketing, instant QR check in, and verified host telemetry.
             </motion.p>
+            <Link
+              href="/host/apply"
+              className="inline-flex mt-6 px-5 py-2.5 rounded-full text-xs font-bold border border-border-subtle text-text-primary hover:border-[var(--accent-orange)]"
+            >
+              Apply for host verification first →
+            </Link>
           </div>
 
           {/* Step-by-Step Event Builder Form Container */}
@@ -225,6 +282,7 @@ export default function HostPage() {
 
                 {/* Form Step Body */}
                 <form onSubmit={handlePublish}>
+                  {publishError && <p className="text-xs text-red-400 mb-4">{publishError}</p>}
                   <AnimatePresence mode="wait">
                     {/* Step 1: Event Essentials */}
                     {currentStep === 1 && (

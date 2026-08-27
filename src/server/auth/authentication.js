@@ -1,58 +1,64 @@
-import { createClient } from '@/lib/supabase/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import prisma from '@/lib/prisma';
+import prisma from "@/lib/prisma";
 
-/**
- * Retrieves the current authenticated user context from NextAuth session or Supabase session
- */
-export async function getCurrentUser(req) {
-  // 1. Try NextAuth session first
-  try {
-    const session = await getServerSession(authOptions);
-    if (session?.user?.email) {
-      const dbUser = await prisma.user.findUnique({
-        where: { email: session.user.email.toLowerCase().trim() },
-      });
-      if (dbUser) return dbUser;
+const PUBLIC_USER_SELECT = {
+  id: true,
+  role: true,
+  permissions: true,
+  name: true,
+  fullName: true,
+  email: true,
+  emailVerified: true,
+  department: true,
+  clubAssociation: true,
+  interests: true,
+  onboardingCompleted: true,
+  failedLoginAttempts: true,
+  lockedUntil: true,
+  tokenVersion: true,
+  ageAttested18: true,
+  termsAcceptedAt: true,
+  privacyAcceptedAt: true,
+  disabledAt: true,
+  deletedAt: true,
+  createdAt: true,
+  updatedAt: true,
+};
 
-      return {
-        id: session.user.id,
-        email: session.user.email,
-        fullName: session.user.name,
-        role: session.user.role || 'USER',
-      };
-    }
-  } catch (err) {
-    // Fall through to Supabase check
-  }
-
-  // 2. Try Supabase Auth session
-  try {
-    const supabase = await createClient();
-    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
-
-    if (supabaseUser && !error) {
-      const profile = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { id: supabaseUser.id },
-            { email: supabaseUser.email }
-          ]
-        }
-      });
-
-      return profile || {
-        id: supabaseUser.id,
-        email: supabaseUser.email,
-        fullName: supabaseUser.user_metadata?.name || 'User',
-        role: supabaseUser.user_metadata?.role || 'USER',
-      };
-    }
-  } catch (err) {
-    console.warn('[getCurrentUser] Supabase session check failed:', err.message);
-  }
-
-  return null;
+export function isAccountBlocked(user) {
+  if (!user) return true;
+  if (user.deletedAt) return true;
+  if (user.disabledAt) return true;
+  if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) return true;
+  return false;
 }
 
+export async function getCurrentUser() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id && !session?.user?.email) {
+      return null;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: session.user.id
+        ? { id: session.user.id }
+        : { email: session.user.email.toLowerCase().trim() },
+      select: PUBLIC_USER_SELECT,
+    });
+
+    if (!user) return null;
+    if (isAccountBlocked(user)) return null;
+
+    const sessionVer = Number(session.user.ver ?? 0);
+    if (sessionVer !== Number(user.tokenVersion || 0)) {
+      return null;
+    }
+
+    return user;
+  } catch (err) {
+    console.error("[getCurrentUser] session resolve failed");
+    return null;
+  }
+}

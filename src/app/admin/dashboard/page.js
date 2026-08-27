@@ -28,7 +28,8 @@ export default function AdminDashboardPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/v2/admin/dashboard/stats");
-      const data = await res.json();
+      const payload = await res.json();
+      const data = payload.data || payload;
       if (res.ok) {
         setTelemetry(data.telemetry);
         setAuditLogs(data.auditLogs || []);
@@ -53,13 +54,14 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !killSwitch, reason: "Manual Emergency Override" }),
       });
-      const data = await res.json();
+      const payload = await res.json();
+      const data = payload.data || payload;
       if (res.ok) {
         setKillSwitch(data.killSwitchActive);
         setKillSwitchModal(false);
         fetchStats();
       } else {
-        alert(data.error || "Failed to update kill-switch");
+        alert(data.error?.message || data.error || "Failed to update kill-switch");
       }
     } catch (err) {
       alert("Error toggling kill-switch");

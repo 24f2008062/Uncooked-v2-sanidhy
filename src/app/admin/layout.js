@@ -20,8 +20,6 @@ import {
   Activity,
   Briefcase
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -34,24 +32,20 @@ export default function AdminLayout({ children }) {
     async function checkAdminAuth() {
       try {
         const res = await fetch("/api/v2/admin/dashboard/stats");
-        if (res.status === 401 || res.status === 403) {
+        if (!res.ok) {
           setAuthorized(false);
           setLoading(false);
           return;
         }
-        
-        if (nextAuthSession?.user) {
+
+        if (nextAuthSession?.user?.role === "SUPER_ADMIN") {
           setUser(nextAuthSession.user);
+          setAuthorized(true);
         } else {
-          const supabase = createClient();
-          const { data } = await supabase.auth.getUser();
-          if (data?.user) {
-            setUser(data.user);
-          }
+          setAuthorized(false);
         }
-        setAuthorized(true);
       } catch (err) {
-        setAuthorized(true);
+        setAuthorized(false);
       } finally {
         setLoading(false);
       }

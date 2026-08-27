@@ -31,7 +31,8 @@ export default function AdminHostApplicationsPage() {
       if (statusFilter) url.searchParams.set("status", statusFilter);
 
       const res = await fetch(url.toString());
-      const data = await res.json();
+      const payload = await res.json();
+      const data = payload.data || payload;
       if (res.ok) {
         setApplications(data.applications || []);
       }
@@ -63,7 +64,7 @@ export default function AdminHostApplicationsPage() {
         setReviewModalOpen(false);
         fetchApplications();
       } else {
-        alert(data.error || "Review action failed");
+        alert(data.error?.message || data.error || "Review action failed");
       }
     } catch (err) {
       alert("Error reviewing application");

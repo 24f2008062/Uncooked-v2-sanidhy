@@ -1,48 +1,48 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/server/auth/authentication";
-import { hasPermission } from "@/server/auth/authorization";
+import { jsonOk, safeError } from "@/server/http/envelope";
+import { requireSuperAdmin } from "@/server/http/guards";
+import { isKillSwitchActive } from "@/server/auth/killSwitch";
 
-export async function GET(req) {
+export async function GET() {
   try {
-    const user = await getCurrentUser(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
 
-    if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && !hasPermission(user, "USERS_READ")) {
-      return NextResponse.json({ error: "Forbidden - Insufficient administrative privileges" }, { status: 403 });
-    }
+    const started = Date.now();
+    const [totalUsers, totalEvents, totalRegistrations, pendingApplications, recentLogs, killSwitchActive] =
+      await Promise.all([
+        prisma.user.count({ where: { deletedAt: null } }),
+        prisma.event.count({ where: { archived: false } }),
+        prisma.registration.count(),
+        prisma.hostApplication.count({ where: { status: "PENDING" } }),
+        prisma.auditLog.findMany({
+          take: 8,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            action: true,
+            entityType: true,
+            entityId: true,
+            createdAt: true,
+            actorId: true,
+          },
+        }),
+        isKillSwitchActive(),
+      ]);
+    const dbLatencyMs = Date.now() - started;
 
-    // Parallel database telemetry metrics
-    const [totalUsers, totalEvents, totalRegistrations, pendingApplications, recentLogs] = await Promise.all([
-      prisma.user.count().catch(() => 0),
-      prisma.event.count().catch(() => 0),
-      prisma.registration.count().catch(() => 0),
-      prisma.hostApplication.count({ where: { status: "PENDING" } }).catch(() => 0),
-      prisma.auditLog.findMany({
-        take: 8,
-        orderBy: { createdAt: "desc" },
-      }).catch(() => []),
-    ]);
-
-    return NextResponse.json({
+    return jsonOk({
       telemetry: {
         totalUsers,
         totalEvents,
         totalRegistrations,
         pendingApplications,
-        p95LatencyMs: Math.floor(Math.random() * 15 + 12),
-        dbPoolLatencyMs: Math.floor(Math.random() * 5 + 3),
-        killSwitchActive: false,
+        dbPoolLatencyMs: dbLatencyMs,
+        killSwitchActive,
       },
       auditLogs: recentLogs,
     });
   } catch (error) {
-    console.error("GET /api/v2/admin/dashboard/stats error:", error.message || error);
-    return NextResponse.json(
-      { error: "Failed to fetch admin telemetry stats" },
-      { status: 500 }
-    );
+    return safeError(error, "Unable to fetch admin stats");
   }
 }

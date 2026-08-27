@@ -1,6 +1,12 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { FileText, CheckCircle2, AlertCircle, Scale, CreditCard } from "lucide-react";
+import { FileText, CheckCircle2, AlertCircle, Scale, Shield } from "lucide-react";
+import { LEGAL } from "@/server/config/legal";
+
+export const metadata = {
+  title: "Terms of Service — Uncooked",
+  description: "Terms of Service for the Uncooked campus events platform.",
+};
 
 export default function TermsPage() {
   return (
@@ -10,86 +16,81 @@ export default function TermsPage() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6">
-              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-              <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">Effective August 2026</span>
+              <span className="w-2 h-2 rounded-full bg-orange-500" />
+              <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">
+                Version {LEGAL.termsVersion}
+              </span>
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>
               Terms of <span className="gradient-text">Service</span>
             </h1>
             <p className="text-lg leading-relaxed max-w-2xl" style={{ color: "var(--text-secondary)" }}>
-              Clear, transparent guidelines for hosts and attendees. By accessing or using the Uncooked platform, you agree to be bound by these terms.
+              These terms govern use of Uncooked. By creating an account or using the site, you agree to them. If you do not agree, do not use the service.
             </p>
           </div>
 
           <div className="space-y-6">
-            {/* Section 1 */}
-            <div className="p-8 rounded-2xl border border-[var(--border-subtle)] bg-[#111] hover:bg-[#151515] transition-colors">
+            <div className="p-8 rounded-2xl border border-[var(--border-subtle)] bg-[#111]">
               <div className="flex items-center gap-4 mb-6">
                 <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <h2 className="text-xl font-bold text-white">Account Registration & Verification</h2>
+                <h2 className="text-xl font-bold text-white">Eligibility and accounts</h2>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed mb-6">
-                To maintain the integrity of our zero-noise ecosystem, all event hosts must undergo our verification process. Attendees must provide accurate information when registering for events.
-              </p>
-              <ul className="grid sm:grid-cols-2 gap-4">
-                {[
-                  "Valid campus (.edu) email required for student events",
-                  "Hosts must complete ID verification for paid ticketing",
-                  "One individual per account policy",
-                  "Accounts are non-transferable"
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-500/50 flex-shrink-0" />
-                    <span className="text-sm text-gray-300">{item}</span>
-                  </li>
-                ))}
+              <ul className="space-y-3 text-sm text-gray-300">
+                <li>You must be 18 or older. We require an 18+ attestation at registration.</li>
+                <li>Provide accurate information. One person per account. Accounts are not transferable.</li>
+                <li>You are responsible for keeping your password confidential. We will never ask for it by email.</li>
+                <li>We may lock or disable accounts that abuse the service, attempt unauthorised access, or post unlawful content.</li>
               </ul>
             </div>
 
-            {/* Section 2 */}
-            <div className="p-8 rounded-2xl border border-[var(--border-subtle)] bg-[#111] hover:bg-[#151515] transition-colors">
+            <div className="p-8 rounded-2xl border border-[var(--border-subtle)] bg-[#111]">
               <div className="flex items-center gap-4 mb-6">
                 <div className="p-3 rounded-xl bg-orange-500/10 text-orange-400">
                   <AlertCircle className="w-6 h-6" />
                 </div>
-                <h2 className="text-xl font-bold text-white">Event Creation & Responsibilities</h2>
+                <h2 className="text-xl font-bold text-white">Events and hosts</h2>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed mb-6">
-                As a host on Uncooked, you are solely responsible for the planning, execution, and safety of your events. We provide the infrastructure; you provide the experience.
-              </p>
-              <ul className="space-y-4">
+              <ul className="space-y-4 text-sm text-gray-400">
                 <li className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                   <Scale className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-semibold text-white mb-1">Compliance with Local Laws</h4>
-                    <p className="text-xs text-gray-400 leading-relaxed">Hosts must ensure all events comply with local regulations, venue rules, and campus guidelines. Uncooked reserves the right to unpublish events that violate safety policies.</p>
+                    <h4 className="text-sm font-semibold text-white mb-1">Host responsibility</h4>
+                    <p className="text-xs leading-relaxed">
+                      Hosts are solely responsible for event safety, venue rules, campus policy, and local law. Uncooked provides software, not event operations. We may unpublish events that appear unsafe, misleading, or unlawful.
+                    </p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                   <FileText className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-semibold text-white mb-1">Accurate Representation</h4>
-                    <p className="text-xs text-gray-400 leading-relaxed">Event details, ticketing prices, and included amenities must be accurately described. Misleading attendees may result in permanent account suspension.</p>
+                    <h4 className="text-sm font-semibold text-white mb-1">Accurate listings</h4>
+                    <p className="text-xs leading-relaxed">
+                      Event details must be accurate. Creating events requires a verified organiser role. Paid ticketing, SMS delivery, and wallet passes are not currently offered.
+                    </p>
                   </div>
                 </li>
               </ul>
             </div>
 
-            {/* Section 3 */}
-            <div className="p-8 rounded-2xl border border-[var(--border-subtle)] bg-[#111] hover:bg-[#151515] transition-colors">
+            <div className="p-8 rounded-2xl border border-[var(--border-subtle)] bg-[#111]">
               <div className="flex items-center gap-4 mb-6">
                 <div className="p-3 rounded-xl bg-green-500/10 text-green-400">
-                  <CreditCard className="w-6 h-6" />
+                  <Shield className="w-5 h-5" />
                 </div>
-                <h2 className="text-xl font-bold text-white">Payments, Fees & Payouts</h2>
+                <h2 className="text-xl font-bold text-white">Payments, acceptable use, liability</h2>
               </div>
+              <p className="text-sm text-gray-400 leading-relaxed mb-4">
+                Card and UPI checkout are not enabled on this version of the platform. Do not submit payment card data to Uncooked. When payments launch, they will be processed by a licensed payment partner and these terms will be updated.
+              </p>
+              <p className="text-sm text-gray-400 leading-relaxed mb-4">
+                You may not probe, overload, or circumvent access controls; post malware; harvest other users&apos; data; or use the service for unlawful content. We may pause writes (including registrations) during a security incident.
+              </p>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Uncooked charges a standard infrastructure fee on all paid tickets to cover processing and platform maintenance. Payouts are initiated 48 hours after the successful completion of an event to protect against fraud. Hosts are responsible for handling attendee refund requests in accordance with their explicitly stated refund policy. In cases of event cancellation, full refunds will be automatically issued to all attendees.
+                The service is provided as available. We do not warrant uninterrupted operation. To the extent permitted by Indian law, {LEGAL.entityName} is not liable for host-run events, venue incidents, or indirect losses. These terms are governed by {LEGAL.governingLaw}. Grievances: {LEGAL.grievanceEmail}.
               </p>
             </div>
-            
           </div>
         </div>
       </main>

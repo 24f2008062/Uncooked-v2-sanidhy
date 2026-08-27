@@ -1,18 +1,11 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/server/auth/authentication";
-import { hasPermission } from "@/server/auth/authorization";
+import { jsonOk, safeError } from "@/server/http/envelope";
+import { requireSuperAdmin } from "@/server/http/guards";
 
 export async function GET(req) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && !hasPermission(user, "HOSTS_AUDIT")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || "";
@@ -27,16 +20,17 @@ export async function GET(req) {
             id: true,
             email: true,
             fullName: true,
+            name: true,
             department: true,
           },
         },
       },
       orderBy: { createdAt: "desc" },
+      take: 100,
     });
 
-    return NextResponse.json({ applications });
+    return jsonOk({ applications });
   } catch (error) {
-    console.error("GET /api/v2/admin/applications error:", error.message || error);
-    return NextResponse.json({ error: "Failed to fetch host applications" }, { status: 500 });
+    return safeError(error, "Unable to fetch host applications");
   }
 }

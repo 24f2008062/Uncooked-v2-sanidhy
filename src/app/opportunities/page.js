@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -93,27 +94,70 @@ const OPPORTUNITIES = [
 const CATEGORIES = ["All", "Internship", "Freelance", "Full Time", "Bounty"];
 
 export default function OpportunitiesPage() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModalItem, setActiveModalItem] = useState(null);
   const [applicantData, setApplicantData] = useState({ name: "", email: "", portfolio: "", note: "" });
   const [isApplied, setIsApplied] = useState(false);
+  const [applyError, setApplyError] = useState("");
+  const [listings, setListings] = useState(OPPORTUNITIES);
 
-  // Filter items based on Category & Search Query
-  const filteredOpportunities = OPPORTUNITIES.filter((item) => {
+  const filteredOpportunities = listings.filter((item) => {
     const matchesCategory = selectedCategory === "All" || item.type.toLowerCase() === selectedCategory.toLowerCase();
     const query = searchQuery.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       item.title.toLowerCase().includes(query) ||
       item.company.toLowerCase().includes(query) ||
-      item.skills.some(skill => skill.toLowerCase().includes(query));
+      (item.skills || []).some((skill) => skill.toLowerCase().includes(query));
 
     return matchesCategory && matchesSearch;
   });
 
-  const handleApplySubmit = (e) => {
+  useEffect(() => {
+    fetch("/api/opportunities")
+      .then((res) => res.json())
+      .then((payload) => {
+        const rows = payload.data?.opportunities || [];
+        if (rows.length) {
+          setListings(
+            rows.map((row) => ({
+              id: row.id,
+              title: row.title,
+              company: row.company,
+              type: row.type,
+              pay: row.stipend || "Undisclosed",
+              location: row.location,
+              desc: row.description,
+              skills: [],
+              badgeColor: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleApplySubmit = async (e) => {
     e.preventDefault();
-    if (!applicantData.name || !applicantData.email) return;
+    setApplyError("");
+    const res = await fetch(`/api/opportunities/${activeModalItem.id}/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        coverNote: applicantData.note,
+        resumeUrl: applicantData.portfolio,
+      }),
+    });
+    const payload = await res.json();
+    if (res.status === 401) {
+      router.push("/login?redirectTo=/opportunities");
+      return;
+    }
+    if (!res.ok) {
+      setApplyError(payload.error?.message || "Could not submit application");
+      return;
+    }
     setIsApplied(true);
   };
 
@@ -269,7 +313,7 @@ export default function OpportunitiesPage() {
                 Hiring for your campus startup or club?
               </h3>
               <p className="text-xs sm:text-sm text-text-secondary mt-1">
-                Post your internship, gig, or hackathon bounty directly to 250,000+ verified campus students.
+                Post internships and bounties for students on Uncooked. Posting requires a verified organiser account.
               </p>
             </div>
 
@@ -350,6 +394,8 @@ export default function OpportunitiesPage() {
                   </div>
 
                   <form onSubmit={handleApplySubmit} className="space-y-4">
+                    {applyError && <p className="text-xs text-red-400">{applyError}</p>}
+                    <p className="text-xs text-gray-400">Applications are attached to your signed-in account.</p>
                     <div>
                       <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
                         Full Name
