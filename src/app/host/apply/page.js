@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -58,7 +58,7 @@ export default function HostApplyPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setError("");
     try {
       const res = await fetch("/api/host/apply");
@@ -81,11 +81,20 @@ export default function HostApplyPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    load();
-  }, []);
+    let isMounted = true;
+    const executeLoad = async () => {
+      if (isMounted) {
+        await load();
+      }
+    };
+    executeLoad();
+    return () => {
+      isMounted = false;
+    };
+  }, [load]);
 
   const submit = async (e) => {
     e.preventDefault();

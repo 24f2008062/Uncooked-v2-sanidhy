@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   FileCheck, 
   Search, 
@@ -24,7 +24,7 @@ export default function AdminHostApplicationsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
       const url = new URL("/api/v2/admin/applications", window.location.origin);
@@ -41,11 +41,19 @@ export default function AdminHostApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
-    fetchApplications();
-  }, [statusFilter]);
+    let isMounted = true;
+    (async () => {
+      if (isMounted) {
+        await fetchApplications();
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchApplications]);
 
   const handleReview = async (action) => {
     if (!selectedApp) return;

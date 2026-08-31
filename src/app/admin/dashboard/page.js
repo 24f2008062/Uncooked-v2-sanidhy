@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   Users, 
   Calendar, 
@@ -24,7 +24,7 @@ export default function AdminDashboardPage() {
   const [killSwitchModal, setKillSwitchModal] = useState(false);
   const [toggleLoading, setToggleLoading] = useState(false);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/v2/admin/dashboard/stats");
@@ -40,11 +40,19 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    let isMounted = true;
+    (async () => {
+      if (isMounted) {
+        await fetchStats();
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchStats]);
 
   const handleToggleKillSwitch = async () => {
     setToggleLoading(true);

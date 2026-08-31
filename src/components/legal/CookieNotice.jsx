@@ -9,12 +9,14 @@ export default function CookieNotice() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    let show = false;
     try {
-      if (!window.localStorage.getItem(KEY)) {
-        setVisible(true);
-      }
+      show = !window.localStorage.getItem(KEY);
     } catch {
-      setVisible(true);
+      show = true;
+    }
+    if (show) {
+      queueMicrotask(() => setVisible(true));
     }
   }, []);
 
