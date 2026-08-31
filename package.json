@@ -7,7 +7,9 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "node --import ./tests/register-loader.mjs --test tests/passwordPolicy.test.mjs tests/rateLimit.test.mjs tests/security/unit.test.mjs",
+    "test:security": "node tests/security/http-suite.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
