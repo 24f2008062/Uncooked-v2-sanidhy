@@ -10,8 +10,8 @@ if (!process.env.DATABASE_URL) {
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString && process.env.NODE_ENV === "production") {
-  throw new Error("DATABASE_URL is not configured");
+if (!connectionString && process.env.NODE_ENV === "development") {
+  console.warn("[Prisma] DATABASE_URL is not configured");
 }
 
 const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false";
