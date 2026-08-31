@@ -8,37 +8,36 @@ if (!process.env.DATABASE_URL) {
   dotenv.config();
 }
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString =
+  process.env.DATABASE_URL ||
+  "postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder";
 
-if (!connectionString && process.env.NODE_ENV === "production") {
-  throw new Error("DATABASE_URL is not configured");
+if (!process.env.DATABASE_URL && process.env.NODE_ENV === "development") {
+  console.warn("[Prisma] DATABASE_URL is not configured");
 }
 
 const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false";
 const useSsl = Boolean(
-  connectionString &&
-    (connectionString.includes("supabase") ||
-      connectionString.includes("pooler") ||
-      connectionString.includes("sslmode=require") ||
-      process.env.DATABASE_SSL === "true")
+  connectionString.includes("supabase") ||
+    connectionString.includes("pooler") ||
+    connectionString.includes("sslmode=require") ||
+    process.env.DATABASE_SSL === "true"
 );
 
-const pool = connectionString
-  ? new Pool({
-      connectionString,
-      max: 5,
-      ssl: useSsl ? { rejectUnauthorized } : undefined,
-    })
-  : null;
+const pool = new Pool({
+  connectionString,
+  max: 5,
+  ssl: useSsl ? { rejectUnauthorized } : undefined,
+});
 
-const adapter = pool ? new PrismaPg(pool) : undefined;
+const adapter = new PrismaPg(pool);
 
 const globalForPrisma = globalThis;
 
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
-    ...(adapter ? { adapter } : {}),
+    adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
