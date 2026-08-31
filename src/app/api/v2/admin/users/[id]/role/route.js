@@ -1,64 +1,66 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/server/auth/authentication";
-import { hasPermission } from "@/server/auth/authorization";
+import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
+import { enforceMutationGuards, requireSuperAdmin } from "@/server/http/guards";
 import { logAuditEvent } from "@/server/auth/audit";
+import { getClientIp, hashIp } from "@/server/http/ip";
+import { ASSIGNABLE_ROLES } from "@/server/config/legal";
 
 export async function POST(req, { params }) {
   try {
-    const actor = await getCurrentUser(req);
-    if (!actor) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const blocked = await enforceMutationGuards(req, { rateKey: "rl_admin", limit: 30, windowMs: 60 * 1000 });
+    if (blocked) return blocked;
 
-    if (actor.role !== "SUPER_ADMIN" && !hasPermission(actor, "USERS_ROLES")) {
-      return NextResponse.json(
-        { error: "Forbidden - Insufficient permissions to alter user roles" },
-        { status: 403 }
-      );
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
 
     const { id } = await params;
-    const body = await req.json();
-    const { role, permissions } = body;
+    if (id === auth.user.id) {
+      return jsonError("You cannot change your own role", 400, "INVALID_STATE");
+    }
+
+    const parsed = await readJson(req);
+    if (parsed.error) return parsed.error;
+    const body = parsed.body;
+    const role = String(body.role || "").toUpperCase();
+    if (!ASSIGNABLE_ROLES.includes(role)) {
+      return jsonError("Role must be USER or ORGANIZER. SUPER_ADMIN cannot be granted from this console.", 400);
+    }
 
     const targetUser = await prisma.user.findUnique({ where: { id } });
-    if (!targetUser) {
-      return NextResponse.json({ error: "Target user not found" }, { status: 404 });
+    if (!targetUser || targetUser.deletedAt) {
+      return jsonError("Target user not found", 404, "NOT_FOUND");
+    }
+    if (targetUser.role === "SUPER_ADMIN") {
+      return jsonError("Super admin roles cannot be changed from this console.", 403, "FORBIDDEN");
     }
 
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
         role,
-        ...(permissions !== undefined && {
-          permissions: Array.isArray(permissions) ? JSON.stringify(permissions) : permissions,
-        }),
+        tokenVersion: { increment: 1 },
       },
     });
 
     await logAuditEvent({
       action: "ROLE_CHANGE",
-      actorId: actor.id,
-      targetId: id,
-      details: {
-        previousRole: targetUser.role,
-        newRole: role,
-        permissions: permissions || [],
-      },
+      actorId: auth.user.id,
+      entityType: "User",
+      entityId: id,
+      previousStatus: targetUser.role,
+      newStatus: role,
+      ipHash: hashIp(getClientIp(req)),
     });
 
-    return NextResponse.json({
-      message: "Role updated successfully",
+    return jsonOk({
+      message: "Role updated. The user must sign in again.",
       user: {
         id: updatedUser.id,
         email: updatedUser.email,
         role: updatedUser.role,
-        permissions: updatedUser.permissions,
       },
     });
   } catch (error) {
-    console.error("POST /api/v2/admin/users/[id]/role error:", error.message || error);
-    return NextResponse.json({ error: "Failed to update user role" }, { status: 500 });
+    return safeError(error, "Unable to update role");
   }
 }

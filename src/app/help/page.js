@@ -45,7 +45,7 @@ export default function HelpPage() {
   const faqs = [
     {
       q: "How do I verify my student status?",
-      a: "Uncooked automatically verifies your student status using your .edu email address during sign-up. If you're having trouble, make sure you're checking your official university inbox for the verification link."
+      a: "Create an account with your real name and campus email, then complete host verification if you want to publish events. We do not currently auto-verify .edu inboxes."
     },
     {
       q: "Can I get a refund if I can't attend an event?",
@@ -53,7 +53,7 @@ export default function HelpPage() {
     },
     {
       q: "How do I scan QR tickets at the door?",
-      a: "If you're hosting an event, use the 'Host Dashboard' on the Uncooked mobile app to scan attendee QR codes instantly at the door. No extra scanning equipment is needed!"
+      a: "Tickets are HMAC-signed on the server. A dedicated scanner app is not available in this version. Organisers should keep attendees' confirmed registrations from the dashboard until scanning ships."
     },
     {
       q: "Is there a fee to host free events?",

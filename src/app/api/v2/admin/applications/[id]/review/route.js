@@ -1,70 +1,78 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/server/auth/authentication";
-import { hasPermission } from "@/server/auth/authorization";
+import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
+import { enforceMutationGuards, requireSuperAdmin } from "@/server/http/guards";
 import { logAuditEvent } from "@/server/auth/audit";
+import { getClientIp, hashIp } from "@/server/http/ip";
+
+const ACTIONS = {
+  APPROVE: "APPROVED",
+  REJECT: "REJECTED",
+  INFO: "INFO_REQUESTED",
+};
 
 export async function POST(req, { params }) {
   try {
-    const actor = await getCurrentUser(req);
-    if (!actor) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const blocked = await enforceMutationGuards(req, { rateKey: "rl_admin", limit: 30, windowMs: 60 * 1000 });
+    if (blocked) return blocked;
 
-    if (actor.role !== "SUPER_ADMIN" && !hasPermission(actor, "HOSTS_AUDIT")) {
-      return NextResponse.json(
-        { error: "Forbidden - Insufficient permissions for host application review" },
-        { status: 403 }
-      );
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
 
     const { id } = await params;
-    const body = await req.json();
-    const { action, notes, rejectionReason } = body; // APPROVED, REJECTED, INFO_REQUESTED
+    const parsed = await readJson(req);
+    if (parsed.error) return parsed.error;
+    const body = parsed.body;
+    const action = String(body.action || "").toUpperCase();
+    const newStatus = ACTIONS[action];
+    if (!newStatus) {
+      return jsonError("Action must be APPROVE, REJECT, or INFO", 400);
+    }
 
-    const application = await prisma.hostApplication.findUnique({
-      where: { id },
-      include: { user: true },
-    });
-
+    const application = await prisma.hostApplication.findUnique({ where: { id } });
     if (!application) {
-      return NextResponse.json({ error: "Host application not found" }, { status: 404 });
+      return jsonError("Host application not found", 404, "NOT_FOUND");
     }
 
-    const newStatus = action === "APPROVE" ? "APPROVED" : action === "REJECT" ? "REJECTED" : "INFO_REQUESTED";
-
-    const updatedApp = await prisma.hostApplication.update({
-      where: { id },
-      data: {
-        status: newStatus,
-        reviewedAt: new Date(),
-        reviewedBy: actor.id,
-        ...(notes !== undefined && { notes }),
-        ...(rejectionReason !== undefined && { rejectionReason }),
-      },
-    });
-
-    // If approved, elevate applicant role to ORGANIZER
-    if (newStatus === "APPROVED") {
-      await prisma.user.update({
-        where: { id: application.userId },
-        data: { role: "ORGANIZER" },
+    const updatedApp = await prisma.$transaction(async (tx) => {
+      const app = await tx.hostApplication.update({
+        where: { id },
+        data: {
+          status: newStatus,
+          reviewedAt: new Date(),
+          reviewedBy: auth.user.id,
+          ...(body.notes !== undefined && { notes: String(body.notes).slice(0, 2000) }),
+          ...(body.rejectionReason !== undefined && {
+            rejectionReason: String(body.rejectionReason).slice(0, 500),
+          }),
+        },
       });
-    }
+
+      if (newStatus === "APPROVED") {
+        await tx.user.update({
+          where: { id: application.userId },
+          data: { role: "ORGANIZER", tokenVersion: { increment: 1 } },
+        });
+      }
+
+      return app;
+    });
 
     await logAuditEvent({
       action: newStatus === "APPROVED" ? "KYC_APPROVAL" : "KYC_REJECTION",
-      actorId: actor.id,
-      targetId: application.userId,
-      details: { applicationId: id, status: newStatus, notes },
+      actorId: auth.user.id,
+      entityType: "HostApplication",
+      entityId: id,
+      applicationId: id,
+      previousStatus: application.status,
+      newStatus,
+      ipHash: hashIp(getClientIp(req)),
     });
 
-    return NextResponse.json({
+    return jsonOk({
       message: `Host application ${newStatus}`,
       application: updatedApp,
     });
   } catch (error) {
-    console.error("POST /api/v2/admin/applications/[id]/review error:", error.message || error);
-    return NextResponse.json({ error: "Failed to review host application" }, { status: 500 });
+    return safeError(error, "Unable to review application");
   }
 }

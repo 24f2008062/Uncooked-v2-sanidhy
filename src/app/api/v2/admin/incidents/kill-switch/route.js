@@ -1,51 +1,54 @@
-import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/server/auth/authentication";
-import { hasPermission } from "@/server/auth/authorization";
+import { jsonOk, readJson, safeError } from "@/server/http/envelope";
+import { enforceMutationGuards, requireSuperAdmin } from "@/server/http/guards";
+import { isKillSwitchActive, setKillSwitch } from "@/server/auth/killSwitch";
 import { logAuditEvent } from "@/server/auth/audit";
+import { getClientIp, hashIp } from "@/server/http/ip";
 
-let isGlobalKillSwitchActive = false;
-
-export async function GET(req) {
-  return NextResponse.json({ killSwitchActive: isGlobalKillSwitchActive });
+export async function GET() {
+  try {
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
+    return jsonOk({ killSwitchActive: await isKillSwitchActive() });
+  } catch (error) {
+    return safeError(error, "Unable to read kill-switch");
+  }
 }
 
 export async function POST(req) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const blocked = await enforceMutationGuards(req, {
+      rateKey: "rl_admin_kill",
+      limit: 10,
+      windowMs: 60 * 1000,
+      skipKillSwitch: true,
+    });
+    if (blocked) return blocked;
 
-    if (user.role !== "SUPER_ADMIN" && !hasPermission(user, "INCIDENTS_MANAGE")) {
-      return NextResponse.json(
-        { error: "Forbidden - Only Super Admins can toggle global platform emergency kill-switch" },
-        { status: 403 }
-      );
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
 
-    const body = await req.json();
-    const { active, reason } = body;
+    const parsed = await readJson(req);
+    if (parsed.error) return parsed.error;
+    const body = parsed.body;
+    const active = Boolean(body.active);
+    const reason = String(body.reason || "Administrative incident override").slice(0, 300);
 
-    isGlobalKillSwitchActive = !!active;
+    await setKillSwitch({ active, reason, actorId: auth.user.id });
 
     await logAuditEvent({
       action: "KILL_SWITCH_TOGGLE",
-      actorId: user.id,
-      details: {
-        killSwitchActive: isGlobalKillSwitchActive,
-        reason: reason || "Administrative incident override",
-      },
+      actorId: auth.user.id,
+      entityType: "PlatformSetting",
+      entityId: "kill_switch",
+      ipHash: hashIp(getClientIp(req)),
+      metadata: { killSwitchActive: active, reason },
     });
 
-    return NextResponse.json({
-      message: `Emergency Kill-Switch ${isGlobalKillSwitchActive ? "ACTIVATED" : "DEACTIVATED"}`,
-      killSwitchActive: isGlobalKillSwitchActive,
+    return jsonOk({
+      message: `Emergency write-pause ${active ? "ACTIVATED" : "DEACTIVATED"}`,
+      killSwitchActive: active,
     });
   } catch (error) {
-    console.error("POST /api/v2/admin/incidents/kill-switch error:", error.message || error);
-    return NextResponse.json(
-      { error: "Failed to update emergency kill-switch status" },
-      { status: 500 }
-    );
+    return safeError(error, "Unable to update kill-switch");
   }
 }

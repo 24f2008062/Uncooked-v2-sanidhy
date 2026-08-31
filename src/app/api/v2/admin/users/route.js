@@ -1,25 +1,19 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/server/auth/authentication";
-import { hasPermission } from "@/server/auth/authorization";
+import { jsonOk, safeError } from "@/server/http/envelope";
+import { requireSuperAdmin } from "@/server/http/guards";
 
 export async function GET(req) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && !hasPermission(user, "USERS_READ")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
 
     const { searchParams } = new URL(req.url);
-    const search = searchParams.get("search") || "";
+    const search = (searchParams.get("search") || "").slice(0, 80);
     const role = searchParams.get("role") || "";
 
     const users = await prisma.user.findMany({
       where: {
+        deletedAt: null,
         ...(role ? { role } : {}),
         ...(search
           ? {
@@ -34,22 +28,22 @@ export async function GET(req) {
       select: {
         id: true,
         fullName: true,
+        name: true,
         email: true,
         role: true,
-        permissions: true,
         department: true,
         onboardingCompleted: true,
         failedLoginAttempts: true,
         lockedUntil: true,
+        disabledAt: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
 
-    return NextResponse.json({ users });
+    return jsonOk({ users });
   } catch (error) {
-    console.error("GET /api/v2/admin/users error:", error.message || error);
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    return safeError(error, "Unable to fetch users");
   }
 }

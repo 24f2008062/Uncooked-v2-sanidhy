@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -148,9 +149,39 @@ export default function EventsPage() {
   const [activeRecapEvent, setActiveRecapEvent] = useState(null);
   const [bookingData, setBookingData] = useState({ name: "", email: "", qty: 1 });
   const [isBooked, setIsBooked] = useState(false);
+  const [events, setEvents] = useState(EVENTS);
+  const [bookingError, setBookingError] = useState("");
+  const [ticketPass, setTicketPass] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetch("/api/events")
+      .then((res) => res.json())
+      .then((payload) => {
+        const rows = payload.data?.events || payload.events || [];
+        if (rows.length) {
+          setEvents(
+            rows.map((row) => ({
+              id: row.id,
+              title: row.title,
+              category: row.category || row.type || "Events",
+              host: row.hostName || "Campus host",
+              date: row.date ? new Date(row.date).toLocaleDateString() : "",
+              time: row.date ? new Date(row.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+              location: row.location,
+              price: row.ticketType === "Paid" ? `₹${row.price}` : "Free RSVP",
+              isFree: row.ticketType !== "Paid",
+              image: row.bannerUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600&auto=format&fit=crop",
+              attendees: `${row.spotsLeft ?? row.capacity ?? 0} spots left`,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Filter logic
-  const filteredEvents = EVENTS.filter((item) => {
+  const filteredEvents = events.filter((item) => {
     const matchesCategory = selectedCategory === "All" || item.category.toLowerCase() === selectedCategory.toLowerCase();
     const query = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -161,9 +192,24 @@ export default function EventsPage() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleBookingSubmit = (e) => {
+  const handleBookingSubmit = async (e) => {
     e.preventDefault();
-    if (!bookingData.name || !bookingData.email) return;
+    setBookingError("");
+    const res = await fetch("/api/registrations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventId: activeModalEvent.id }),
+    });
+    const payload = await res.json();
+    if (res.status === 401) {
+      router.push("/login?redirectTo=/events");
+      return;
+    }
+    if (!res.ok) {
+      setBookingError(payload.error?.message || "Could not complete registration");
+      return;
+    }
+    setTicketPass(payload.data?.ticketPass || null);
     setIsBooked(true);
   };
 
@@ -307,9 +353,11 @@ export default function EventsPage() {
                   {/* Card Content Body */}
                   <div className="p-6 flex-grow flex flex-col justify-between">
                     <div>
-                      <h3 className="text-lg font-bold text-text-primary leading-snug mb-1.5 group-hover:text-[var(--accent-orange)] transition-colors">
-                        {item.title}
-                      </h3>
+                      <Link href={`/events/${item.id}`}>
+                        <h3 className="text-lg font-bold text-text-primary leading-snug mb-1.5 group-hover:text-[var(--accent-orange)] transition-colors">
+                          {item.title}
+                        </h3>
+                      </Link>
                       <p className="text-xs font-medium text-text-secondary mb-4">
                         Hosted by <span className="text-text-primary font-semibold">{item.host}</span>
                       </p>
@@ -330,18 +378,13 @@ export default function EventsPage() {
                       </div>
                     </div>
 
-                    {/* Action Button */}
-                    <button
-                      onClick={() => {
-                        setActiveModalEvent(item);
-                        setIsBooked(false);
-                        setBookingData({ name: "", email: "", qty: 1 });
-                      }}
+                    <Link
+                      href={`/events/${item.id}`}
                       className="w-full py-3 rounded-xl font-bold text-xs bg-background text-text-primary border border-border-subtle hover:bg-border-subtle transition-all duration-200 flex items-center justify-center gap-2 group-hover:border-[var(--accent-orange)] cursor-pointer"
                     >
                       <Ticket className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
-                      <span>{item.isFree ? "Get Free Pass" : "Book Ticket"}</span>
-                    </button>
+                      <span>View event</span>
+                    </Link>
                   </div>
                 </motion.div>
               ))
@@ -523,12 +566,14 @@ export default function EventsPage() {
                     <div className="text-left flex-grow">
                       <p className="text-xs font-bold text-text-primary">{bookingData.name}</p>
                       <p className="text-[10px] font-mono text-text-secondary">{bookingData.email}</p>
-                      <p className="text-[9px] font-mono text-[var(--accent-orange)] mt-1">PASS ID: #UNC-{Math.floor(100000 + Math.random() * 900000)}</p>
+                      <p className="text-[9px] font-mono text-[var(--accent-orange)] mt-1">
+                        PASS ID: {ticketPass?.id || "Issued after sign-in"}
+                      </p>
                     </div>
                   </div>
 
                   <p className="text-[11px] text-text-secondary">
-                    Pass sent to your email. Present QR code at the venue gate for instant check-in.
+                    Your signed pass is saved to your dashboard. Present the QR at the gate. Email delivery is not enabled yet.
                   </p>
 
                   <button
@@ -554,6 +599,8 @@ export default function EventsPage() {
                   </div>
 
                   <form onSubmit={handleBookingSubmit} className="space-y-4">
+                    {bookingError && <p className="text-xs text-red-400">{bookingError}</p>}
+                    <p className="text-xs text-gray-400">You must be signed in. The pass is issued to your account, not to this form email.</p>
                     <div>
                       <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
                         Full Name
@@ -570,7 +617,7 @@ export default function EventsPage() {
 
                     <div>
                       <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
-                        Campus Email (.edu)
+                        Email
                       </label>
                       <input
                         type="email"

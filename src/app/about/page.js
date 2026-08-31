@@ -21,10 +21,10 @@ import {
 } from "lucide-react";
 
 const STATS = [
-  { value: "120+", label: "Active Campuses" },
-  { value: "3,500+", label: "Events Hosted" },
-  { value: "250K+", label: "Student Attendees" },
-  { value: "99.99%", label: "Check in Uptime" },
+  { value: "Campus-first", label: "Events & hosts" },
+  { value: "India", label: "DPDP-aligned privacy" },
+  { value: "18+", label: "Age requirement" },
+  { value: "HMAC", label: "Signed digital passes" },
 ];
 
 const PILLARS = [

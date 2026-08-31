@@ -2,6 +2,7 @@ import { Inter, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import ScrollToTop from "@/components/layout/ScrollToTop";
+import CookieNotice from "@/components/legal/CookieNotice";
 import "./globals.css";
 
 const inter = Inter({
@@ -59,6 +60,7 @@ export default function RootLayout({ children }) {
         <NextAuthProvider>
           <ThemeProvider>
             <ScrollToTop />
+            <CookieNotice />
             {children}
           </ThemeProvider>
         </NextAuthProvider>

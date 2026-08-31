@@ -1,24 +1,37 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
+import { enforceMutationGuards, requireRoles } from "@/server/http/guards";
+import { logAuditEvent } from "@/server/auth/audit";
+import { hashIp, getClientIp } from "@/server/http/ip";
+import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
+import { publicEvent } from "@/server/services/eventsPublic";
 
 export async function GET(req) {
   try {
+    const rl = rateLimit(`rl_events_get:${hashIp(getClientIp(req))}`, 60, 60_000);
+    if (!rl.ok) {
+      return jsonError("Too many requests. Please try again later.", 429, "RATE_LIMITED", rateLimitHeaders(rl));
+    }
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const search = searchParams.get("search");
-    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50", 10) || 50, 1), 50);
 
-    const whereClause = {};
+    const whereClause = {
+      archived: false,
+      status: { not: "Suspended" },
+    };
 
     if (category && category !== "All") {
       whereClause.category = { equals: category, mode: "insensitive" };
     }
 
     if (search) {
+      const q = search.slice(0, 80);
       whereClause.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-        { location: { contains: search, mode: "insensitive" } },
+        { title: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { location: { contains: q, mode: "insensitive" } },
       ];
     }
 
@@ -26,37 +39,48 @@ export async function GET(req) {
       where: whereClause,
       take: limit,
       orderBy: { date: "asc" },
+      include: {
+        _count: { select: { registrations: true } },
+        createdBy: { select: { name: true, fullName: true } },
+      },
     });
 
-    return NextResponse.json({ events, count: events.length });
+    return jsonOk({
+      events: events.map((event) => publicEvent(event, { registrationCount: event._count.registrations })),
+      count: events.length,
+    });
   } catch (error) {
-    console.error("Error fetching events:", error.message || error);
-    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
-      return NextResponse.json(
-        { error: "Database server connection failed. Please check DATABASE_URL in .env.local", events: [], count: 0 },
-        { status: 503 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Failed to fetch events from database", events: [], count: 0 },
-      { status: 500 }
-    );
+    return safeError(error, "Unable to load events");
   }
 }
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { title, type, category, date, location, description, price, capacity, ticketType } = body;
+    const blocked = await enforceMutationGuards(req, { rateKey: "rl_event_create", limit: 10, windowMs: 60 * 60 * 1000 });
+    if (blocked) return blocked;
 
-    if (!title || !type || !date || !location) {
-      return NextResponse.json(
-        { error: "Missing required fields (title, type, date, location)" },
-        { status: 400 }
-      );
+    const auth = await requireRoles(["ORGANIZER"]);
+    if (auth.error) return auth.error;
+
+    const parsed = await readJson(req);
+    if (parsed.error) return parsed.error;
+    const body = parsed.body;
+    const title = String(body.title || "").trim().slice(0, 140);
+    const type = String(body.type || body.category || "").trim().slice(0, 60);
+    const category = String(body.category || type).trim().slice(0, 60);
+    const location = String(body.location || "").trim().slice(0, 160);
+    const description = String(body.description || "").trim().slice(0, 5000);
+    const date = body.date ? new Date(body.date) : null;
+
+    if (!title || !type || !location || !date || Number.isNaN(date.getTime())) {
+      return jsonError("Title, category, date, and location are required", 400);
     }
 
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const capacity = Math.min(Math.max(parseInt(body.capacity, 10) || 100, 1), 20000);
+    const price = Math.max(parseFloat(body.price) || 0, 0);
+    const ticketType = body.ticketType === "Paid" || price > 0 ? "Paid" : "Free";
+
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 48);
     const eventId = `${slug}-${Date.now().toString(36)}`;
 
     const event = await prisma.event.create({
@@ -64,28 +88,28 @@ export async function POST(req) {
         id: eventId,
         title,
         type,
-        category: category || type,
-        date: new Date(date),
+        category,
+        date,
         location,
-        description: description || "",
-        ticketType: ticketType || (price > 0 ? "Paid" : "Free"),
-        price: price ? parseFloat(price) : 0,
-        capacity: capacity ? parseInt(capacity, 10) : 100,
+        description,
+        ticketType,
+        price: ticketType === "Paid" ? price : 0,
+        capacity,
+        createdById: auth.user.id,
+        status: "Active",
       },
     });
 
-    return NextResponse.json({ message: "Event created successfully", event }, { status: 201 });
+    await logAuditEvent({
+      actorId: auth.user.id,
+      action: "EVENT_CREATE",
+      entityType: "Event",
+      entityId: event.id,
+      ipHash: hashIp(getClientIp(req)),
+    });
+
+    return jsonOk({ message: "Event created", event: publicEvent(event) }, 201);
   } catch (error) {
-    console.error("Error creating event:", error.message || error);
-    if (error.message?.includes("Can't reach database server") || error.code === "P1001") {
-      return NextResponse.json(
-        { error: "Database server connection failed. Please check DATABASE_URL in .env.local" },
-        { status: 503 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Failed to create event" },
-      { status: 500 }
-    );
+    return safeError(error, "Unable to create event");
   }
 }

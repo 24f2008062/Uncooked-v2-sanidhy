@@ -32,7 +32,8 @@ export default function AdminUserGovernancePage() {
       if (roleFilter) url.searchParams.set("role", roleFilter);
 
       const res = await fetch(url.toString());
-      const data = await res.json();
+      const payload = await res.json();
+      const data = payload.data || payload;
       if (res.ok) {
         setUsers(data.users || []);
       }
@@ -61,7 +62,7 @@ export default function AdminUserGovernancePage() {
         setRoleDrawerOpen(false);
         fetchUsers();
       } else {
-        alert(data.error || "Failed to update role");
+        alert(data.error?.message || data.error || "Failed to update role");
       }
     } catch (err) {
       alert("Error updating role");
@@ -85,7 +86,7 @@ export default function AdminUserGovernancePage() {
         fetchUsers();
       } else {
         const data = await res.json();
-        alert(data.error || "Action failed");
+        alert(data.error?.message || data.error || "Action failed");
       }
     } catch (err) {
       alert("Error updating account lock status");
@@ -131,7 +132,7 @@ export default function AdminUserGovernancePage() {
             <option value="USER">USER</option>
             <option value="ORGANIZER">ORGANIZER</option>
             <option value="ADMIN">ADMIN</option>
-            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+
           </select>
         </div>
       </div>
@@ -270,8 +271,6 @@ export default function AdminUserGovernancePage() {
                 >
                   <option value="USER">USER (Standard Member)</option>
                   <option value="ORGANIZER">ORGANIZER (Event Host)</option>
-                  <option value="ADMIN">ADMIN (Platform Operator)</option>
-                  <option value="SUPER_ADMIN">SUPER_ADMIN (Full Governance)</option>
                 </select>
               </div>
 
@@ -280,7 +279,7 @@ export default function AdminUserGovernancePage() {
                   <Shield className="w-3.5 h-3.5 text-amber-400" /> Security Impact Notice
                 </p>
                 <p>
-                  Elevating a user to ADMIN or SUPER_ADMIN grants platform moderation access and system configuration rights.
+                  Organiser can create events. Super Admin cannot be granted from this screen.
                 </p>
               </div>
             </div>

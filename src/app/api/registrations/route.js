@@ -1,85 +1,135 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
+import { enforceMutationGuards, requireUser } from "@/server/http/guards";
+import { signTicketPayload } from "@/server/tickets/hmac";
+
+export async function GET() {
+  try {
+    const auth = await requireUser();
+    if (auth.error) return auth.error;
+
+    const registrations = await prisma.registration.findMany({
+      where: { userId: auth.user.id },
+      include: { event: true },
+      orderBy: { registeredAt: "desc" },
+    });
+
+    return jsonOk({
+      registrations: registrations.map((reg) => ({
+        id: reg.id,
+        status: reg.status,
+        registeredAt: reg.registeredAt,
+        event: {
+          id: reg.event.id,
+          title: reg.event.title,
+          date: reg.event.date,
+          location: reg.event.location,
+        },
+        ticketPass: {
+          id: reg.id,
+          eventId: reg.eventId,
+          qrPayload: JSON.stringify({
+            regId: reg.id,
+            eventId: reg.eventId,
+            userId: auth.user.id,
+            sig: signTicketPayload({
+              registrationId: reg.id,
+              eventId: reg.eventId,
+              userId: auth.user.id,
+            }),
+          }),
+        },
+      })),
+    });
+  } catch (error) {
+    return safeError(error, "Unable to load registrations");
+  }
+}
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { eventId, userId, teamName, couponCode } = body;
+    const blocked = await enforceMutationGuards(req, { rateKey: "rl_register_event", limit: 20, windowMs: 60 * 60 * 1000 });
+    if (blocked) return blocked;
 
-    if (!eventId || !userId) {
-      return NextResponse.json(
-        { error: "Event ID and User ID are required" },
-        { status: 400 }
-      );
+    const auth = await requireUser();
+    if (auth.error) return auth.error;
+
+    const parsed = await readJson(req);
+    if (parsed.error) return parsed.error;
+    const body = parsed.body;
+    const eventId = String(body.eventId || "").trim();
+    const teamName = String(body.teamName || "").trim().slice(0, 80) || null;
+
+    if (!eventId) {
+      return jsonError("Event ID is required", 400);
     }
 
-    // 1. Verify Event exists
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      include: { _count: { select: { registrations: true } } },
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      const event = await tx.event.findUnique({
+        where: { id: eventId },
+        include: { _count: { select: { registrations: true } } },
+      });
+      if (!event || event.archived || event.status === "Suspended") {
+        return { error: { message: "Event not found", status: 404, code: "NOT_FOUND" } };
+      }
 
-    if (!event) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
+      const existing = await tx.registration.findUnique({
+        where: { userId_eventId: { userId: auth.user.id, eventId } },
+      });
+      if (existing) {
+        return { existing, event };
+      }
 
-    // 2. Check if user is already registered
-    const existingRegistration = await prisma.registration.findFirst({
-      where: { eventId, userId },
-    });
+      const currentCount = event._count?.registrations || 0;
+      const isFull = currentCount >= event.capacity;
+      if (isFull && !event.waitlistEnabled) {
+        return { error: { message: "This event is full", status: 409, code: "CAPACITY_FULL" } };
+      }
+      const status = isFull ? "Waitlisted" : "Confirmed";
 
-    if (existingRegistration) {
-      return NextResponse.json(
-        {
-          message: "User is already registered for this event",
-          registration: existingRegistration,
+      const registration = await tx.registration.create({
+        data: {
+          eventId,
+          userId: auth.user.id,
+          teamName,
+          status,
+          checkInStatus: false,
         },
-        { status: 200 }
-      );
-    }
+      });
 
-    // 3. Determine status based on capacity
-    const currentCount = event._count?.registrations || 0;
-    const isFull = currentCount >= event.capacity;
-    const status = isFull && event.waitlistEnabled ? "Waitlisted" : "Confirmed";
-
-    // 4. Create Registration in database
-    const registration = await prisma.registration.create({
-      data: {
-        eventId,
-        userId,
-        teamName: teamName || null,
-        status,
-        checkInStatus: false,
-      },
+      return { registration, event };
     });
 
-    return NextResponse.json(
-      {
-        message: status === "Waitlisted" ? "Added to event waitlist" : "Registration confirmed",
-        registrationId: registration.id,
-        status: registration.status,
-        ticketPass: {
-          id: registration.id,
-          eventId: event.id,
-          eventTitle: event.title,
-          eventDate: event.date,
-          location: event.location,
-          qrPayload: JSON.stringify({
-            regId: registration.id,
-            eventId: event.id,
-            userId: userId,
-            sig: registration.id.slice(0, 8),
-          }),
-        },
+    if (result.error) {
+      return jsonError(result.error.message, result.error.status, result.error.code);
+    }
+
+    const registration = result.registration || result.existing;
+    const sig = signTicketPayload({
+      registrationId: registration.id,
+      eventId: result.event.id,
+      userId: auth.user.id,
+    });
+
+    return jsonOk({
+      message: registration.status === "Waitlisted" ? "Added to waitlist" : "Registration confirmed",
+      registrationId: registration.id,
+      status: registration.status,
+      ticketPass: {
+        id: registration.id,
+        eventId: result.event.id,
+        eventTitle: result.event.title,
+        eventDate: result.event.date,
+        location: result.event.location,
+        qrPayload: JSON.stringify({
+          regId: registration.id,
+          eventId: result.event.id,
+          userId: auth.user.id,
+          sig,
+        }),
       },
-      { status: 201 }
-    );
+    }, result.existing ? 200 : 201);
   } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json(
-      { error: "Internal server error during registration" },
-      { status: 500 }
-    );
+    return safeError(error, "Unable to complete registration");
   }
 }
