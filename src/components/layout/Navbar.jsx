@@ -8,39 +8,15 @@ import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sparkles, Moon, Sun, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import { createClient } from "@/lib/supabase/client";
 
 export default function Navbar({ forceDarkTop = false }) {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [supabaseUser, setSupabaseUser] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-
-  // Check Supabase session
-  useEffect(() => {
-    try {
-      const supabase = createClient();
-      supabase.auth.getUser().then(({ data }) => {
-        if (data?.user) {
-          setSupabaseUser(data.user);
-        }
-      }).catch(() => {});
-
-      const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-        setSupabaseUser(session?.user || null);
-      });
-
-      return () => {
-        authListener?.subscription?.unsubscribe();
-      };
-    } catch (e) {
-      // Supabase credentials not set
-    }
-  }, []);
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -81,15 +57,11 @@ export default function Navbar({ forceDarkTop = false }) {
     };
   }, [mobileOpen]);
 
-  const currentUser = session?.user || supabaseUser;
+  const currentUser = session?.user;
   const isLoggedIn = !!currentUser;
   const userName = currentUser?.name || currentUser?.email?.split("@")[0] || "User";
 
   const handleLogout = async () => {
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch (e) {}
     await signOut({ callbackUrl: "/" });
   };
 
