@@ -614,7 +614,7 @@ const GridScan = ({
   }, [enableGyro, uiFaceActive]);
 
   useEffect(() => {
-    setModelsReady(false);
+    queueMicrotask(() => setModelsReady(false));
   }, [modelsPath]);
 
   useEffect(() => {

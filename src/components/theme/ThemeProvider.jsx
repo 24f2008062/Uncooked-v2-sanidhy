@@ -12,14 +12,13 @@ export function ThemeProvider({ children }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const storedTheme = localStorage.getItem("theme");
-    if (storedTheme === "light" || storedTheme === "dark") {
-      setTheme(storedTheme);
-      document.documentElement.setAttribute("data-theme", storedTheme);
-    } else {
-      document.documentElement.setAttribute("data-theme", "dark");
-    }
+    const targetTheme = (storedTheme === "light" || storedTheme === "dark") ? storedTheme : "dark";
+    document.documentElement.setAttribute("data-theme", targetTheme);
+    queueMicrotask(() => {
+      setTheme(targetTheme);
+      setMounted(true);
+    });
   }, []);
 
   const toggleTheme = () => {

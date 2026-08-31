@@ -77,7 +77,7 @@ export default function HelpPage() {
               How can we <span className="gradient-text">help you?</span>
             </h1>
             <p className="text-lg text-gray-400 mb-10 max-w-xl mx-auto">
-              Search our knowledge base or browse categories below to find exactly what you're looking for.
+              Search our knowledge base or browse categories below to find exactly what you&apos;re looking for.
             </p>
             
             {/* Search Bar */}

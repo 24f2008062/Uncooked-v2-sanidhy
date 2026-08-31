@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -60,6 +61,7 @@ const HOST_FEATURES = [
 ];
 
 export default function HostPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isPublished, setIsPublished] = useState(false);
 
@@ -114,7 +116,7 @@ export default function HostPage() {
       });
       const payload = await res.json();
       if (res.status === 401) {
-        window.location.href = "/login?redirectTo=/host";
+        router.push("/login?redirectTo=/host");
         return;
       }
       if (res.status === 403) {

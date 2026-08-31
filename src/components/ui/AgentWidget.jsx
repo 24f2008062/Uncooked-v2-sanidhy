@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, Minus, Send, Sparkles, X, MessageSquare, Bot } from "lucide-react";
 import Image from "next/image";
@@ -22,11 +22,12 @@ export default function AgentWidget() {
   const [inputText, setInputText] = useState("");
   const [isCalling, setIsCalling] = useState(false);
 
-  const handleSend = (textToSend) => {
+  const handleSend = useCallback((textToSend) => {
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
-    const userMsg = { id: Date.now(), sender: "user", text };
+    const msgId = Date.now();
+    const userMsg = { id: msgId, sender: "user", text };
     setMessages((prev) => [...prev, userMsg]);
     setInputText("");
 
@@ -45,10 +46,10 @@ export default function AgentWidget() {
 
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: "bot", text: reply },
+        { id: msgId + 1, sender: "bot", text: reply },
       ]);
     }, 700);
-  };
+  }, [inputText]);
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
@@ -145,7 +146,7 @@ export default function AgentWidget() {
 
                   <div>
                     <h3 className="text-base font-bold text-text-primary">
-                      Hi, I'm Aura.
+                      Hi, I&apos;m Aura.
                     </h3>
                     <p className="text-xs text-text-secondary mt-1">
                       How can I help you with Uncooked today?

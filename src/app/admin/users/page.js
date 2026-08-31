@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   Users, 
   Search, 
@@ -24,7 +24,7 @@ export default function AdminUserGovernancePage() {
   const [newRole, setNewRole] = useState("USER");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const url = new URL("/api/v2/admin/users", window.location.origin);
@@ -42,11 +42,19 @@ export default function AdminUserGovernancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, roleFilter]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [search, roleFilter]);
+    let isMounted = true;
+    (async () => {
+      if (isMounted) {
+        await fetchUsers();
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchUsers]);
 
   const handleRoleElevate = async () => {
     if (!selectedUser) return;

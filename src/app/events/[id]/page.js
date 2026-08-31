@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
@@ -46,7 +46,8 @@ export default function EventDetailsPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
+    if (!id) return;
     setError("");
     setLoading(true);
     try {
@@ -64,12 +65,19 @@ export default function EventDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
-    if (id) load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, authStatus]);
+    let isMounted = true;
+    (async () => {
+      if (isMounted && id) {
+        await load();
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [id, authStatus, load]);
 
   const register = async () => {
     if (authStatus !== "authenticated") {

@@ -62,10 +62,17 @@ export default function Navbar({ forceDarkTop = false }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const toggleMobileMenu = () => {
+    setMobileOpen((prev) => {
+      const next = !prev;
+      if (next) setVisible(true);
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden";
-      setVisible(true);
     } else {
       document.body.style.overflow = "";
     }
@@ -222,7 +229,7 @@ export default function Navbar({ forceDarkTop = false }) {
 
         {/* Mobile Menu Button */}
         <button
-          onClick={() => setMobileOpen(!mobileOpen)}
+          onClick={toggleMobileMenu}
           className="md:hidden z-50 p-2 rounded-lg"
           style={{ color: "var(--text-primary)" }}
           id="mobile-menu-toggle"

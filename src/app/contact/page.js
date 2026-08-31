@@ -112,7 +112,7 @@ export default function ContactPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-4xl sm:text-5xl font-bold tracking-tight text-text-primary mb-4"
             >
-              Let's Talk Campus Infrastructure.
+              Let&apos;s Talk Campus Infrastructure.
             </motion.h1>
 
             <motion.p
@@ -294,7 +294,7 @@ export default function ContactPage() {
                 FREQUENTLY ASKED QUESTIONS
               </h2>
               <h3 className="text-2xl sm:text-3xl font-bold text-text-primary">
-                Got Questions? We've Got Answers.
+                Got Questions? We&apos;ve Got Answers.
               </h3>
             </div>
 
