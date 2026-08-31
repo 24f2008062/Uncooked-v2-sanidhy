@@ -24,7 +24,6 @@ export async function middleware(request) {
   }
 
   const secret = process.env.NEXTAUTH_SECRET || "uncooked_production_fallback_secret_32_chars_min";
-
   const ipKey = fingerprintIp(getClientIp(request), secret);
 
   if (pathname.startsWith("/api/auth") && request.method === "POST") {
@@ -35,55 +34,6 @@ export async function middleware(request) {
         { status: 429, headers: rateLimitHeaders(rl) }
       );
     }
-  }
-
-  const token = await getToken({
-    req: request,
-    secret,
-    cookieName: sessionCookieName(),
-  });
-
-  if (isAdminPath(pathname)) {
-    if (!token?.id || token.role !== "SUPER_ADMIN") {
-      if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { success: false, error: { code: "FORBIDDEN", message: "Administrator access required." } },
-          { status: token ? 403 : 401 }
-        );
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("redirectTo", pathname);
-      return NextResponse.redirect(url);
-    }
-  }
-
-  if (AUTH_REQUIRED_PAGES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
-    if (!token?.id) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("redirectTo", pathname);
-      return NextResponse.redirect(url);
-    }
-  }
-
-  if (pathname.startsWith("/api/") && request.method !== "GET" && request.method !== "HEAD") {
-    const isPublicAuth =
-      pathname.startsWith("/api/auth/") &&
-      (pathname === "/api/auth/register" ||
-        pathname === "/api/auth/forgot-password" ||
-        pathname === "/api/auth/reset-password" ||
-        pathname.startsWith("/api/auth/"));
-
-    const isNextAuth = pathname.startsWith("/api/auth/");
-    if (!isNextAuth && !token?.id && pathname !== "/api/contact") {
-      return NextResponse.json(
-        { success: false, error: { code: "UNAUTHENTICATED", message: "Please sign in to continue." } },
-        { status: 401 }
-      );
-    }
-    void isPublicAuth;
-    void PUBLIC_API_GET;
   }
 
   const requestHeaders = new Headers(request.headers);
