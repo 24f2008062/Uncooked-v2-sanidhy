@@ -1,11 +1,16 @@
 import { randomUUID } from "crypto";
-import CredentialsProvider from "next-auth/providers/credentials";
+import CredentialsProviderRaw from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import { verifyPassword } from "@/server/utils/passwordUtils";
 import { sessionCookieName, sessionCookieOptions } from "@/server/config/authCookies";
 import { LOGIN_LOCKOUT_MS, LOGIN_LOCKOUT_THRESHOLD, SESSION_MAX_AGE_SEC } from "@/server/config/legal";
 
-function getSecret() {
+const CredentialsProvider =
+  typeof CredentialsProviderRaw === "function"
+    ? CredentialsProviderRaw
+    : CredentialsProviderRaw.default;
+
+export function getSecret() {
   const secret = process.env.NEXTAUTH_SECRET;
   if (secret && secret.length >= 32 && !secret.includes("dev_secret") && !secret.includes("change-me")) {
     return secret;
@@ -17,6 +22,7 @@ function getSecret() {
 }
 
 export const authOptions = {
+  trustHost: true,
   providers: [
     CredentialsProvider({
       name: "Credentials",
