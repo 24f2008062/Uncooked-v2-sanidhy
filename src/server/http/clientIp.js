@@ -1,4 +1,11 @@
 export function getClientIp(req) {
+  // Prefer platform-provided client IP. On Vercel, x-forwarded-for is set by
+  // the edge and the leftmost entry is the client. Do not invent IPs from
+  // untrusted custom headers beyond these standard proxy headers.
+  const vercel = req.headers.get("x-vercel-forwarded-for");
+  if (vercel) {
+    return vercel.split(",")[0].trim().slice(0, 64);
+  }
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
     return forwarded.split(",")[0].trim().slice(0, 64);

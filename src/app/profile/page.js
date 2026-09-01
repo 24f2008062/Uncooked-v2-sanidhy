@@ -122,8 +122,14 @@ export default function ProfilePage() {
 
   const eraseAccount = async () => {
     if (!window.confirm("This permanently erases your personal data and signs you out. Continue?")) return;
+    const password = window.prompt("Enter your current password to confirm account erasure:");
+    if (!password) return;
     setBusy(true);
-    const res = await fetch("/api/user/delete", { method: "POST" });
+    const res = await fetch("/api/user/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
     const payload = await res.json();
     setBusy(false);
     if (!payload.success) {

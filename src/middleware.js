@@ -3,10 +3,10 @@ import { getToken } from "next-auth/jwt";
 import { sessionCookieName } from "@/server/config/authCookies";
 import { getClientIp, fingerprintIp } from "@/server/http/clientIp";
 import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
+import { safeInternalPath } from "@/lib/safeRedirect";
 
 const ADMIN_PREFIXES = ["/admin", "/api/v2/admin"];
 const AUTH_REQUIRED_PAGES = ["/dashboard", "/profile", "/host/apply"];
-const PUBLIC_API_GET = [/^\/api\/events$/, /^\/api\/opportunities$/];
 
 function isAdminPath(pathname) {
   return ADMIN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -24,14 +24,21 @@ export async function middleware(request) {
   }
 
   const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) {
+  const secretOk =
+    typeof secret === "string" &&
+    secret.length >= 32 &&
+    !secret.toLowerCase().includes("dev_secret") &&
+    !secret.toLowerCase().includes("change-me") &&
+    !secret.toLowerCase().includes("fallback");
+  if (!secretOk) {
+    // Fail closed: never skip page or API auth when secret is missing/weak.
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         { success: false, error: { code: "INTERNAL_ERROR", message: "Authentication is not configured" } },
-        { status: 500 }
+        { status: 503 }
       );
     }
-    return NextResponse.next();
+    return new NextResponse("Service unavailable", { status: 503 });
   }
 
   const ipKey = fingerprintIp(getClientIp(request), secret);
@@ -62,7 +69,7 @@ export async function middleware(request) {
       }
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      url.searchParams.set("redirectTo", pathname);
+      url.searchParams.set("redirectTo", safeInternalPath(pathname, "/admin"));
       return NextResponse.redirect(url);
     }
   }
@@ -71,28 +78,20 @@ export async function middleware(request) {
     if (!token?.id) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      url.searchParams.set("redirectTo", pathname);
+      url.searchParams.set("redirectTo", safeInternalPath(pathname, "/dashboard"));
       return NextResponse.redirect(url);
     }
   }
 
   if (pathname.startsWith("/api/") && request.method !== "GET" && request.method !== "HEAD") {
-    const isPublicAuth =
-      pathname.startsWith("/api/auth/") &&
-      (pathname === "/api/auth/register" ||
-        pathname === "/api/auth/forgot-password" ||
-        pathname === "/api/auth/reset-password" ||
-        pathname.startsWith("/api/auth/"));
-
-    const isNextAuth = pathname.startsWith("/api/auth/");
-    if (!isNextAuth && !token?.id && pathname !== "/api/contact") {
+    const isAuthApi = pathname.startsWith("/api/auth/");
+    const isPublicMutation = isAuthApi || pathname === "/api/contact";
+    if (!isPublicMutation && !token?.id) {
       return NextResponse.json(
         { success: false, error: { code: "UNAUTHENTICATED", message: "Please sign in to continue." } },
         { status: 401 }
       );
     }
-    void isPublicAuth;
-    void PUBLIC_API_GET;
   }
 
   const requestHeaders = new Headers(request.headers);
