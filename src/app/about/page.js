@@ -118,7 +118,7 @@ export default function AboutPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-text-secondary text-base sm:text-lg leading-relaxed"
             >
-              Uncooked was built to eliminate fragmented spreadsheets, long check in queues, and manual follow ups for student organizers — creating a seamless platform for every campus event.
+              Uncooked was built to eliminate fragmented spreadsheets, long check in queues, and manual follow ups for student organizers, creating a seamless platform for every campus event.
             </motion.p>
           </div>
 
