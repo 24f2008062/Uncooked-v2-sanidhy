@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -42,27 +42,31 @@ export default function HostScannerPage() {
 
   const preview = useMemo(() => parsePassPayload(raw), [raw]);
 
-  const loadEvent = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/events/${encodeURIComponent(eventId)}`);
-      const payload = await res.json();
-      if (!res.ok) {
-        setError(payload.error?.message || "Event not found");
-        return;
-      }
-      setEventTitle(payload.data?.event?.title || eventId);
-    } catch {
-      setError("Unable to load event");
-    } finally {
-      setLoading(false);
-    }
-  }, [eventId]);
-
   useEffect(() => {
-    if (eventId) loadEvent();
-  }, [eventId, loadEvent]);
+    if (!eventId) return undefined;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(`/api/events/${encodeURIComponent(eventId)}`);
+        const payload = await res.json();
+        if (cancelled) return;
+        if (!res.ok) {
+          setError(payload.error?.message || "Event not found");
+          return;
+        }
+        setEventTitle(payload.data?.event?.title || eventId);
+      } catch {
+        if (!cancelled) setError("Unable to load event");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
 
   const submit = async (e) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -47,42 +47,26 @@ export default function CreateEventPage() {
   const [error, setError] = useState("");
   const [successId, setSuccessId] = useState("");
 
-  const defaultStart = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    d.setMinutes(0, 0, 0);
-    return toLocalInputValue(d);
-  }, []);
-
-  const defaultEnd = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    d.setHours(d.getHours() + 3);
-    d.setMinutes(0, 0, 0);
-    return toLocalInputValue(d);
-  }, []);
-
-  const [form, setForm] = useState({
-    title: "",
-    category: CATEGORIES[0],
-    start: "",
-    end: "",
-    location: "",
-    description: "",
-    ticketType: "Free",
-    price: "0",
-    capacity: "100",
-    unlimitedCapacity: false,
-    waitlistEnabled: true,
+  const [form, setForm] = useState(() => {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() + 7);
+    startDate.setMinutes(0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setHours(endDate.getHours() + 3);
+    return {
+      title: "",
+      category: CATEGORIES[0],
+      start: toLocalInputValue(startDate),
+      end: toLocalInputValue(endDate),
+      location: "",
+      description: "",
+      ticketType: "Free",
+      price: "0",
+      capacity: "100",
+      unlimitedCapacity: false,
+      waitlistEnabled: true,
+    };
   });
-
-  useEffect(() => {
-    setForm((prev) => ({
-      ...prev,
-      start: prev.start || defaultStart,
-      end: prev.end || defaultEnd,
-    }));
-  }, [defaultStart, defaultEnd]);
 
   useEffect(() => {
     let cancelled = false;

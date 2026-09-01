@@ -7,9 +7,12 @@ import { LOGIN_LOCKOUT_MS, LOGIN_LOCKOUT_THRESHOLD, SESSION_MAX_AGE_SEC } from "
 import { requireAuthSecret } from "@/server/security/secrets";
 
 function getSecret() {
-  // During `next build`, Next may import this module while collecting page
-  // data. Never use a known runtime fallback — only a build-phase stand-in.
-  if (process.env.NEXT_PHASE === "phase-production-build" && !process.env.NEXTAUTH_SECRET) {
+  // During `next build` / Vercel compile, this module may load before runtime
+  // secrets are required. Never use a known runtime fallback outside build.
+  const building =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.NEXT_PHASE === "phase-production-compile";
+  if (building && !process.env.NEXTAUTH_SECRET) {
     return "build-phase-only-secret-not-valid-at-runtime-xx";
   }
   return requireAuthSecret();
