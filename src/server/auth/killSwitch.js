@@ -2,18 +2,25 @@ import prisma from "@/lib/prisma";
 
 const KEY = "kill_switch";
 
-export async function isKillSwitchActive() {
+/**
+ * Fail closed for write paths: if settings cannot be read, treat as paused.
+ * `unavailable` distinguishes a real kill switch from a DB outage.
+ */
+export async function getKillSwitchState() {
   try {
     const row = await prisma.platformSetting.findUnique({ where: { key: KEY } });
-    return row?.value === "true";
+    return { active: row?.value === "true", unavailable: false };
   } catch {
-    // Fail closed for write-path callers: if we cannot read settings, treat
-    // the platform as paused rather than allowing mutations during an outage.
-    return true;
+    return { active: true, unavailable: true };
   }
 }
 
-/** Read-only helper for dashboards — does not fail closed on DB errors. */
+export async function isKillSwitchActive() {
+  const state = await getKillSwitchState();
+  return state.active;
+}
+
+/** Read-only helper for dashboards. Does not fail closed on DB errors. */
 export async function peekKillSwitchActive() {
   try {
     const row = await prisma.platformSetting.findUnique({ where: { key: KEY } });
