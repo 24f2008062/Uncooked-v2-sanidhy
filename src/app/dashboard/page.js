@@ -71,7 +71,7 @@ export default function DashboardPage() {
               Welcome back, {name.split(" ")[0]}
             </h1>
             <p className="text-sm text-text-secondary mt-2">
-              Your passes, applications, and host status — signed in as {session?.user?.email}
+              Your passes, applications, and host status. Signed in as {session?.user?.email}
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export default function DashboardPage() {
                 </div>
                 {registrations.length === 0 ? (
                   <p className="text-sm text-text-secondary">
-                    No tickets yet. Register from an event page — the pass is bound to this account.
+                    No tickets yet. Register from an event page. The pass is bound to this account.
                   </p>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">

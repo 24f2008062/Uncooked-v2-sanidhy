@@ -4,7 +4,7 @@ import { EyeOff, UserSquare2, Share2, Settings2, Cookie, Scale, Mail } from "luc
 import { LEGAL } from "@/server/config/legal";
 
 export const metadata = {
-  title: "Privacy Policy — Uncooked",
+  title: "Privacy Policy | Uncooked",
   description: "How Uncooked collects, uses, and erases personal data under the DPDP Act, 2023.",
 };
 

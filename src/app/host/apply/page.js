@@ -29,7 +29,7 @@ const STATUS_COPY = {
     icon: AlertCircle,
     color: "text-orange-300",
     title: "More information requested",
-    body: "Update your notes and resubmit. Do not upload identity documents — Aadhaar/PAN uploads are not accepted on this form.",
+    body: "Update your notes and resubmit. Do not upload identity documents. Aadhaar/PAN uploads are not accepted on this form.",
   },
   APPROVED: {
     icon: CheckCircle2,

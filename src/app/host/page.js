@@ -179,7 +179,7 @@ export default function HostPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-text-secondary text-base sm:text-lg leading-relaxed"
             >
-              From hackathons and tech talks to cultural fests and sports leagues — get zero noise ticketing, instant QR check in, and verified host telemetry.
+              From hackathons and tech talks to cultural fests and sports leagues. Get zero noise ticketing, instant QR check in, and verified host telemetry.
             </motion.p>
             <Link
               href="/host/apply"
@@ -255,7 +255,7 @@ export default function HostPage() {
                       Event Setup Wizard
                     </h3>
                     <p className="text-xs text-text-secondary mt-0.5">
-                      Step {currentStep} of 4 — {
+                      Step {currentStep} of 4: {
                         currentStep === 1 ? "Event Essentials" :
                         currentStep === 2 ? "Schedule & Venue" :
                         currentStep === 3 ? "Access & Telemetry" : "Preview & Launch"

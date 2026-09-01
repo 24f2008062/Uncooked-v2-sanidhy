@@ -4,7 +4,7 @@ import { Shield, Lock, Server, CheckCircle2, Activity } from "lucide-react";
 import { LEGAL } from "@/server/config/legal";
 
 export const metadata = {
-  title: "Security — Uncooked",
+  title: "Security | Uncooked",
   description: "How Uncooked protects accounts and personal data.",
 };
 
