@@ -1,6 +1,6 @@
 import { jsonOk, readJson, safeError } from "@/server/http/envelope";
 import { enforceMutationGuards, requireSuperAdmin } from "@/server/http/guards";
-import { isKillSwitchActive, setKillSwitch } from "@/server/auth/killSwitch";
+import { peekKillSwitchActive, setKillSwitch } from "@/server/auth/killSwitch";
 import { logAuditEvent } from "@/server/auth/audit";
 import { getClientIp, hashIp } from "@/server/http/ip";
 
@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const auth = await requireSuperAdmin();
     if (auth.error) return auth.error;
-    return jsonOk({ killSwitchActive: await isKillSwitchActive() });
+    return jsonOk({ killSwitchActive: await peekKillSwitchActive() });
   } catch (error) {
     return safeError(error, "Unable to read kill-switch");
   }

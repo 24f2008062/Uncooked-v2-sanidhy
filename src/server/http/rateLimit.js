@@ -10,6 +10,7 @@ function prune(now) {
 /**
  * Fixed-window limiter. Single-instance only (serverless will be per-isolate).
  * Fail closed on abuse; fail open only if Map ops throw.
+ * For hard cross-instance guarantees, back this with Redis/Upstash.
  */
 export function rateLimit(key, limit, windowMs) {
   const now = Date.now();

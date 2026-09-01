@@ -34,15 +34,16 @@ export async function POST(req, { params }) {
     }
 
     const updatedApp = await prisma.$transaction(async (tx) => {
+      // Never overwrite applicant-submitted `notes`. Admin commentary goes in rejectionReason.
+      const adminNote = body.rejectionReason ?? body.adminNote ?? body.notes;
       const app = await tx.hostApplication.update({
         where: { id },
         data: {
           status: newStatus,
           reviewedAt: new Date(),
           reviewedBy: auth.user.id,
-          ...(body.notes !== undefined && { notes: String(body.notes).slice(0, 2000) }),
-          ...(body.rejectionReason !== undefined && {
-            rejectionReason: String(body.rejectionReason).slice(0, 500),
+          ...(adminNote !== undefined && {
+            rejectionReason: String(adminNote).slice(0, 500),
           }),
         },
       });
@@ -58,7 +59,12 @@ export async function POST(req, { params }) {
     });
 
     await logAuditEvent({
-      action: newStatus === "APPROVED" ? "KYC_APPROVAL" : "KYC_REJECTION",
+      action:
+        newStatus === "APPROVED"
+          ? "KYC_APPROVAL"
+          : newStatus === "INFO_REQUESTED"
+            ? "KYC_INFO_REQUEST"
+            : "KYC_REJECTION",
       actorId: auth.user.id,
       entityType: "HostApplication",
       entityId: id,

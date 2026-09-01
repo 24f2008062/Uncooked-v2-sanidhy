@@ -4,16 +4,15 @@ import prisma from "@/lib/prisma";
 import { verifyPassword } from "@/server/utils/passwordUtils";
 import { sessionCookieName, sessionCookieOptions } from "@/server/config/authCookies";
 import { LOGIN_LOCKOUT_MS, LOGIN_LOCKOUT_THRESHOLD, SESSION_MAX_AGE_SEC } from "@/server/config/legal";
+import { requireAuthSecret } from "@/server/security/secrets";
 
 function getSecret() {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (secret && secret.length >= 32 && !secret.includes("dev_secret") && !secret.includes("change-me")) {
-    return secret;
+  // During `next build`, Next may import this module while collecting page
+  // data. Never use a known runtime fallback — only a build-phase stand-in.
+  if (process.env.NEXT_PHASE === "phase-production-build" && !process.env.NEXTAUTH_SECRET) {
+    return "build-phase-only-secret-not-valid-at-runtime-xx";
   }
-  if (secret) {
-    return secret;
-  }
-  return "uncooked_production_fallback_secret_32_chars_min";
+  return requireAuthSecret();
 }
 
 export const authOptions = {

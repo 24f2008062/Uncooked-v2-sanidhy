@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { jsonOk, safeError } from "@/server/http/envelope";
 import { requireSuperAdmin } from "@/server/http/guards";
-import { isKillSwitchActive } from "@/server/auth/killSwitch";
+import { peekKillSwitchActive } from "@/server/auth/killSwitch";
 
 export async function GET() {
   try {
@@ -27,7 +27,7 @@ export async function GET() {
             actorId: true,
           },
         }),
-        isKillSwitchActive(),
+        peekKillSwitchActive(),
       ]);
     const dbLatencyMs = Date.now() - started;
 

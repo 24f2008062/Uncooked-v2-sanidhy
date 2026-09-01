@@ -8,11 +8,12 @@ import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { safeInternalPath } from "@/lib/safeRedirect";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+  const redirectTo = safeInternalPath(searchParams.get("redirectTo"), "/dashboard");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -33,7 +34,7 @@ function LoginForm() {
         setErrorMsg("Invalid email or password.");
         setLoading(false);
       } else {
-        router.push(redirectTo.startsWith("/") ? redirectTo : "/dashboard");
+        router.push(redirectTo);
         router.refresh();
       }
     } catch (err) {

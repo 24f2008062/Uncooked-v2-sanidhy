@@ -53,6 +53,19 @@ test("HMAC rejects tampered ticket signatures", () => {
 test("CSRF blocks missing and foreign origins on POST", () => {
   const missing = new Request("http://localhost:3000/api/contact", { method: "POST" });
   assert.equal(assertSameOrigin(missing), "Missing Origin header");
+
+  const spoofedNone = new Request("http://localhost:3000/api/contact", {
+    method: "POST",
+    headers: { "sec-fetch-site": "none" },
+  });
+  assert.equal(assertSameOrigin(spoofedNone), "Missing Origin header");
+
+  const sameOriginNoHeader = new Request("http://localhost:3000/api/contact", {
+    method: "POST",
+    headers: { "sec-fetch-site": "same-origin" },
+  });
+  assert.equal(assertSameOrigin(sameOriginNoHeader), null);
+
   const evil = new Request("http://localhost:3000/api/contact", {
     method: "POST",
     headers: { origin: "https://evil.example" },
