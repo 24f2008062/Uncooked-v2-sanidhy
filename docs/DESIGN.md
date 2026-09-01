@@ -98,6 +98,9 @@ Homepage hero CTAs (Luma-style pair): primary **Create Your First Event** → `/
 **Create** (`/create`)  
 Auth required. Verified ORGANIZER/SUPER_ADMIN: 12-column form (7 main fields + 5 sticky options: ticket, capacity, waitlist) posting to `POST /api/events`. Non-hosts: card pointing to `/host/apply`. Reuse `AccountNav` + form field tokens.
 
+**Scanner** (`/host/scanner/[eventId]`)  
+Auth required. Host/admin door tool: paste HMAC pass JSON → `POST /api/events/[id]/check-in`. Emerald success / red invalid. No fake offline claims.
+
 **Account** (`/dashboard`, `/profile`, `/host/apply`, `/create`)  
 `AccountNav` under the title, then cards. Dashboard: 3 stat tiles, then passes + applications.
 

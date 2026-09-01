@@ -3,12 +3,12 @@ import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
 import { enforceMutationGuards, requireRoles } from "@/server/http/guards";
 import { logAuditEvent } from "@/server/auth/audit";
 import { hashIp, getClientIp } from "@/server/http/ip";
-import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
+import { rateLimitAsync, rateLimitHeaders } from "@/server/http/rateLimit";
 import { publicEvent } from "@/server/services/eventsPublic";
 
 export async function GET(req) {
   try {
-    const rl = rateLimit(`rl_events_get:${hashIp(getClientIp(req))}`, 60, 60_000);
+    const rl = await rateLimitAsync(`rl_events_get:${hashIp(getClientIp(req))}`, 60, 60_000);
     if (!rl.ok) {
       return jsonError("Too many requests. Please try again later.", 429, "RATE_LIMITED", rateLimitHeaders(rl));
     }
@@ -21,6 +21,11 @@ export async function GET(req) {
       archived: false,
       status: { not: "Suspended" },
     };
+
+    // Trust catalog: only events created by verified organisers / admins
+    if (String(process.env.VERIFIED_HOSTS_ONLY || "").toLowerCase() === "true") {
+      whereClause.createdBy = { role: { in: ["ORGANIZER", "SUPER_ADMIN"] } };
+    }
 
     if (category && category !== "All") {
       whereClause.category = { equals: category, mode: "insensitive" };
@@ -41,7 +46,7 @@ export async function GET(req) {
       orderBy: { date: "asc" },
       include: {
         _count: { select: { registrations: true } },
-        createdBy: { select: { name: true, fullName: true } },
+        createdBy: { select: { name: true, fullName: true, role: true } },
       },
     });
 

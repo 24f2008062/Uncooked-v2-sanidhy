@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - name: Unit + security unit suites
+        run: npm test
+        env:
+          NEXTAUTH_SECRET: ci-nextauth-secret-at-least-32-chars-long
+          TICKET_HMAC_SECRET: ci-ticket-hmac-secret-at-least-32-chars
+          NEXTAUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - name: next build
+        run: npm run build
+        env:
+          NEXTAUTH_SECRET: ci-nextauth-secret-at-least-32-chars-long
+          TICKET_HMAC_SECRET: ci-ticket-hmac-secret-at-least-32-chars
+          NEXTAUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/uncooked_ci?schema=public
+          DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/uncooked_ci?schema=public
+          NEXT_PHASE: phase-production-build
+
+  lint:
+    name: ESLint (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint

@@ -4,7 +4,7 @@ import { getKillSwitchState } from "@/server/auth/killSwitch";
 import { assertSameOrigin } from "@/server/http/csrf";
 import { jsonError } from "@/server/http/envelope";
 import { getClientIp, hashIp } from "@/server/http/ip";
-import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
+import { rateLimitAsync, rateLimitHeaders } from "@/server/http/rateLimit";
 
 export async function enforceMutationGuards(req, { rateKey, limit = 30, windowMs = 60_000, skipKillSwitch = false } = {}) {
   const csrfError = assertSameOrigin(req);
@@ -14,7 +14,7 @@ export async function enforceMutationGuards(req, { rateKey, limit = 30, windowMs
 
   const ip = getClientIp(req);
   const ipHash = hashIp(ip);
-  const result = rateLimit(`${rateKey}:${ipHash}`, limit, windowMs);
+  const result = await rateLimitAsync(`${rateKey}:${ipHash}`, limit, windowMs);
   if (!result.ok) {
     return jsonError("Too many requests. Please try again later.", 429, "RATE_LIMITED", rateLimitHeaders(result));
   }

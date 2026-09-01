@@ -24,9 +24,14 @@ const useSsl = Boolean(
     process.env.DATABASE_SSL === "true"
 );
 
+// Keep pools small on serverless (many isolates × max connections).
+const poolMax = Number(process.env.DATABASE_POOL_MAX || (process.env.NODE_ENV === "production" ? 3 : 5));
+
 const pool = new Pool({
   connectionString,
-  max: 5,
+  max: Number.isFinite(poolMax) && poolMax > 0 ? poolMax : 3,
+  idleTimeoutMillis: 10_000,
+  connectionTimeoutMillis: 10_000,
   ssl: useSsl ? { rejectUnauthorized } : undefined,
 });
 
