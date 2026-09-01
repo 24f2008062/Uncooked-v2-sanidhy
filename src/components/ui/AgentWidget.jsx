@@ -115,7 +115,7 @@ export default function AgentWidget() {
                   <div>
                     <h3 className="text-base font-bold text-text-primary">Hi, I&apos;m Aura.</h3>
                     <p className="text-xs text-text-secondary mt-1 max-w-[260px]">
-                      Campus events, passes, hosting, and privacy — honest answers about what Uncooked actually does.
+                      Campus events, passes, hosting, and privacy. Honest answers about what Uncooked actually does.
                     </p>
                   </div>
 
