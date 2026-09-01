@@ -89,12 +89,16 @@ Navbar: Events → `/events`. Signed-in: Dashboard + Profile. Do not send “Eve
 ## 4. Layout recipes
 
 **Marketing / listing** (`/`, `/events`, `/opportunities`, `/host`)  
-Centered header, optional stats row, filter bar as a card, 1/2/3 column grid, bottom CTA band.
+Centered header, optional stats row, filter bar as a card, 1/2/3 column grid, bottom CTA band.  
+Homepage hero CTAs (Luma-style pair): primary **Create Your First Event** → `/create`; secondary **Discover Events** → `/events` (never `/dashboard`).
 
 **Detail** (`/events/[id]`)  
 12-column: 7 content (banner, about, schedule) + 5 sticky pass/register card.
 
-**Account** (`/dashboard`, `/profile`, `/host/apply`)  
+**Create** (`/create`)  
+Auth required. Verified ORGANIZER/SUPER_ADMIN: 12-column form (7 main fields + 5 sticky options: ticket, capacity, waitlist) posting to `POST /api/events`. Non-hosts: card pointing to `/host/apply`. Reuse `AccountNav` + form field tokens.
+
+**Account** (`/dashboard`, `/profile`, `/host/apply`, `/create`)  
 `AccountNav` under the title, then cards. Dashboard: 3 stat tiles, then passes + applications.
 
 **Admin** (`/admin/*`)  

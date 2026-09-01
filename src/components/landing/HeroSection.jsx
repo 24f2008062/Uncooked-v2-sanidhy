@@ -342,23 +342,27 @@ export default function HeroSection() {
           every event feel effortless.
         </motion.p>
 
-        {/* CTA Buttons */}
+        {/* CTA Buttons — Luma-style pair: create (primary) + discover (secondary) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.55 }}
           className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center gap-3 sm:gap-4"
         >
-          <Link href="/host" className="btn-primary px-6 sm:px-8 py-3 text-sm sm:text-base">
+          <Link
+            href="/create"
+            className="btn-primary px-6 sm:px-8 py-3 text-sm sm:text-base min-h-[44px] inline-flex items-center justify-center"
+          >
             Create Your First Event
           </Link>
           <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-sm font-medium transition-colors duration-200 py-2"
-            style={{ color: "#a3a3a3" }}
+            href="/events"
+            className="btn-secondary px-6 sm:px-8 py-3 text-sm sm:text-base min-h-[44px] inline-flex items-center justify-center gap-2"
           >
             Discover Events
-            <span className="text-xs">→</span>
+            <span className="text-xs" aria-hidden>
+              →
+            </span>
           </Link>
         </motion.div>
       </div>
