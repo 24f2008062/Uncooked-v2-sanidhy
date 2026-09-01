@@ -342,7 +342,7 @@ export default function HeroSection() {
           every event feel effortless.
         </motion.p>
 
-        {/* CTA Buttons — Luma-style pair: create (primary) + discover (secondary) */}
+        {/* CTA Buttons: create (primary) + discover (secondary) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

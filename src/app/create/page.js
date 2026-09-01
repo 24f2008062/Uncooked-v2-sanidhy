@@ -140,7 +140,7 @@ export default function CreateEventPage() {
           date: startDate.toISOString(),
           endDate: endDate && !Number.isNaN(endDate.getTime()) ? endDate.toISOString() : null,
           location: form.location.trim(),
-          description: form.description.trim() || `${form.title.trim()} — hosted on Uncooked.`,
+          description: form.description.trim() || `${form.title.trim()} (hosted on Uncooked).`,
           ticketType: form.ticketType,
           price: form.ticketType === "Paid" ? form.price : 0,
           capacity: form.capacity,
@@ -211,7 +211,7 @@ export default function CreateEventPage() {
                   <h2 className="text-lg font-bold text-text-primary">Verified host required</h2>
                   <p className="text-sm text-text-secondary mt-1 leading-relaxed">
                     Unlike open social RSVP tools, Uncooked only lets verified organisers publish.
-                    Apply once — after admin approval your role becomes ORGANIZER and this form
+                    Apply once. After admin approval your role becomes ORGANIZER and this form
                     unlocks.
                   </p>
                 </div>
@@ -312,7 +312,7 @@ export default function CreateEventPage() {
                       />
                     </div>
                     <p className="text-[11px] text-text-muted mt-2">
-                      Offline venue or a virtual meeting link — same field Luma uses for place.
+                      Offline venue or a virtual meeting link (same idea as Luma location).
                     </p>
                   </div>
 
@@ -446,7 +446,7 @@ export default function CreateEventPage() {
 
                   <p className="text-[11px] text-text-muted leading-relaxed">
                     After create, attendees register on the event page and receive an HMAC-signed
-                    pass on their dashboard. Door scanner is the next product bet — not claimed as
+                    pass on their dashboard. Door scanner is the next product bet, not claimed as
                     live here.
                   </p>
                 </section>
