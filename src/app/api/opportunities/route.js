@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
 import { getClientIp, hashIp } from "@/server/http/ip";
-import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
+import { rateLimitAsync, rateLimitHeaders } from "@/server/http/rateLimit";
 import { enforceMutationGuards, requireRoles } from "@/server/http/guards";
 
 function publicOpportunity(row) {
@@ -21,7 +21,7 @@ function publicOpportunity(row) {
 
 export async function GET(req) {
   try {
-    const rl = rateLimit(`rl_opp_get:${hashIp(getClientIp(req))}`, 60, 60_000);
+    const rl = await rateLimitAsync(`rl_opp_get:${hashIp(getClientIp(req))}`, 60, 60_000);
     if (!rl.ok) {
       return jsonError("Too many requests. Please try again later.", 429, "RATE_LIMITED", rateLimitHeaders(rl));
     }

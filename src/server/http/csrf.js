@@ -9,8 +9,12 @@ function allowedOrigins() {
     }
   }
   if (process.env.NODE_ENV !== "production") {
-    origins.add("http://localhost:3000");
-    origins.add("http://127.0.0.1:3000");
+    // Common local ports (dev may not always be :3000)
+    for (const host of ["localhost", "127.0.0.1"]) {
+      for (const port of ["3000", "3001", "3010"]) {
+        origins.add(`http://${host}:${port}`);
+      }
+    }
   }
   return origins;
 }
@@ -33,7 +37,7 @@ export function assertSameOrigin(req) {
 
   if (!origin) {
     // Browsers may omit Origin on same-origin POSTs. Accept only when
-    // Sec-Fetch-Site proves same-origin. Do NOT trust "none" — non-browser
+    // Sec-Fetch-Site proves same-origin. Do NOT trust "none": non-browser
     // clients (and some cross-site contexts) can omit/forge that header.
     const secFetchSite = (req.headers.get("sec-fetch-site") || "").toLowerCase();
     if (secFetchSite === "same-origin") {

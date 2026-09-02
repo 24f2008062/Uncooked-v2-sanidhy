@@ -55,6 +55,9 @@ export default function DashboardPage() {
   const registrations = passes.length ? passes : profile?.registrations || [];
   const apps = profile?.opportunityApps || [];
   const host = profile?.hostApplication;
+  const isHost =
+    String(profile?.role || session?.user?.role || "").toUpperCase() === "ORGANIZER" ||
+    String(profile?.role || session?.user?.role || "").toUpperCase() === "SUPER_ADMIN";
 
   return (
     <>
@@ -76,6 +79,17 @@ export default function DashboardPage() {
           </div>
 
           <AccountNav />
+
+          {isHost && (
+            <div className="mb-6 p-4 rounded-2xl bg-card border border-border-subtle flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-text-secondary">
+                Host tools: open an event page, copy its id, then scan passes at the door.
+              </p>
+              <Link href="/create" className="btn-secondary text-xs min-h-[44px] px-4 inline-flex items-center">
+                Create event
+              </Link>
+            </div>
+          )}
 
           {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
 

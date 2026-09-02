@@ -6,7 +6,7 @@ import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
 import { safeInternalPath } from "@/lib/safeRedirect";
 
 const ADMIN_PREFIXES = ["/admin", "/api/v2/admin"];
-const AUTH_REQUIRED_PAGES = ["/dashboard", "/profile", "/host/apply", "/create"];
+const AUTH_REQUIRED_PAGES = ["/dashboard", "/profile", "/host/apply", "/create", "/host/scanner"];
 
 function isAdminPath(pathname) {
   return ADMIN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

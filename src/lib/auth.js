@@ -6,6 +6,13 @@ import { sessionCookieName, sessionCookieOptions } from "@/server/config/authCoo
 import { LOGIN_LOCKOUT_MS, LOGIN_LOCKOUT_THRESHOLD, SESSION_MAX_AGE_SEC } from "@/server/config/legal";
 import { requireAuthSecret } from "@/server/security/secrets";
 
+function getSecret() {
+  // During `next build` / Vercel compile, this module may load before runtime
+  // secrets are required. Never use a known runtime fallback outside build.
+  const building =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.NEXT_PHASE === "phase-production-compile";
+  if (building && !process.env.NEXTAUTH_SECRET) {
 const CredentialsProvider =
   typeof CredentialsProviderRaw === "function"
     ? CredentialsProviderRaw
