@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/server/auth/authentication";
+import { getCurrentUser, getAuthUserAndProfile } from "@/server/auth/authentication";
 import { isSuperAdmin } from "@/server/auth/authorization";
 import { getKillSwitchState } from "@/server/auth/killSwitch";
 import { assertSameOrigin } from "@/server/http/csrf";
@@ -33,11 +33,17 @@ export async function enforceMutationGuards(req, { rateKey, limit = 30, windowMs
 }
 
 export async function requireUser() {
-  const user = await getCurrentUser();
-  if (!user) {
+  const { authUser, user, state } = await getAuthUserAndProfile();
+  if (state === "NO_SUPABASE_SESSION") {
     return { error: jsonError("Please sign in to continue.", 401, "UNAUTHENTICATED") };
   }
-  return { user };
+  if (state === "AUTHENTICATED_BUT_PROFILE_MISSING") {
+    return { error: jsonError("Application profile missing or incomplete.", 409, "PROFILE_NOT_PROVISIONED") };
+  }
+  if (state === "ACCOUNT_BLOCKED" || !user) {
+    return { error: jsonError("Account is locked or disabled.", 403, "ACCOUNT_BLOCKED") };
+  }
+  return { user, authUser };
 }
 
 export async function requireRoles(roles = []) {

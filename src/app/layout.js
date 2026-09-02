@@ -1,6 +1,6 @@
 import { Inter, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
-import NextAuthProvider from "@/components/providers/NextAuthProvider";
+import SupabaseProvider from "@/components/providers/SupabaseProvider";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import CookieNotice from "@/components/legal/CookieNotice";
 import "./globals.css";
@@ -57,13 +57,13 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300">
-        <NextAuthProvider>
+        <SupabaseProvider>
           <ThemeProvider>
             <ScrollToTop />
             <CookieNotice />
             {children}
           </ThemeProvider>
-        </NextAuthProvider>
+        </SupabaseProvider>
       </body>
     </html>
   );
