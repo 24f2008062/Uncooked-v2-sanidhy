@@ -76,9 +76,18 @@ export async function POST(req) {
       return jsonError("Title, category, date, and location are required", 400);
     }
 
-    const capacity = Math.min(Math.max(parseInt(body.capacity, 10) || 100, 1), 20000);
+    const unlimited = Boolean(body.unlimitedCapacity);
+    const capacity = unlimited
+      ? 20000
+      : Math.min(Math.max(parseInt(body.capacity, 10) || 100, 1), 20000);
     const price = Math.max(parseFloat(body.price) || 0, 0);
     const ticketType = body.ticketType === "Paid" || price > 0 ? "Paid" : "Free";
+    const waitlistEnabled = Boolean(body.waitlistEnabled);
+    const endDate = body.endDate ? new Date(body.endDate) : null;
+    const schedule =
+      endDate && !Number.isNaN(endDate.getTime())
+        ? JSON.stringify({ end: endDate.toISOString() })
+        : null;
 
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 48);
     const eventId = `${slug}-${Date.now().toString(36)}`;
@@ -92,9 +101,11 @@ export async function POST(req) {
         date,
         location,
         description,
+        schedule,
         ticketType,
         price: ticketType === "Paid" ? price : 0,
         capacity,
+        waitlistEnabled,
         createdById: auth.user.id,
         status: "Active",
       },

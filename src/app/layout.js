@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Uncooked Portal — Delightful Campus Events Start Here",
+  title: "Uncooked Portal: Delightful Campus Events Start Here",
   description:
     "The enterprise-grade zero-noise operating system for student events, campus ecosystems, host verification and infrastructure telemetry. Discover, create, and manage events effortlessly.",
   keywords: [
@@ -32,7 +32,7 @@ export const metadata = {
     "QR check-in",
   ],
   openGraph: {
-    title: "Uncooked Portal — Delightful Campus Events Start Here",
+    title: "Uncooked Portal: Delightful Campus Events Start Here",
     description:
       "From run clubs to launch parties, Uncooked makes every event feel effortless.",
     type: "website",

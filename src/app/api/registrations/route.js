@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
 import { enforceMutationGuards, requireUser } from "@/server/http/guards";
 import { signTicketPayload } from "@/server/tickets/hmac";
+import { isValidEventId } from "@/server/services/eventsPublic";
 
 export async function GET() {
   try {
@@ -60,11 +61,14 @@ export async function POST(req) {
     const eventId = String(body.eventId || "").trim();
     const teamName = String(body.teamName || "").trim().slice(0, 80) || null;
 
-    if (!eventId) {
+    if (!eventId || !isValidEventId(eventId)) {
       return jsonError("Event ID is required", 400);
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Serialize capacity checks across concurrent registrations.
+      await tx.$executeRaw`SELECT id FROM "Event" WHERE id = ${eventId} FOR UPDATE`;
+
       const event = await tx.event.findUnique({
         where: { id: eventId },
         include: { _count: { select: { registrations: true } } },

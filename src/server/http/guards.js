@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/server/auth/authentication";
 import { isSuperAdmin } from "@/server/auth/authorization";
-import { isKillSwitchActive } from "@/server/auth/killSwitch";
+import { getKillSwitchState } from "@/server/auth/killSwitch";
 import { assertSameOrigin } from "@/server/http/csrf";
 import { jsonError } from "@/server/http/envelope";
 import { getClientIp, hashIp } from "@/server/http/ip";
@@ -19,8 +19,14 @@ export async function enforceMutationGuards(req, { rateKey, limit = 30, windowMs
     return jsonError("Too many requests. Please try again later.", 429, "RATE_LIMITED", rateLimitHeaders(result));
   }
 
-  if (!skipKillSwitch && (await isKillSwitchActive())) {
-    return jsonError("The platform is temporarily paused for maintenance.", 503, "KILL_SWITCH");
+  if (!skipKillSwitch) {
+    const kill = await getKillSwitchState();
+    if (kill.active) {
+      if (kill.unavailable) {
+        return jsonError("Service temporarily unavailable", 503, "DEPENDENCY_UNAVAILABLE");
+      }
+      return jsonError("The platform is temporarily paused for maintenance.", 503, "KILL_SWITCH");
+    }
   }
 
   return null;

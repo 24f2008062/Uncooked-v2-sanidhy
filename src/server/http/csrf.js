@@ -32,9 +32,11 @@ export function assertSameOrigin(req) {
   }
 
   if (!origin) {
-    // Same-origin navigations may omit Origin; require it for API mutations.
+    // Browsers may omit Origin on same-origin POSTs. Accept only when
+    // Sec-Fetch-Site proves same-origin. Do NOT trust "none" — non-browser
+    // clients (and some cross-site contexts) can omit/forge that header.
     const secFetchSite = (req.headers.get("sec-fetch-site") || "").toLowerCase();
-    if (secFetchSite === "same-origin" || secFetchSite === "none") {
+    if (secFetchSite === "same-origin") {
       return null;
     }
     return "Missing Origin header";

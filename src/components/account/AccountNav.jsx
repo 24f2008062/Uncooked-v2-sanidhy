@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, User, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, User, ShieldCheck, CalendarPlus } from "lucide-react";
 
 const TABS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/profile", label: "Profile", icon: User },
+  { href: "/create", label: "Create event", icon: CalendarPlus },
   { href: "/host/apply", label: "Host application", icon: ShieldCheck },
 ];
 

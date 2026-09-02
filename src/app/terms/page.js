@@ -4,7 +4,7 @@ import { FileText, CheckCircle2, AlertCircle, Scale, Shield } from "lucide-react
 import { LEGAL } from "@/server/config/legal";
 
 export const metadata = {
-  title: "Terms of Service — Uncooked",
+  title: "Terms of Service | Uncooked",
   description: "Terms of Service for the Uncooked campus events platform.",
 };
 
