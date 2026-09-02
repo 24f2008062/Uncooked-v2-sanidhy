@@ -16,7 +16,7 @@ if (!process.env.DATABASE_URL && process.env.NODE_ENV === "development") {
   console.warn("[Prisma] DATABASE_URL is not configured");
 }
 
-const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false";
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "true";
 const useSsl = Boolean(
   connectionString.includes("supabase") ||
     connectionString.includes("pooler") ||

@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import CredentialsProvider from "next-auth/providers/credentials";
+import CredentialsProviderRaw from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import { verifyPassword } from "@/server/utils/passwordUtils";
 import { sessionCookieName, sessionCookieOptions } from "@/server/config/authCookies";
@@ -13,12 +13,26 @@ function getSecret() {
     process.env.NEXT_PHASE === "phase-production-build" ||
     process.env.NEXT_PHASE === "phase-production-compile";
   if (building && !process.env.NEXTAUTH_SECRET) {
+const CredentialsProvider =
+  typeof CredentialsProviderRaw === "function"
+    ? CredentialsProviderRaw
+    : CredentialsProviderRaw.default;
+
+export function getSecret() {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (secret && secret.length >= 32 && !secret.includes("dev_secret") && !secret.includes("change-me")) {
+    return secret;
+  }
+  // During `next build`, Next may import this module while collecting page
+  // data. Never use a known runtime fallback — only a build-phase stand-in.
+  if (process.env.NEXT_PHASE === "phase-production-build" && !process.env.NEXTAUTH_SECRET) {
     return "build-phase-only-secret-not-valid-at-runtime-xx";
   }
   return requireAuthSecret();
 }
 
 export const authOptions = {
+  trustHost: true,
   providers: [
     CredentialsProvider({
       name: "Credentials",
