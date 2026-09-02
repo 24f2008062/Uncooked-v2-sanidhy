@@ -13,7 +13,16 @@ const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   throw new Error("DATABASE_URL is required to seed");
 }
-const pool = new Pool({ connectionString });
+const useSsl = Boolean(
+  connectionString.includes("supabase") ||
+    connectionString.includes("pooler") ||
+    connectionString.includes("sslmode=require") ||
+    process.env.DATABASE_SSL === "true"
+);
+const pool = new Pool({
+  connectionString,
+  ssl: useSsl ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "true" } : undefined,
+});
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function hashPassword(password) {

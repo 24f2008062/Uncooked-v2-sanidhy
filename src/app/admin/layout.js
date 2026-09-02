@@ -32,14 +32,8 @@ export default function AdminLayout({ children }) {
     async function checkAdminAuth() {
       try {
         const res = await fetch("/api/v2/admin/dashboard/stats");
-        if (!res.ok) {
-          setAuthorized(false);
-          setLoading(false);
-          return;
-        }
-
-        if (nextAuthSession?.user?.role === "SUPER_ADMIN") {
-          setUser(nextAuthSession.user);
+        if (res.ok) {
+          setUser(nextAuthSession?.user || { role: "SUPER_ADMIN", email: "admin@uncooked.edu" });
           setAuthorized(true);
         } else {
           setAuthorized(false);

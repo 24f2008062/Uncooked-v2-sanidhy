@@ -47,6 +47,9 @@
   },
   "overrides": {
     "deepmerge-ts": "^8.0.1",
-    "mysql2": "^3.22.0"
+    "mysql2": "^3.22.0",
+    "next-auth": {
+      "nodemailer": "$nodemailer"
+    }
   }
 }
