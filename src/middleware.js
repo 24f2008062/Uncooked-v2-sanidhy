@@ -41,9 +41,12 @@ export async function middleware(request) {
     },
   });
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -65,7 +68,18 @@ export async function middleware(request) {
     }
   );
 
-  const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+  let user = null;
+  let getUserError = null;
+
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+    try {
+      const res = await supabase.auth.getUser();
+      user = res.data?.user || null;
+      getUserError = res.error || null;
+    } catch (err) {
+      console.warn(`[AUTH_MW] getUser error on ${pathname}:`, err.message);
+    }
+  }
 
   if (getUserError) {
     console.warn(`[AUTH_MW] getUser warning on ${pathname}:`, getUserError.message);

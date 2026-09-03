@@ -6,9 +6,12 @@ export async function updateSession(request) {
     request,
   });
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -27,8 +30,14 @@ export async function updateSession(request) {
     }
   );
 
-  // refreshing the auth token
-  await supabase.auth.getUser();
+  // refreshing the auth token if valid environment configuration
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+    try {
+      await supabase.auth.getUser();
+    } catch (e) {
+      // Ignore auth failure during static build or missing env
+    }
+  }
 
   return { supabase, supabaseResponse };
 }

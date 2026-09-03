@@ -12,24 +12,39 @@ export default function SupabaseProvider({ children }) {
   useEffect(() => {
     let mounted = true;
 
-    async function getSession() {
-      const { data: { session: activeSession }, error } = await supabase.auth.getSession();
+    const isPlaceholder = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
+
+    if (isPlaceholder) {
       if (mounted) {
-        if (error || !activeSession) {
+        setSession({ data: null, status: "unauthenticated" });
+      }
+      return;
+    }
+
+    async function getSession() {
+      try {
+        const { data: { session: activeSession }, error } = await supabase.auth.getSession();
+        if (mounted) {
+          if (error || !activeSession) {
+            setSession({ data: null, status: "unauthenticated" });
+          } else {
+            // Mapping Supabase session to match next-auth user format
+            const formattedSession = {
+              ...activeSession,
+              user: {
+                ...activeSession.user,
+                id: activeSession.user.id,
+                email: activeSession.user.email,
+                name: activeSession.user.user_metadata?.name || activeSession.user.email,
+                role: activeSession.user.user_metadata?.role || "USER",
+              }
+            };
+            setSession({ data: formattedSession, status: "authenticated" });
+          }
+        }
+      } catch (e) {
+        if (mounted) {
           setSession({ data: null, status: "unauthenticated" });
-        } else {
-          // Mapping Supabase session to match next-auth user format
-          const formattedSession = {
-            ...activeSession,
-            user: {
-              ...activeSession.user,
-              id: activeSession.user.id,
-              email: activeSession.user.email,
-              name: activeSession.user.user_metadata?.name || activeSession.user.email,
-              role: activeSession.user.user_metadata?.role || "USER",
-            }
-          };
-          setSession({ data: formattedSession, status: "authenticated" });
         }
       }
     }
@@ -58,7 +73,7 @@ export default function SupabaseProvider({ children }) {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 

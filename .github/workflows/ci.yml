@@ -18,6 +18,9 @@ env:
   TICKET_HMAC_SECRET: ci-ticket-hmac-secret-at-least-32-chars
   NEXTAUTH_URL: http://localhost:3000
   NEXT_PUBLIC_APP_URL: http://localhost:3000
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+  SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
   DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/uncooked_ci?schema=public
   DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/uncooked_ci?schema=public
 
