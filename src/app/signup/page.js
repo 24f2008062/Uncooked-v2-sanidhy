@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, User, Mail, MapPin, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Loader2, User, Mail, MapPin, Lock, AlertCircle, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 
 export default function SignupPage() {
@@ -13,12 +13,14 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const supabase = createClient();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     location: "",
     password: "",
+    confirmPassword: "",
     ageAttested18: false,
     acceptTerms: false,
   });
@@ -27,6 +29,12 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMsg("Passwords do not match. Please verify both password fields.");
+      setLoading(false);
+      return;
+    }
 
     try {
       // Register with Supabase directly
@@ -183,6 +191,50 @@ export default function SignupPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Confirm Password Field */}
+              <div className="relative group">
+                <Lock className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Confirm Password"
+                  minLength={12}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className={`w-full pl-11 pr-12 py-3 text-[14px] rounded-xl outline-none transition-all duration-300 bg-[#141414] border ${
+                    formData.confirmPassword && formData.password !== formData.confirmPassword
+                      ? "border-red-500/60 focus:border-red-500 focus:ring-red-500"
+                      : formData.confirmPassword && formData.password === formData.confirmPassword
+                      ? "border-emerald-500/60 focus:border-emerald-500 focus:ring-emerald-500"
+                      : "border-[#2a2a2a] focus:border-[#f472b6] focus:ring-[#f472b6]"
+                  } text-white placeholder-gray-500`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* Password match indicator */}
+              {formData.confirmPassword.length > 0 && (
+                <div className="text-xs flex items-center gap-1.5 px-1 py-0.5">
+                  {formData.password === formData.confirmPassword ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Passwords match
+                    </span>
+                  ) : (
+                    <span className="text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> Passwords do not match
+                    </span>
+                  )}
+                </div>
+              )}
 
               <label className="flex items-start gap-2 text-[11px] text-gray-400">
                 <input

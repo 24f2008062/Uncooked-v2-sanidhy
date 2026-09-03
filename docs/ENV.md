@@ -52,8 +52,8 @@ Without Sentry, errors still go to server logs only.
 | --- | --- | --- |
 | `LEGAL_ENTITY_NAME` | `Uncooked` | Privacy / terms copy |
 | `GRIEVANCE_OFFICER_NAME` | `Grievance Officer` | DPDP grievance |
-| `GRIEVANCE_EMAIL` | `privacy@uncooked.dev` | Must be a real monitored inbox in prod |
-| `SUPPORT_EMAIL` | `support@uncooked.dev` | Contact / support |
+| `GRIEVANCE_EMAIL` | `support@uncooked.in` | Must be a real monitored inbox in prod |
+| `SUPPORT_EMAIL` | `support@uncooked.in` | Contact / support |
 
 ---
 

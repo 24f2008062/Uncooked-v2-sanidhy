@@ -4,6 +4,8 @@ import HeroSection from "@/components/landing/HeroSection";
 import MarqueeRibbons from "@/components/landing/MarqueeRibbons";
 import StatsSection from "@/components/landing/StatsSection";
 import PopularEvents from "@/components/landing/PopularEvents";
+import CareerCatalyst from "@/components/landing/CareerCatalyst";
+import LiveFeed from "@/components/landing/LiveFeed";
 import CommunityGrid from "@/components/landing/CommunityGrid";
 import CategoryGrid from "@/components/landing/CategoryGrid";
 import FeedbackSection from "@/components/landing/FeedbackSection";
@@ -25,6 +27,8 @@ export default function HomePage() {
             'hero-section',
             'stats-section',
             'popular-events',
+            'career-catalyst',
+            'live-feed',
             'communities',
             'categories',
             'feedback-section',
@@ -34,7 +38,7 @@ export default function HomePage() {
       </div>
 
       <main>
-        {/* 1. Hero with floating event cards */}
+        {/* 1. Hero with floating event cards, search bar, location & category filters */}
         <HeroSection />
 
         {/* Crossed Marquee Ribbons */}
@@ -46,16 +50,22 @@ export default function HomePage() {
         {/* 2. Popular Events carousel */}
         <PopularEvents />
 
-        {/* 3. Global Communities */}
+        {/* 3. Career Catalyst (Exclusive Work Opportunities) */}
+        <CareerCatalyst />
+
+        {/* 4. Campus Broadcast Bulletins (Live Feed) */}
+        <LiveFeed />
+
+        {/* 5. Global Communities */}
         <CommunityGrid />
 
-        {/* 4. Browse by Category */}
+        {/* 6. Browse by Category */}
         <CategoryGrid />
 
-        {/* 5. Feedback & Logs */}
+        {/* 7. Ecosystem Feedback & Attendee Reviews */}
         <FeedbackSection />
 
-        {/* 7. Ecosystem Partners */}
+        {/* 8. Ecosystem Partners & Student Operating System */}
         <EcosystemPartners />
       </main>
 
@@ -63,3 +73,4 @@ export default function HomePage() {
     </>
   );
 }
+

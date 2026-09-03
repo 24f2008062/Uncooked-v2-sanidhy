@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import InteractiveMesh from "./InteractiveMesh";
-import { Sparkles, Calendar, Ticket, Compass, ArrowRight, Video, Flame, Star, Zap, MapPin } from "lucide-react";
 import GridScan from "@/components/ui/GridScan";
 import BlurText from "@/components/ui/BlurText";
 
@@ -291,13 +290,28 @@ export default function HeroSection() {
       </div>
 
       {/* Center Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-[100vh] min-h-[100dvh] px-4 sm:px-6 text-center">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-[100vh] min-h-[100dvh] px-4 sm:px-6 text-center pt-24 pb-16">
+        
+        {/* Prominent Local Campus Identity Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#161619]/90 border border-[#2c2c32] text-xs font-semibold text-amber-400 shadow-[0_0_25px_rgba(249,115,22,0.15)] backdrop-blur-md"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>⚡ Live Across Lucknow &amp; Campus Networks</span>
+        </motion.div>
+
         {/* Brand badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-4 sm:mb-6"
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="mb-3"
         >
           <span
             className="text-xs sm:text-sm font-medium tracking-wider uppercase"
@@ -335,7 +349,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg max-w-sm sm:max-w-md mx-auto leading-relaxed px-2"
+          className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg max-w-sm sm:max-w-lg mx-auto leading-relaxed px-2"
           style={{ color: "#a3a3a3" }}
         >
           From run clubs to launch parties and firework shows, Uncooked makes
@@ -347,7 +361,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.55 }}
-          className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center gap-3 sm:gap-4"
+          className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 pointer-events-auto"
         >
           <Link
             href="/create"
@@ -378,3 +392,6 @@ export default function HeroSection() {
     </section>
   );
 }
+
+
+
