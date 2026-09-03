@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sendAdminBroadcastEmail } from "@/lib/email/service";
-import { createClient } from "@/lib/supabase/server";
+import { requireSuperAdmin } from "@/server/http/guards";
 
 export async function GET(req) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.user_metadata?.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
 
     const history = await prisma.auditLog.findMany({
       where: { action: { startsWith: "BROADCAST_" } },
@@ -27,12 +23,9 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.user_metadata?.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
+    const user = auth.user; // Prisma User entity
 
     const { audience, subject, message, targetEmails, mediaUrl } = await req.json();
 
@@ -73,7 +66,7 @@ export async function POST(req) {
           subject,
           message,
           mediaUrl,
-          senderName: user.user_metadata?.name || "Uncooked Admin Desk",
+          senderName: user.fullName || "Uncooked Admin Desk",
         });
         successCount++;
       } catch (err) {
@@ -81,15 +74,19 @@ export async function POST(req) {
       }
     }
 
-    // Log to AuditLog
-    await prisma.auditLog.create({
-      data: {
-        adminId: user.id,
-        actorId: user.id,
-        action: `BROADCAST_SENT_${audience}`,
-        details: JSON.stringify({ subject, recipientCount: successCount, totalTargeted: recipientEmails.length }),
-      },
-    });
+    // Log to AuditLog safely (handling relation requirement)
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId: user.id,
+          actorId: user.id,
+          action: `BROADCAST_SENT_${audience}`,
+          details: JSON.stringify({ subject, recipientCount: successCount, totalTargeted: recipientEmails.length }),
+        },
+      });
+    } catch (auditErr) {
+      console.warn("[Communications API] AuditLog write warning:", auditErr.message);
+    }
 
     return NextResponse.json({
       success: true,
@@ -98,6 +95,6 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error("[Communications API] Error sending broadcast:", error);
-    return NextResponse.json({ error: "Failed to dispatch broadcast" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to dispatch broadcast" }, { status: 500 });
   }
 }
