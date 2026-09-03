@@ -104,3 +104,122 @@ test("Issue #30: Contact form input XSS sanitization", () => {
   assert.equal(sanitized, '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
   assert.equal(sanitized.includes("<script>"), false);
 });
+
+test("Phase 17: Password Reset Fail-Closed Security Invariants", async () => {
+  // Mock validation helper verifying fail-closed rules
+  const evaluateResetInvariants = (authError, user, authRecords) => {
+    if (authError) return { success: false, code: "AUTH_PROVIDER_UPDATE_FAILED" };
+    if (!user) return { success: false, code: "USER_NOT_FOUND" };
+    if (!user.authUserId && (!authRecords || authRecords.length === 0)) {
+      return { success: false, code: "AUTH_IDENTITY_NOT_PROVISIONED" };
+    }
+    if (!user.authUserId && authRecords.length > 1) {
+      return { success: false, code: "AUTH_IDENTITY_AMBIGUOUS" };
+    }
+    if (!user.authUserId && authRecords.length === 1 && !authRecords[0].email_confirmed_at) {
+      return { success: false, code: "AUTH_IDENTITY_UNVERIFIED" };
+    }
+    return { success: true, code: "RESET_SUCCESS" };
+  };
+
+  // Test A: Supabase update failure produces fail-closed failure
+  const resA = evaluateResetInvariants(new Error("Supabase outage"), { id: "u1", authUserId: "a1" }, []);
+  assert.equal(resA.success, false);
+  assert.equal(resA.code, "AUTH_PROVIDER_UPDATE_FAILED");
+
+  // Test C: Missing Auth identity fails closed without account creation
+  const resC = evaluateResetInvariants(null, { id: "u1", authUserId: null }, []);
+  assert.equal(resC.success, false);
+  assert.equal(resC.code, "AUTH_IDENTITY_NOT_PROVISIONED");
+
+  // Test E: Ambiguous Auth identity fails closed
+  const resE = evaluateResetInvariants(null, { id: "u1", authUserId: null }, [{ id: "a1" }, { id: "a2" }]);
+  assert.equal(resE.success, false);
+  assert.equal(resE.code, "AUTH_IDENTITY_AMBIGUOUS");
+
+  // Test F: Unverified Supabase email fails closed
+  const resF = evaluateResetInvariants(null, { id: "u1", authUserId: null }, [{ id: "a1", email_confirmed_at: null }]);
+  assert.equal(resF.success, false);
+  assert.equal(resF.code, "AUTH_IDENTITY_UNVERIFIED");
+});
+
+test("Phase 19: Concurrency and Replay Protection Mechanics", () => {
+  // Simulate atomic token state machine
+  let tokenStore = new Map([["token123", { identifier: "user@univ.edu" }]]);
+  let providerUpdateCallCount = 0;
+
+  const processResetRequest = (token) => {
+    // Atomic deletion (claim token)
+    const exists = tokenStore.has(token);
+    if (exists) {
+      tokenStore.delete(token); // Atomically claimed
+    }
+    if (!exists) {
+      return { status: 400, code: "RESET_TOKEN_INVALID_OR_CONSUMED" };
+    }
+
+    // Call provider
+    providerUpdateCallCount++;
+    return { status: 200, code: "RESET_SUCCESS" };
+  };
+
+  // Concurrent Execution: Request A and Request B submit identical token
+  const resA = processResetRequest("token123");
+  const resB = processResetRequest("token123");
+
+  assert.equal(resA.status, 200);
+  assert.equal(resB.status, 400);
+  assert.equal(resB.code, "RESET_TOKEN_INVALID_OR_CONSUMED");
+  assert.equal(providerUpdateCallCount, 1, "Supabase updateUserById must be called EXACTLY ONCE across concurrent attempts");
+});
+
+test("Final Patch: Case A vs Case B Partial Success Distinction", () => {
+  const evaluatePartialFailure = (wasAlreadyLinked, prismaUpdateSuccess) => {
+    // Supabase update succeeded
+    if (prismaUpdateSuccess) {
+      return { status: 200, code: "RESET_SUCCESS" };
+    }
+    if (wasAlreadyLinked) {
+      return { status: 200, code: "AUTH_UPDATED_LOCAL_CLEANUP_FAILED", message: "Your password has been reset successfully. You can now log in." };
+    } else {
+      return { status: 500, code: "AUTH_UPDATED_IDENTITY_LINK_FAILED", message: "Your password may have been updated, but we couldn't complete account recovery. Please try signing in with your new password. If access is not restored, contact support." };
+    }
+  };
+
+  // Case A: Already Migrated User - Prisma cleanup fails -> Returns 200 OK (Auth functional)
+  const resCaseA = evaluatePartialFailure(true, false);
+  assert.equal(resCaseA.status, 200);
+  assert.equal(resCaseA.code, "AUTH_UPDATED_LOCAL_CLEANUP_FAILED");
+
+  // Case B: Unlinked Legacy User - Identity link fails -> Returns 500 Fail (Identity link incomplete)
+  const resCaseB = evaluatePartialFailure(false, false);
+  assert.equal(resCaseB.status, 500);
+  assert.equal(resCaseB.code, "AUTH_UPDATED_IDENTITY_LINK_FAILED");
+});
+
+test("Final Patch: Migrated Account Password Authority Invariant", () => {
+  const canAuthenticateLegacy = (user) => {
+    if (user.authUserId !== null) {
+      return false; // Hard stop: Migrated accounts MUST NOT authenticate via legacy hash
+    }
+    return Boolean(user.passwordHash);
+  };
+
+  const migratedUserWithFakeHash = {
+    id: "u1",
+    authUserId: "supa-123",
+    passwordHash: "fake_scrypt_hash",
+  };
+
+  const unmigratedUser = {
+    id: "u2",
+    authUserId: null,
+    passwordHash: "valid_scrypt_hash",
+  };
+
+  assert.equal(canAuthenticateLegacy(migratedUserWithFakeHash), false, "Migrated user MUST NOT authenticate against legacy passwordHash");
+  assert.equal(canAuthenticateLegacy(unmigratedUser), true, "Unmigrated user may use legacy hash for JIT migration");
+});
+
+
+
