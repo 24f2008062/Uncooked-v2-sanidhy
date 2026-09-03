@@ -86,31 +86,32 @@ export async function POST(req) {
       // User has linked authUserId; verify Supabase Auth record exists
       const { data: authUserData, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(user.authUserId);
 
-      if (authUserError || !authUserData?.user) {
-        console.error("[PASSWORD_RESET_FAILED]", {
-          reason: "AUTH_IDENTITY_NOT_FOUND",
+      if (!authUserError && authUserData?.user) {
+        if (authUserData.user.email && authUserData.user.email.toLowerCase() !== cleanEmail) {
+          console.error("[PASSWORD_RESET_FAILED]", {
+            reason: "AUTH_IDENTITY_CONFLICT",
+            applicationUserId: user.id,
+            authUserId: user.authUserId,
+            authEmail: authUserData.user.email,
+            timestamp: new Date().toISOString(),
+          });
+          return jsonError("Password reset could not be completed. Identity conflict detected.", 500);
+        }
+        targetAuthUserId = user.authUserId;
+      } else {
+        console.warn("[PASSWORD_RESET_HEALING]", {
+          reason: "STALE_AUTH_USER_ID",
           applicationUserId: user.id,
-          authUserId: user.authUserId,
-          supabaseCode: authUserError?.code,
+          staleAuthUserId: user.authUserId,
+          error: authUserError?.message,
           timestamp: new Date().toISOString(),
         });
-        return jsonError("Password reset could not be completed for this account. Please contact support.", 500);
       }
+    }
 
-      if (authUserData.user.email && authUserData.user.email.toLowerCase() !== cleanEmail) {
-        console.error("[PASSWORD_RESET_FAILED]", {
-          reason: "AUTH_IDENTITY_CONFLICT",
-          applicationUserId: user.id,
-          authUserId: user.authUserId,
-          authEmail: authUserData.user.email,
-          timestamp: new Date().toISOString(),
-        });
-        return jsonError("Password reset could not be completed. Identity conflict detected.", 500);
-      }
+    if (!targetAuthUserId) {
+      // Unlinked user or stale authUserId: query auth.users by email to resolve candidate identities
 
-      targetAuthUserId = user.authUserId;
-    } else {
-      // Unlinked user: query auth.users by email to resolve candidate identities
       let authRecords = [];
       try {
         authRecords = await prisma.$queryRaw`SELECT id, email_confirmed_at FROM auth.users WHERE LOWER(email) = ${cleanEmail}`;
