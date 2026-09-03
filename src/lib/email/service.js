@@ -1,8 +1,8 @@
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "Uncooked Portal <noreply@uncooked.com>";
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "support@uncooked.com";
+const FROM_EMAIL = process.env.SMTP_FROM || process.env.EMAIL_FROM || "UNCOOKED <support@uncooked.in>";
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || process.env.SMTP_USER || "support@uncooked.in";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 // Helper to wrap content in a unified modern dark email template
