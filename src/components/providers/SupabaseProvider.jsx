@@ -36,7 +36,7 @@ export default function SupabaseProvider({ children }) {
                 id: activeSession.user.id,
                 email: activeSession.user.email,
                 name: activeSession.user.user_metadata?.name || activeSession.user.email,
-                role: activeSession.user.user_metadata?.role || "USER",
+                role: activeSession.user.app_metadata?.role || "USER",
               }
             };
             setSession({ data: formattedSession, status: "authenticated" });

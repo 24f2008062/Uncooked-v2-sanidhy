@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sendSupportTicketNotification } from "@/lib/email/service";
-import { createClient } from "@/lib/supabase/server";
+import { requireSuperAdmin, enforceMutationGuards } from "@/server/http/guards";
 
 export async function GET(req) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.user_metadata?.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
-    }
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
 
     const tickets = await prisma.supportTicket.findMany({
       include: {
@@ -30,12 +26,16 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const auth = await requireSuperAdmin();
+    if (auth.error) return auth.error;
+    const user = auth.user;
 
-    if (!user || user.user_metadata?.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
-    }
+    const blocked = await enforceMutationGuards(req, {
+      rateKey: "rl_admin_support",
+      limit: 20,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (blocked) return blocked;
 
     const { ticketId, message, status } = await req.json();
 
@@ -71,7 +71,7 @@ export async function POST(req) {
           subject: ticket.subject,
           category: ticket.category,
           message,
-          senderName: user.user_metadata?.name || "Support Team",
+          senderName: user.name || user.fullName || "Support Team",
           isReply: true,
         });
       }
@@ -99,3 +99,4 @@ export async function POST(req) {
     return NextResponse.json({ error: "Failed to process support response" }, { status: 500 });
   }
 }
+

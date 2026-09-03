@@ -37,21 +37,37 @@ export default function SignupPage() {
     }
 
     try {
-      // Register with Supabase directly
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            name: formData.name,
-            department: formData.location,
-          }
-        }
+      // 1. Call server-side registration route for validation & DPDP consent persistence
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          location: formData.location,
+          password: formData.password,
+          ageAttested18: formData.ageAttested18,
+          acceptTerms: formData.acceptTerms,
+        }),
       });
 
-      if (error) {
-        setErrorMsg(error.message);
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error?.message || "Registration failed. Please check your inputs.");
         setLoading(false);
+        return;
+      }
+
+      // 2. Sign in with Supabase to establish client session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (signInError) {
+        setErrorMsg("Registration successful! Please sign in with your credentials.");
+        router.push("/login");
         return;
       }
 

@@ -8,6 +8,7 @@ returns trigger as $$
 begin
   insert into public."User" (
     id, 
+    "authUserId",
     email, 
     "fullName", 
     "name",
@@ -16,7 +17,8 @@ begin
     "updatedAt"
   )
   values (
-    new.id, -- We map the Supabase UUID to the Prisma ID for new users. Prisma accepts this since its ID is just a String.
+    new.id,
+    new.id, -- Explicitly set authUserId to link Supabase auth UUID with Prisma application profile
     new.email,
     coalesce(new.raw_user_meta_data->>'name', new.email),
     coalesce(new.raw_user_meta_data->>'name', new.email),
@@ -24,7 +26,7 @@ begin
     now(),
     now()
   )
-  on conflict (email) do nothing; -- If they exist (legacy users), DO NOT overwrite their ID. Let Prisma keep the existing relations.
+  on conflict (email) do update set "authUserId" = EXCLUDED."authUserId" where public."User"."authUserId" is null;
   
   return new;
 end;

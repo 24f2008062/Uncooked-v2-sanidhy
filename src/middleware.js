@@ -22,8 +22,14 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  const secret = process.env.NEXTAUTH_SECRET || "uncooked_production_fallback_secret_32_chars_min";
-  const ipKey = fingerprintIp(getClientIp(request), secret);
+  const secret = process.env.NEXTAUTH_SECRET || process.env.SUPABASE_JWT_SECRET || (process.env.NODE_ENV !== "production" ? "uncooked_dev_session_secret_min32chars" : null);
+  if (process.env.NODE_ENV === "production" && !secret) {
+    return NextResponse.json(
+      { success: false, error: { code: "SERVICE_UNAVAILABLE", message: "Required security secret not configured." } },
+      { status: 503 }
+    );
+  }
+  const ipKey = secret ? fingerprintIp(getClientIp(request), secret) : "dev_key";
 
   if (pathname.startsWith("/api/auth") && request.method === "POST") {
     const rl = rateLimit(`mw_auth:${ipKey}`, 20, 15 * 60 * 1000);
@@ -57,7 +63,6 @@ export async function middleware(request) {
           const nextResponse = NextResponse.next({
             request,
           });
-          // Preserve any existing response headers
           response.headers.forEach((val, key) => nextResponse.headers.set(key, val));
           response = nextResponse;
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -85,9 +90,29 @@ export async function middleware(request) {
     console.warn(`[AUTH_MW] getUser warning on ${pathname}:`, getUserError.message);
   }
 
+  // Account status check (Issue #26)
+  const isBlocked = user?.app_metadata?.account_status === "LOCKED" || user?.app_metadata?.account_status === "DISABLED" || user?.app_metadata?.account_status === "DELETED";
+  if (user && isBlocked) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { success: false, error: { code: "ACCOUNT_BLOCKED", message: "Account has been suspended or disabled." } },
+        { status: 403 }
+      );
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("error", "ACCOUNT_BLOCKED");
+    const redirectResponse = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return redirectResponse;
+  }
+
   if (isAdminPath(pathname)) {
-    const isSuperAdmin = user?.user_metadata?.role === "SUPER_ADMIN" || user?.email === "admin@uncooked.edu";
-    if (!user || !isSuperAdmin) {
+    // Rely on app_metadata (set by server/Postgres trigger) or let downstream API handlers check Prisma DB User.role === SUPER_ADMIN
+    const isSuperAdmin = user?.app_metadata?.role === "SUPER_ADMIN";
+    if (!user || (!isSuperAdmin && !pathname.startsWith("/api/"))) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
           { success: false, error: { code: "FORBIDDEN", message: "Administrator access required." } },

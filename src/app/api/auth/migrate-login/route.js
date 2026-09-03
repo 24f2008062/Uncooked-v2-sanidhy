@@ -3,12 +3,36 @@ import prisma from "@/lib/prisma";
 import { verifyPassword } from "@/server/utils/passwordUtils";
 import { createClient } from "@supabase/supabase-js";
 
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { verifyPassword } from "@/server/utils/passwordUtils";
+import { createClient } from "@supabase/supabase-js";
+import { enforceMutationGuards } from "@/server/http/guards";
+
 export async function POST(req) {
   try {
+    const blocked = await enforceMutationGuards(req, {
+      rateKey: "rl_auth_migrate_login",
+      limit: 5,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (blocked) return blocked;
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey || supabaseUrl.includes("placeholder") || supabaseServiceKey.includes("placeholder")) {
+      console.error("[SECURITY] Missing or placeholder Supabase credentials for migration service");
+      return NextResponse.json(
+        { success: false, error: { code: "SERVICE_UNAVAILABLE", message: "Authentication migration service currently unavailable." } },
+        { status: 503 }
+      );
+    }
+
     const { email, password } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password required", code: "MISSING_CREDENTIALS" }, { status: 400 });
+      return NextResponse.json({ success: false, error: { code: "INVALID_CREDENTIALS", message: "Invalid credentials provided." } }, { status: 400 });
     }
 
     const cleanEmail = email.toLowerCase().trim();
@@ -19,85 +43,70 @@ export async function POST(req) {
     });
 
     if (!user) {
-      console.log("[Migrate] Application user not found for", cleanEmail);
-      return NextResponse.json({ error: "Invalid credentials", code: "LEGACY_USER_NOT_FOUND" }, { status: 401 });
+      return NextResponse.json({ success: false, error: { code: "INVALID_CREDENTIALS", message: "Invalid credentials provided." } }, { status: 401 });
     }
 
-    // 2. State A: Hard Stop for Already-Migrated Accounts (Section 1 & 2)
+    // 2. State A: Hard Stop for Already-Migrated Accounts
     if (user.authUserId !== null) {
-      console.log("[Migrate] Account already migrated for", cleanEmail, "- authUserId:", user.authUserId);
       return NextResponse.json(
-        { error: "Account already migrated. Please sign in normally.", code: "ALREADY_MIGRATED" },
+        { success: false, error: { code: "ALREADY_MIGRATED", message: "Account already migrated. Please sign in normally." } },
         { status: 400 }
       );
     }
 
     // Must have a legacy password hash to proceed
     if (!user.passwordHash) {
-      console.log("[Migrate] Unmigrated user has no legacy passwordHash for", cleanEmail);
-      return NextResponse.json({ error: "Invalid credentials", code: "NO_LEGACY_HASH" }, { status: 401 });
+      return NextResponse.json({ success: false, error: { code: "INVALID_CREDENTIALS", message: "Invalid credentials provided." } }, { status: 401 });
     }
 
     // 3. Verify legacy password BEFORE any identity or password mutation
     const isValid = await verifyPassword(password, user.passwordHash);
 
     if (!isValid) {
-      console.log("[Migrate] Legacy password verification failed for", cleanEmail);
-      return NextResponse.json({ error: "Invalid credentials", code: "INVALID_LEGACY_PASSWORD" }, { status: 401 });
+      return NextResponse.json({ success: false, error: { code: "INVALID_CREDENTIALS", message: "Invalid credentials provided." } }, { status: 401 });
     }
 
-    console.log("[Migrate] Legacy password verified successfully for unmigrated user:", cleanEmail);
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder-service-role-key";
-
-    const supabaseAdmin = createClient(
-      supabaseUrl,
-      supabaseServiceKey
-    );
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // 4. Determine / Recover Supabase Identity Safely
     let authUserId = null;
 
-    // Check if identity already exists in auth.users (e.g. Partial Migration Recovery)
+    // Check if identity already exists in auth.users
     const authRecords = await prisma.$queryRaw`SELECT id FROM auth.users WHERE LOWER(email) = ${cleanEmail} LIMIT 1`;
 
     if (authRecords && authRecords.length > 0) {
       const existingAuthId = authRecords[0].id;
 
-      // Identity Conflict Check (Section 4): Verify existingAuthId is not already linked to another application user
+      // Identity Conflict Check: Verify existingAuthId is not already linked to another application user
       const conflictingUser = await prisma.user.findFirst({
         where: { authUserId: existingAuthId },
       });
 
       if (conflictingUser && conflictingUser.id !== user.id) {
-        console.error("[Migrate] AUTH_IDENTITY_CONFLICT: auth.users ID", existingAuthId, "already belongs to User.id", conflictingUser.id);
+        console.error("[Migrate] AUTH_IDENTITY_CONFLICT detected during migration");
         return NextResponse.json(
-          { error: "Identity conflict detected during migration", code: "AUTH_IDENTITY_CONFLICT" },
+          { success: false, error: { code: "AUTH_IDENTITY_CONFLICT", message: "Identity conflict detected during migration." } },
           { status: 409 }
         );
       }
 
-      console.log("[Migrate] PARTIAL_MIGRATION_RECOVERED: Updating password for existing auth record:", existingAuthId);
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(existingAuthId, {
         password: password,
         email_confirm: true,
         user_metadata: {
           name: user.name || user.fullName || "User",
           department: user.department,
-          role: user.role || "USER",
         },
       });
 
       if (updateError) {
-        console.error("[Migrate] Failed to update password for existing auth record:", updateError);
-        return NextResponse.json({ error: "Failed to update authentication password", code: "SUPABASE_UPDATE_FAILED" }, { status: 500 });
+        console.error("[Migrate] Failed to update password for existing auth record:", updateError.message);
+        return NextResponse.json({ success: false, error: { code: "SUPABASE_UPDATE_FAILED", message: "Failed to update authentication credentials." } }, { status: 500 });
       }
 
       authUserId = existingAuthId;
     } else {
       // Create new Supabase identity
-      console.log("[Migrate] Creating new Supabase Auth identity...");
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: cleanEmail,
         password: password,
@@ -105,14 +114,11 @@ export async function POST(req) {
         user_metadata: {
           name: user.name || user.fullName || "User",
           department: user.department,
-          role: user.role || "USER",
         },
       });
 
       if (createError) {
-        // Recover from concurrent creation race if user was registered in split second
         if (createError.message && createError.message.includes("already been registered")) {
-          console.warn("[Migrate] Concurrent creation race detected. Recovering auth user by email...");
           const raceRecords = await prisma.$queryRaw`SELECT id FROM auth.users WHERE LOWER(email) = ${cleanEmail} LIMIT 1`;
           if (raceRecords && raceRecords.length > 0) {
             authUserId = raceRecords[0].id;
@@ -120,17 +126,16 @@ export async function POST(req) {
         }
         
         if (!authUserId) {
-          console.error("[Migrate] Failed to create Supabase Auth user:", createError);
-          return NextResponse.json({ error: "Failed to create user in Auth", code: "SUPABASE_CREATE_FAILED" }, { status: 500 });
+          console.error("[Migrate] Failed to create Supabase Auth user:", createError.message);
+          return NextResponse.json({ success: false, error: { code: "SUPABASE_CREATE_FAILED", message: "Failed to create user in Auth." } }, { status: 500 });
         }
       } else if (newUser?.user) {
         authUserId = newUser.user.id;
       }
     }
 
-    // 5. Conflict-Safe Atomic Identity Linking & Password Hash Clearing (Section 6 & 7)
+    // 5. Conflict-Safe Atomic Identity Linking & Password Hash Clearing
     if (authUserId) {
-      console.log("[Migrate] Atomically linking authUserId", authUserId, "to User.id", user.id);
       const updateResult = await prisma.user.updateMany({
         where: {
           id: user.id,
@@ -138,19 +143,19 @@ export async function POST(req) {
         },
         data: {
           authUserId: authUserId,
-          passwordHash: null, // Clear passwordHash atomically with linkage!
+          passwordHash: null,
         },
       });
 
       if (updateResult.count === 0) {
-        console.warn("[Migrate] Concurrent migration detected or authUserId already set for user:", user.id);
+        console.warn("[Migrate] Concurrent migration detected or authUserId already set for user ID:", user.id);
       }
     }
 
-    console.log("[Migrate] JIT migration completed successfully for", cleanEmail);
-    return NextResponse.json({ success: true, code: "MIGRATION_SUCCESSFUL" });
+    return NextResponse.json({ success: true, message: "Migration successful." });
   } catch (err) {
-    console.error("[Migrate] Unhandled error during migration:", err);
-    return NextResponse.json({ error: "Internal server error", code: "DATABASE_ERROR" }, { status: 500 });
+    console.error("[Migrate] Unhandled error during migration:", err.message);
+    return NextResponse.json({ success: false, error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } }, { status: 500 });
   }
 }
+

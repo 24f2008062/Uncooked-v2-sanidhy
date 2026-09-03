@@ -59,6 +59,7 @@ export async function POST(req) {
     if (parsed.error) return parsed.error;
     const body = parsed.body;
     const eventId = String(body.eventId || "").trim();
+    const ticketTierId = String(body.ticketTierId || "").trim() || null;
     const teamName = String(body.teamName || "").trim().slice(0, 80) || null;
 
     if (!eventId || !isValidEventId(eventId)) {
@@ -66,7 +67,7 @@ export async function POST(req) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // Serialize capacity checks across concurrent registrations.
+      // Serialize capacity checks across concurrent registrations for this event.
       await tx.$executeRaw`SELECT id FROM "Event" WHERE id = ${eventId} FOR UPDATE`;
 
       const event = await tx.event.findUnique({
@@ -74,7 +75,7 @@ export async function POST(req) {
         include: { _count: { select: { registrations: true } } },
       });
       if (!event || event.archived || event.status === "Suspended") {
-        return { error: { message: "Event not found", status: 404, code: "NOT_FOUND" } };
+        return { error: { message: "Event not found or unavailable", status: 404, code: "NOT_FOUND" } };
       }
 
       const existing = await tx.registration.findUnique({
@@ -82,6 +83,18 @@ export async function POST(req) {
       });
       if (existing) {
         return { existing, event };
+      }
+
+      let tier = null;
+      if (ticketTierId) {
+        await tx.$executeRaw`SELECT id FROM "TicketTier" WHERE id = ${ticketTierId} FOR UPDATE`;
+        tier = await tx.ticketTier.findUnique({ where: { id: ticketTierId } });
+        if (!tier || tier.eventId !== eventId) {
+          return { error: { message: "Selected ticket tier is invalid for this event", status: 400, code: "INVALID_TIER" } };
+        }
+        if (tier.available <= 0) {
+          return { error: { message: "Selected ticket tier is sold out", status: 409, code: "TIER_SOLD_OUT" } };
+        }
       }
 
       const currentCount = event._count?.registrations || 0;
@@ -95,11 +108,19 @@ export async function POST(req) {
         data: {
           eventId,
           userId: auth.user.id,
+          ticketTierId: tier ? tier.id : null,
           teamName,
           status,
           checkInStatus: false,
         },
       });
+
+      if (tier && status === "Confirmed") {
+        await tx.ticketTier.update({
+          where: { id: tier.id },
+          data: { available: { decrement: 1 } },
+        });
+      }
 
       return { registration, event };
     });

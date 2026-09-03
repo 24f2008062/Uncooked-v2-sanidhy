@@ -46,7 +46,12 @@ export function rateLimit(key, limit, windowMs) {
 export async function rateLimitAsync(key, limit, windowMs) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const isProd = process.env.NODE_ENV === "production";
+
   if (!url || !token) {
+    if (isProd) {
+      console.warn(`[SECURITY_WARN] Upstash Redis not configured in production. Rate limit key "${key}" using instance-local memory fallback.`);
+    }
     return memoryLimit(key, limit, windowMs);
   }
 
@@ -60,11 +65,13 @@ export async function rateLimitAsync(key, limit, windowMs) {
       cache: "no-store",
     });
     if (!incrRes.ok) {
+      if (isProd) console.error(`[SECURITY_WARN] Upstash Redis INCR failed (${incrRes.status}) for key "${key}". Falling back to memory.`);
       return memoryLimit(key, limit, windowMs);
     }
     const incrJson = await incrRes.json();
     const count = Number(incrJson.result ?? incrJson);
     if (!Number.isFinite(count)) {
+      if (isProd) console.error(`[SECURITY_WARN] Upstash Redis returned invalid count for key "${key}". Falling back to memory.`);
       return memoryLimit(key, limit, windowMs);
     }
     if (count === 1) {
@@ -83,7 +90,8 @@ export async function rateLimitAsync(key, limit, windowMs) {
       retryAfterSec: windowSec,
       backend: "redis",
     };
-  } catch {
+  } catch (err) {
+    if (isProd) console.error(`[SECURITY_WARN] Upstash Redis fetch error for key "${key}":`, err.message);
     return memoryLimit(key, limit, windowMs);
   }
 }

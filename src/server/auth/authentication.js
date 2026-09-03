@@ -49,6 +49,31 @@ export async function getAuthUserAndProfile() {
       select: PUBLIC_USER_SELECT,
     });
 
+    if (!user) {
+      // 1b. Fallback resolution by User.id === authUser.id (SQL trigger mapped ID)
+      const userById = await prisma.user.findUnique({
+        where: { id: authUser.id },
+        select: PUBLIC_USER_SELECT,
+      });
+
+      if (userById) {
+        if (!userById.authUserId) {
+          try {
+            user = await prisma.user.update({
+              where: { id: userById.id },
+              data: { authUserId: authUser.id },
+              select: PUBLIC_USER_SELECT,
+            });
+            console.log(`[AUTH_IDENTITY_AUTO_HEAL] Linked authUserId for User.id: ${userById.id}`);
+          } catch (healErr) {
+            user = userById;
+          }
+        } else {
+          user = userById;
+        }
+      }
+    }
+
     if (user) {
       if (isAccountBlocked(user)) {
         console.warn(`[AUTH_RESOLVE] Account blocked for userId: ${user.id} authUserId: ${authUser.id}`);

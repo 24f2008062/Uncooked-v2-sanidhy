@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sendAdminBroadcastEmail } from "@/lib/email/service";
-import { requireSuperAdmin } from "@/server/http/guards";
+import { requireSuperAdmin, enforceMutationGuards } from "@/server/http/guards";
 
 export async function GET(req) {
   try {
@@ -26,6 +26,13 @@ export async function POST(req) {
     const auth = await requireSuperAdmin();
     if (auth.error) return auth.error;
     const user = auth.user; // Prisma User entity
+
+    const blocked = await enforceMutationGuards(req, {
+      rateKey: "rl_admin_communications",
+      limit: 5,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (blocked) return blocked;
 
     const { audience, subject, message, targetEmails, mediaUrl } = await req.json();
 

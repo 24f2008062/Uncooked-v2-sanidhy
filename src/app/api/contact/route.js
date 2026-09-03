@@ -14,6 +14,15 @@ const CATEGORIES = new Set([
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function sanitizeText(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 export async function POST(req) {
   try {
     const blocked = await enforceMutationGuards(req, {
@@ -26,14 +35,17 @@ export async function POST(req) {
     const parsed = await readJson(req);
     if (parsed.error) return parsed.error;
     const body = parsed.body;
-    const name = String(body.name || "").trim().slice(0, 80);
+    const rawName = String(body.name || "").trim().slice(0, 80);
     const email = String(body.email || "").toLowerCase().trim();
     const category = CATEGORIES.has(body.category) ? body.category : "General Inquiry";
-    const message = String(body.message || "").trim().slice(0, 4000);
+    const rawMessage = String(body.message || "").trim().slice(0, 4000);
 
-    if (!name || !EMAIL_RE.test(email) || !message) {
+    if (!rawName || !EMAIL_RE.test(email) || !rawMessage) {
       return jsonError("Name, valid email, and message are required", 400);
     }
+
+    const name = sanitizeText(rawName);
+    const message = sanitizeText(rawMessage);
 
     await prisma.contactMessage.create({
       data: {
