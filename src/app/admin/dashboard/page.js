@@ -13,11 +13,19 @@ import {
   Clock, 
   RefreshCw,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Briefcase,
+  ExternalLink,
+  MapPin,
+  Building2,
+  ArrowRight
 } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminDashboardPage() {
   const [telemetry, setTelemetry] = useState(null);
+  const [recentEvents, setRecentEvents] = useState([]);
+  const [recentOpportunities, setRecentOpportunities] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [killSwitch, setKillSwitch] = useState(false);
@@ -32,6 +40,8 @@ export default function AdminDashboardPage() {
       const data = payload.data || payload;
       if (res.ok) {
         setTelemetry(data.telemetry);
+        setRecentEvents(data.recentEvents || []);
+        setRecentOpportunities(data.recentOpportunities || []);
         setAuditLogs(data.auditLogs || []);
         setKillSwitch(data.telemetry?.killSwitchActive || false);
       }
@@ -79,13 +89,13 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
       {/* Header Title */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Operations & Telemetry</h1>
           <p className="text-xs text-gray-400 mt-1">
-            Real-time platform metrics, operational health, and system governance.
+            Real-time platform metrics, live event catalog, opportunities, and system governance.
           </p>
         </div>
         <button
@@ -139,61 +149,166 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Telemetry Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Users Card */}
         <div className="p-5 bg-[#101014] border border-[#1e1e26] rounded-2xl">
-          <div className="flex items-center justify-between text-gray-400 mb-3">
+          <div className="flex items-center justify-between text-gray-400 mb-2">
             <span className="text-xs font-medium uppercase tracking-wider">Total Accounts</span>
             <Users className="w-4 h-4 text-blue-400" />
           </div>
-          <p className="text-3xl font-extrabold text-white">
+          <p className="text-2xl font-extrabold text-white">
             {loading ? "..." : telemetry?.totalUsers ?? 0}
           </p>
-          <div className="flex items-center gap-1 mt-2 text-[11px] text-gray-500">
-            <span>Verified Users in Supabase DB</span>
+          <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-500">
+            <span>Verified Users</span>
           </div>
         </div>
 
         {/* Total Events Card */}
         <div className="p-5 bg-[#101014] border border-[#1e1e26] rounded-2xl">
-          <div className="flex items-center justify-between text-gray-400 mb-3">
-            <span className="text-xs font-medium uppercase tracking-wider">Published Events</span>
+          <div className="flex items-center justify-between text-gray-400 mb-2">
+            <span className="text-xs font-medium uppercase tracking-wider">Campus Events</span>
             <Calendar className="w-4 h-4 text-amber-400" />
           </div>
-          <p className="text-3xl font-extrabold text-white">
+          <p className="text-2xl font-extrabold text-white">
             {loading ? "..." : telemetry?.totalEvents ?? 0}
           </p>
-          <div className="flex items-center gap-1 mt-2 text-[11px] text-gray-500">
-            <span>Active & Archived Events</span>
+          <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-500">
+            <span>Active & Published</span>
+          </div>
+        </div>
+
+        {/* Total Opportunities Card */}
+        <div className="p-5 bg-[#101014] border border-[#1e1e26] rounded-2xl">
+          <div className="flex items-center justify-between text-gray-400 mb-2">
+            <span className="text-xs font-medium uppercase tracking-wider">Opportunities</span>
+            <Briefcase className="w-4 h-4 text-purple-400" />
+          </div>
+          <p className="text-2xl font-extrabold text-white">
+            {loading ? "..." : telemetry?.totalOpportunities ?? 0}
+          </p>
+          <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-500">
+            <span>Internships & Bounties</span>
           </div>
         </div>
 
         {/* Total Registrations Card */}
         <div className="p-5 bg-[#101014] border border-[#1e1e26] rounded-2xl">
-          <div className="flex items-center justify-between text-gray-400 mb-3">
-            <span className="text-xs font-medium uppercase tracking-wider">Total Ticket RSVPs</span>
+          <div className="flex items-center justify-between text-gray-400 mb-2">
+            <span className="text-xs font-medium uppercase tracking-wider">Total RSVPs</span>
             <Ticket className="w-4 h-4 text-emerald-400" />
           </div>
-          <p className="text-3xl font-extrabold text-white">
+          <p className="text-2xl font-extrabold text-white">
             {loading ? "..." : telemetry?.totalRegistrations ?? 0}
           </p>
-          <div className="flex items-center gap-1 mt-2 text-[11px] text-gray-500">
-            <span>Attendee Registrations</span>
+          <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-500">
+            <span>Registrations</span>
           </div>
         </div>
 
         {/* Pending Host Applications */}
         <div className="p-5 bg-[#101014] border border-[#1e1e26] rounded-2xl">
-          <div className="flex items-center justify-between text-gray-400 mb-3">
-            <span className="text-xs font-medium uppercase tracking-wider">Pending Host KYC</span>
+          <div className="flex items-center justify-between text-gray-400 mb-2">
+            <span className="text-xs font-medium uppercase tracking-wider">Pending KYC</span>
             <FileCheck className="w-4 h-4 text-purple-400" />
           </div>
-          <p className="text-3xl font-extrabold text-white">
+          <p className="text-2xl font-extrabold text-white">
             {loading ? "..." : telemetry?.pendingApplications ?? 0}
           </p>
-          <div className="flex items-center gap-1 mt-2 text-[11px] text-purple-400 font-medium">
-            <span>Awaiting Review Desk</span>
+          <div className="flex items-center gap-1 mt-1 text-[11px] text-purple-400 font-medium">
+            <span>Host Applications</span>
           </div>
+        </div>
+      </div>
+
+      {/* LIVE RECENT EVENTS AND OPPORTUNITIES SECTIONS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Events Widget */}
+        <div className="bg-[#101014] border border-[#1e1e26] p-6 rounded-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-[#1e1e26] pb-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-amber-400" />
+              <span>Live Campus Events Catalog</span>
+            </h3>
+            <Link
+              href="/admin/events"
+              className="text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1 transition"
+            >
+              Manage All Events <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {recentEvents.length === 0 ? (
+            <p className="text-xs text-gray-500 italic py-4">No active events found in database.</p>
+          ) : (
+            <div className="space-y-3">
+              {recentEvents.map((evt) => (
+                <div key={evt.id} className="p-3 bg-[#141419] border border-[#22222e] rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-3">
+                    {evt.bannerUrl ? (
+                      <img src={evt.bannerUrl} alt="" className="w-9 h-9 rounded-lg object-cover border border-[#2a2a3a]" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold flex items-center justify-center">
+                        {evt.title.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-bold text-white truncate max-w-[180px] sm:max-w-[220px]">{evt.title}</p>
+                      <p className="text-[11px] text-gray-400">{evt.category || "General"} &bull; {new Date(evt.date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      {evt._count?.registrations || 0} / {evt.capacity} seats
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Opportunities Widget */}
+        <div className="bg-[#101014] border border-[#1e1e26] p-6 rounded-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-[#1e1e26] pb-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-purple-400" />
+              <span>Opportunities & Bounties Catalog</span>
+            </h3>
+            <Link
+              href="/admin/opportunities"
+              className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 transition"
+            >
+              Manage Opportunities <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {recentOpportunities.length === 0 ? (
+            <p className="text-xs text-gray-500 italic py-4">No active opportunities found in database.</p>
+          ) : (
+            <div className="space-y-3">
+              {recentOpportunities.map((opp) => (
+                <div key={opp.id} className="p-3 bg-[#141419] border border-[#22222e] rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold flex items-center justify-center">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-white truncate max-w-[180px] sm:max-w-[220px]">{opp.title}</p>
+                      <p className="text-[11px] text-gray-400">{opp.company} &bull; {opp.type}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                      {opp._count?.applications || 0} Apps
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
