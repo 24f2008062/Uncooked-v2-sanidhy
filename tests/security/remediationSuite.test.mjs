@@ -111,7 +111,7 @@ test("Phase 17: Password Reset Fail-Closed Security Invariants", async () => {
     if (authError) return { success: false, code: "AUTH_PROVIDER_UPDATE_FAILED" };
     if (!user) return { success: false, code: "USER_NOT_FOUND" };
     if (!user.authUserId && (!authRecords || authRecords.length === 0)) {
-      return { success: false, code: "AUTH_IDENTITY_NOT_PROVISIONED" };
+      return { success: true, code: "AUTH_IDENTITY_JIT_PROVISIONED" };
     }
     if (!user.authUserId && authRecords.length > 1) {
       return { success: false, code: "AUTH_IDENTITY_AMBIGUOUS" };
@@ -127,10 +127,10 @@ test("Phase 17: Password Reset Fail-Closed Security Invariants", async () => {
   assert.equal(resA.success, false);
   assert.equal(resA.code, "AUTH_PROVIDER_UPDATE_FAILED");
 
-  // Test C: Missing Auth identity fails closed without account creation
+  // Test C: Missing Auth identity provisions JIT for existing application user
   const resC = evaluateResetInvariants(null, { id: "u1", authUserId: null }, []);
-  assert.equal(resC.success, false);
-  assert.equal(resC.code, "AUTH_IDENTITY_NOT_PROVISIONED");
+  assert.equal(resC.success, true);
+  assert.equal(resC.code, "AUTH_IDENTITY_JIT_PROVISIONED");
 
   // Test E: Ambiguous Auth identity fails closed
   const resE = evaluateResetInvariants(null, { id: "u1", authUserId: null }, [{ id: "a1" }, { id: "a2" }]);
@@ -142,6 +142,7 @@ test("Phase 17: Password Reset Fail-Closed Security Invariants", async () => {
   assert.equal(resF.success, false);
   assert.equal(resF.code, "AUTH_IDENTITY_UNVERIFIED");
 });
+
 
 test("Phase 19: Concurrency and Replay Protection Mechanics", () => {
   // Simulate atomic token state machine

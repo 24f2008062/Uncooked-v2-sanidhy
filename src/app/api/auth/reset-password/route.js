@@ -124,16 +124,38 @@ export async function POST(req) {
       }
 
       if (!authRecords || authRecords.length === 0) {
-        console.error("[PASSWORD_RESET_FAILED]", {
-          reason: "AUTH_IDENTITY_NOT_PROVISIONED",
+        // Legacy user has no auth.users record yet. Provision identity JIT with new password.
+        console.log("[PASSWORD_RESET_PROVISION]", {
           applicationUserId: user.id,
           email: cleanEmail,
           timestamp: new Date().toISOString(),
         });
-        return jsonError("Password reset could not be completed for this account. Please request a new reset link or contact support.", 500);
-      }
 
-      if (authRecords.length > 1) {
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: cleanEmail,
+          password: passToUse,
+          email_confirm: true,
+          user_metadata: {
+            name: user.name || user.fullName || "User",
+            department: user.department,
+            role: user.role || "USER",
+          },
+        });
+
+        if (createError || !newUser?.user) {
+          console.error("[PASSWORD_RESET_FAILED]", {
+            reason: "AUTH_PROVISION_FAILED",
+            applicationUserId: user.id,
+            email: cleanEmail,
+            error: createError?.message,
+            timestamp: new Date().toISOString(),
+          });
+          return jsonError("Password reset could not be completed. Failed to provision authentication credentials.", 500);
+        }
+
+        targetAuthUserId = newUser.user.id;
+      } else if (authRecords.length > 1) {
+
         console.error("[PASSWORD_RESET_FAILED]", {
           reason: "AUTH_IDENTITY_AMBIGUOUS",
           applicationUserId: user.id,
