@@ -2,11 +2,6 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyPassword } from "@/server/utils/passwordUtils";
 import { createClient } from "@supabase/supabase-js";
-
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { verifyPassword } from "@/server/utils/passwordUtils";
-import { createClient } from "@supabase/supabase-js";
 import { enforceMutationGuards } from "@/server/http/guards";
 
 export async function POST(req) {

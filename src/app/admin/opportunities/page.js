@@ -9,6 +9,8 @@ import {
   Edit,
   Trash2,
   CheckCircle2,
+  XCircle,
+  Eye,
   AlertCircle,
   Building2,
   MapPin,
@@ -595,7 +597,7 @@ export default function AdminOpportunitiesPage() {
                       <p className="text-gray-400 text-[11px]">{app.user?.email} &bull; {app.user?.department || "General"}</p>
                       {app.coverNote && (
                         <p className="text-gray-300 bg-[#121218] p-2 rounded-lg text-[11px] mt-2 italic">
-                          "{app.coverNote}"
+                          &quot;{app.coverNote}&quot;
                         </p>
                       )}
                     </div>
