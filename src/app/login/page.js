@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { safeInternalPath } from "@/lib/safeRedirect";
 
@@ -16,21 +16,61 @@ function LoginForm() {
   const redirectTo = safeInternalPath(searchParams.get("redirectTo"), "/dashboard");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const supabase = createClient();
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "oauth_callback_failed") {
+      setErrorMsg("Google sign-in failed or was cancelled. Please try again.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
 
+    console.log("[AUTH_LOGIN] Login started");
+    console.log("[AUTH_LOGIN] Email:", formData.email);
+
     try {
-      const res = await signIn("credentials", {
-        redirect: false,
+      const loginRes = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
+      let error = loginRes.error;
 
-      if (res?.error) {
+      console.log("[AUTH_LOGIN] Success:", !loginRes.error);
+      console.log("[AUTH_LOGIN] User ID:", loginRes.data?.user?.id || null);
+      console.log("[AUTH_LOGIN] Session exists:", !!loginRes.data?.session);
+      console.log("[AUTH_LOGIN] Error code:", loginRes.error?.status || loginRes.error?.code || null);
+      console.log("[AUTH_LOGIN] Error message:", loginRes.error?.message || null);
+
+      // If standard login fails, try the JIT migration fallback
+      if (error && error.message.toLowerCase().includes("invalid login credentials")) {
+        try {
+          const migrateRes = await fetch("/api/auth/migrate-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: formData.email, password: formData.password }),
+          });
+          
+          if (migrateRes.ok) {
+            // Migration successful! Their password is now updated in Supabase. Let's retry the login.
+            const retryLogin = await supabase.auth.signInWithPassword({
+              email: formData.email,
+              password: formData.password,
+            });
+            error = retryLogin.error;
+          }
+        } catch (migrateErr) {
+          console.error("Migration fallback failed:", migrateErr);
+        }
+      }
+
+      if (error) {
         setErrorMsg("Invalid email or password.");
         setLoading(false);
       } else {
@@ -91,7 +131,16 @@ function LoginForm() {
             {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
               <button
                 type="button"
-                onClick={() => signIn("google")}
+                onClick={async () => {
+                  const origin = window.location.origin;
+                  const target = safeInternalPath(redirectTo, "/dashboard");
+                  await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: {
+                      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(target)}`,
+                    },
+                  });
+                }}
                 className="w-full py-3.5 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-3 transition-all duration-300 bg-white hover:bg-gray-100 text-black"
               >
                 Login with Google
@@ -114,14 +163,22 @@ function LoginForm() {
 
               <div className="relative group">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   autoComplete="current-password"
                   placeholder="Password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-5 py-3.5 text-[15px] rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6] group-hover:border-[#333]"
+                  className="w-full px-5 py-3.5 pr-12 text-[15px] rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6] group-hover:border-[#333]"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
 
               <div className="text-right">

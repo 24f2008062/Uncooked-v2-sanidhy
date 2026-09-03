@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "@/components/providers/SupabaseProvider";
+import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sparkles, Moon, Sun, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useTheme } from "@/components/theme/ThemeProvider";
@@ -12,6 +13,7 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 export default function Navbar({ forceDarkTop = false }) {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const supabase = createClient();
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -57,16 +59,13 @@ export default function Navbar({ forceDarkTop = false }) {
     };
   }, [mobileOpen]);
 
-  const currentUser = session?.user || {
-    name: "Admin User",
-    email: "admin@uncooked.dev",
-    role: "SUPER_ADMIN",
-  };
-  const isLoggedIn = true;
-  const userName = currentUser?.name || currentUser?.email?.split("@")[0] || "Admin";
+  const isLoggedIn = status === "authenticated";
+  const currentUser = session?.user;
+  const userName = currentUser?.name || currentUser?.email?.split("@")[0] || "User";
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
+    await supabase.auth.signOut();
+    router.push("/");
   };
 
   const navLinks = [

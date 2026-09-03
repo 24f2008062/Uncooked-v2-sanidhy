@@ -11,6 +11,7 @@ datasource db {
 
 model User {
   id                   String    @id @default(cuid())
+  authUserId           String?   @unique
   role                 String    @default("USER") // USER | ORGANIZER | SUPER_ADMIN
   permissions          String?
   name                 String?

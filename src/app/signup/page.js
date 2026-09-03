@@ -3,15 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, User, Mail, MapPin, Lock, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, User, Mail, MapPin, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 
 export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const supabase = createClient();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -27,41 +29,27 @@ export default function SignupPage() {
     setErrorMsg("");
 
     try {
-      // 1. Call backend registration endpoint
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: formData.name,
-          email: formData.email?.trim().toLowerCase(),
-          password: formData.password,
-          department: formData.location,
-          ageAttested18: formData.ageAttested18,
-          acceptTerms: formData.acceptTerms,
-        }),
+      // Register with Supabase directly
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+            department: formData.location,
+          }
+        }
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setErrorMsg(data.error?.message || data.error || "Failed to create account");
+      if (error) {
+        setErrorMsg(error.message);
         setLoading(false);
         return;
       }
 
-      // 2. Automatically log in after successful registration
-      const loginRes = await signIn("credentials", {
-        redirect: false,
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (loginRes?.error) {
-        router.push("/login");
-      } else {
-        router.push("/dashboard");
-        router.refresh();
-      }
+      // If successful, push to dashboard
+      router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       console.error("Signup submission error:", err);
       setErrorMsg("An unexpected error occurred. Please try again.");
@@ -116,7 +104,15 @@ export default function SignupPage() {
             {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
               <button
                 type="button"
-                onClick={() => signIn("google")}
+                onClick={async () => {
+                  const origin = window.location.origin;
+                  await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: {
+                      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/dashboard")}`,
+                    },
+                  });
+                }}
                 className="w-full py-3 rounded-2xl text-[14px] font-semibold bg-white text-black"
               >
                 Sign Up with Google
@@ -166,19 +162,26 @@ export default function SignupPage() {
                 />
               </div>
 
-              {/* Password */}
               <div className="relative group">
                 <Lock className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   autoComplete="new-password"
                   placeholder="Password (min 12 chars, letter + number)"
                   minLength={12}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-11 pr-5 py-3 text-[14px] rounded-xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6]"
+                  className="w-full pl-11 pr-12 py-3 text-[14px] rounded-xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6]"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
 
               <label className="flex items-start gap-2 text-[11px] text-gray-400">

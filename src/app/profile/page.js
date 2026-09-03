@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "@/components/providers/SupabaseProvider";
+import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -30,6 +31,7 @@ function parseInterests(value) {
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
+  const supabase = createClient();
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({
     fullName: "",
@@ -136,7 +138,8 @@ export default function ProfilePage() {
       setError(payload.error?.message || "Erasure failed");
       return;
     }
-    await signOut({ callbackUrl: "/" });
+    await supabase.auth.signOut();
+    window.location.href = "/";
   };
 
   return (

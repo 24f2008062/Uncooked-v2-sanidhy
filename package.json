@@ -14,6 +14,8 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.9.1",
+    "@supabase/ssr": "^0.12.5",
+    "@supabase/supabase-js": "^2.113.0",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",
@@ -21,7 +23,6 @@
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.34.0",
     "next": "16.3.2",
-    "next-auth": "^4.24.15",
     "nodemailer": "^9.1.1",
     "ogl": "^1.0.11",
     "pg": "^8.23.0",
@@ -48,9 +49,6 @@
   },
   "overrides": {
     "deepmerge-ts": "^8.0.1",
-    "mysql2": "^3.22.0",
-    "next-auth": {
-      "nodemailer": "$nodemailer"
-    }
+    "mysql2": "^3.22.0"
   }
 }
