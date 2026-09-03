@@ -73,20 +73,55 @@ export async function POST(req) {
       },
     });
 
-    // Also sync password with Supabase Auth if authUserId is set
-    if (user.authUserId) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder-service-role-key";
+    // Also sync password with Supabase Auth
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-      if (!supabaseUrl.includes("placeholder")) {
-        try {
-          const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-          await supabaseAdmin.auth.admin.updateUserById(user.authUserId, {
-            password: passToUse,
-          });
-        } catch (supaErr) {
-          console.warn("[ResetPassword] Supabase password update warning:", supaErr.message);
+    if (supabaseUrl && supabaseServiceKey && !supabaseUrl.includes("placeholder")) {
+      try {
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+        let targetAuthUserId = user.authUserId;
+
+        // If authUserId was not set, search auth.users by email
+        if (!targetAuthUserId) {
+          const authRecords = await prisma.$queryRaw`SELECT id FROM auth.users WHERE LOWER(email) = ${cleanEmail} LIMIT 1`;
+          if (authRecords && authRecords.length > 0) {
+            targetAuthUserId = authRecords[0].id;
+          }
         }
+
+        if (targetAuthUserId) {
+          await supabaseAdmin.auth.admin.updateUserById(targetAuthUserId, {
+            password: passToUse,
+            email_confirm: true,
+          });
+
+          if (!user.authUserId) {
+            await prisma.user.update({
+              where: { email: cleanEmail },
+              data: { authUserId: targetAuthUserId },
+            });
+          }
+        } else {
+          // Create Supabase Auth user if not present
+          const { data: newAuthUser } = await supabaseAdmin.auth.admin.createUser({
+            email: cleanEmail,
+            password: passToUse,
+            email_confirm: true,
+            user_metadata: {
+              name: user.name || user.fullName || "User",
+            },
+          });
+
+          if (newAuthUser?.user) {
+            await prisma.user.update({
+              where: { email: cleanEmail },
+              data: { authUserId: newAuthUser.user.id },
+            });
+          }
+        }
+      } catch (supaErr) {
+        console.warn("[ResetPassword] Supabase password update warning:", supaErr.message);
       }
     }
 

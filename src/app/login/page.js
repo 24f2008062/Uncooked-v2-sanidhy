@@ -71,7 +71,21 @@ function LoginForm() {
       }
 
       if (error) {
-        setErrorMsg("Invalid email or password.");
+        try {
+          const checkRes = await fetch("/api/auth/check-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: formData.email }),
+          });
+          const checkData = await checkRes.json();
+          if (checkData.success && checkData.exists === false) {
+            setErrorMsg("No account found with this email address. Please check your typing or register a new account.");
+          } else {
+            setErrorMsg("Incorrect password. Please verify your password or click 'Forgot password?' to reset.");
+          }
+        } catch {
+          setErrorMsg("Invalid email or password. Please try again.");
+        }
         setLoading(false);
       } else {
         router.push(redirectTo);
