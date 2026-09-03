@@ -53,9 +53,8 @@ export async function POST(req) {
       },
     });
 
-    const host = req.headers.get("host") || "localhost:3000";
-    const protocol = req.headers.get("x-forwarded-proto") || "http";
-    const resetUrl = `${protocol}://${host}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || `${req.headers.get("x-forwarded-proto") || "https"}://${req.headers.get("host") || "localhost:3000"}`;
+    const resetUrl = `${baseUrl.replace(/\/$/, "")}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
     await sendPasswordResetEmail({
       email,

@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.EMAIL_FROM || "UNCOOKED <support@uncooked.in>";
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || process.env.SMTP_USER || "support@uncooked.in";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000").replace(/\/$/, "");
 
 // Helper to wrap content in a unified modern dark email template
 function buildEmailTemplate({ title, preheader, bodyHtml, actionButton }) {
