@@ -35,13 +35,28 @@ async function main() {
   console.log("🌱 Starting Uncooked Portal database seeding...");
 
   // 1. Seed Accounts
+  const seedEmails = ["admin@uncooked.edu", "host@uncooked.edu", "student@uncooked.edu"];
+  for (const email of seedEmails) {
+    try {
+      await prisma.$executeRaw`DELETE FROM auth.users WHERE LOWER(email) = ${email}`;
+    } catch {
+      // Ignore if auth.users is unavailable
+    }
+  }
+
   const adminPassword = await hashPassword("AdminSecret123!");
   const hostPassword = await hashPassword("HostSecret123!");
   const studentPassword = await hashPassword("StudentSecret123!");
 
   const superAdmin = await prisma.user.upsert({
     where: { email: "admin@uncooked.edu" },
-    update: {},
+    update: {
+      passwordHash: adminPassword,
+      authUserId: null,
+      role: "SUPER_ADMIN",
+      onboardingCompleted: true,
+      emailVerified: new Date(),
+    },
     create: {
       email: "admin@uncooked.edu",
       name: "Super Admin",
@@ -55,7 +70,13 @@ async function main() {
 
   const hostUser = await prisma.user.upsert({
     where: { email: "host@uncooked.edu" },
-    update: {},
+    update: {
+      passwordHash: hostPassword,
+      authUserId: null,
+      role: "ORGANIZER",
+      onboardingCompleted: true,
+      emailVerified: new Date(),
+    },
     create: {
       email: "host@uncooked.edu",
       name: "Campus Cultural Board",
@@ -69,7 +90,13 @@ async function main() {
 
   const studentUser = await prisma.user.upsert({
     where: { email: "student@uncooked.edu" },
-    update: {},
+    update: {
+      passwordHash: studentPassword,
+      authUserId: null,
+      role: "USER",
+      onboardingCompleted: true,
+      emailVerified: new Date(),
+    },
     create: {
       email: "student@uncooked.edu",
       name: "Alex Rivera",

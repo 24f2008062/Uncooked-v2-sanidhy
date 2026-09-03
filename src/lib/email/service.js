@@ -275,11 +275,18 @@ export async function sendSupportTicketNotification({ to, ticketId, subject, cat
 /**
  * 4. Admin Broadcast & Direct Announcements
  */
-export async function sendAdminBroadcastEmail({ to, subject, message, senderName }) {
+export async function sendAdminBroadcastEmail({ to, subject, message, mediaUrl, senderName }) {
+  const mediaHtml = mediaUrl ? `
+    <div style="margin: 20px 0; text-align: center;">
+      <img src="${mediaUrl}" alt="Announcement Banner" style="max-width: 100%; max-height: 320px; border-radius: 12px; border: 1px solid #27272a; object-fit: cover;" />
+    </div>
+  ` : "";
+
   const html = buildEmailTemplate({
     title: subject,
     bodyHtml: `
       <h1>📢 Announcement from ${senderName || "Uncooked Admin"}</h1>
+      ${mediaHtml}
       <div style="font-size: 15px; line-height: 1.7; color: #d4d4d8; margin: 20px 0;">
         ${message.replace(/\n/g, "<br/>")}
       </div>

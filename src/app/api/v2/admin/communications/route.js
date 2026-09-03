@@ -34,7 +34,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
     }
 
-    const { audience, subject, message, targetEmails } = await req.json();
+    const { audience, subject, message, targetEmails, mediaUrl } = await req.json();
 
     if (!subject || !message) {
       return NextResponse.json({ error: "Subject and message content are required" }, { status: 400 });
@@ -72,6 +72,7 @@ export async function POST(req) {
           to: email,
           subject,
           message,
+          mediaUrl,
           senderName: user.user_metadata?.name || "Uncooked Admin Desk",
         });
         successCount++;

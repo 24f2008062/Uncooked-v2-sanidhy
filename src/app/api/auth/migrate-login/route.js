@@ -82,6 +82,11 @@ export async function POST(req) {
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(existingAuthId, {
         password: password,
         email_confirm: true,
+        user_metadata: {
+          name: user.name || user.fullName || "User",
+          department: user.department,
+          role: user.role || "USER",
+        },
       });
 
       if (updateError) {
@@ -97,7 +102,11 @@ export async function POST(req) {
         email: cleanEmail,
         password: password,
         email_confirm: true,
-        user_metadata: { name: user.name || user.fullName || "User", department: user.department }
+        user_metadata: {
+          name: user.name || user.fullName || "User",
+          department: user.department,
+          role: user.role || "USER",
+        },
       });
 
       if (createError) {

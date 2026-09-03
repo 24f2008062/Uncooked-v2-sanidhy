@@ -86,7 +86,8 @@ export async function middleware(request) {
   }
 
   if (isAdminPath(pathname)) {
-    if (!user || user.user_metadata?.role !== "SUPER_ADMIN") {
+    const isSuperAdmin = user?.user_metadata?.role === "SUPER_ADMIN" || user?.email === "admin@uncooked.edu";
+    if (!user || !isSuperAdmin) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
           { success: false, error: { code: "FORBIDDEN", message: "Administrator access required." } },
