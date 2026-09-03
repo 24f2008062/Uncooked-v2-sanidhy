@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
 import { enforceMutationGuards } from "@/server/http/guards";
 import { getClientIp, hashIp } from "@/server/http/ip";
+import { sendContactNotification } from "@/lib/email/service";
 
 const CATEGORIES = new Set([
   "Host Verification",
@@ -42,6 +43,14 @@ export async function POST(req) {
         message,
         ipHash: hashIp(getClientIp(req)),
       },
+    });
+
+    // Dispatch email notification to support team and auto-reply to user
+    await sendContactNotification({
+      name,
+      email,
+      category,
+      message,
     });
 
     return jsonOk({
