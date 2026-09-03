@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/components/providers/SupabaseProvider";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
@@ -29,7 +29,7 @@ const STATUS_COPY = {
     icon: AlertCircle,
     color: "text-orange-300",
     title: "More information requested",
-    body: "Update your notes and resubmit. Do not upload identity documents — Aadhaar/PAN uploads are not accepted on this form.",
+    body: "Update your notes and resubmit. Do not upload identity documents. Aadhaar/PAN uploads are not accepted on this form.",
   },
   APPROVED: {
     icon: CheckCircle2,

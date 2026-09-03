@@ -7,8 +7,8 @@ export const LEGAL = {
   country: "India",
   governingLaw: "the laws of India",
   grievanceOfficerName: process.env.GRIEVANCE_OFFICER_NAME || "Grievance Officer",
-  grievanceEmail: process.env.GRIEVANCE_EMAIL || "privacy@uncooked.dev",
-  supportEmail: process.env.SUPPORT_EMAIL || "support@uncooked.dev",
+  grievanceEmail: process.env.GRIEVANCE_EMAIL || "support@uncooked.in",
+  supportEmail: process.env.SUPPORT_EMAIL || "support@uncooked.in",
   termsVersion: TERMS_VERSION,
   privacyVersion: PRIVACY_VERSION,
   dataFiduciaryNotice:

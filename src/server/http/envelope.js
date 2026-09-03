@@ -16,6 +16,10 @@ export function safeError(error, fallback = "Request failed") {
   const name = String(error?.name || "");
   const msg = String(error?.message || "");
   console.error("[api]", code || name || "ERR");
+  // Fire-and-forget telemetry (no-op without SENTRY_DSN)
+  import("@/server/observability/sentry")
+    .then((m) => m.captureException(error, { code, name }))
+    .catch(() => {});
   if (
     name.includes("PrismaClientInitialization") ||
     name.includes("PrismaClientRustPanic") ||

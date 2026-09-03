@@ -179,14 +179,14 @@ export default function HelpPage() {
             </div>
             
             <div className="relative z-10 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <button className="btn-secondary px-6 py-3 flex items-center justify-center gap-2">
+              <a href="/contact" className="btn-secondary px-6 py-3 flex items-center justify-center gap-2">
                 <MessageSquare className="w-4 h-4" />
-                Live Chat
-              </button>
-              <button className="btn-primary px-6 py-3 flex items-center justify-center gap-2">
+                Contact Form
+              </a>
+              <a href="mailto:support@uncooked.in" className="btn-primary px-6 py-3 flex items-center justify-center gap-2">
                 <Mail className="w-4 h-4" />
-                Email Support
-              </button>
+                support@uncooked.in
+              </a>
             </div>
           </div>
 

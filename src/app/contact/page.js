@@ -21,21 +21,9 @@ import {
 const SUPPORT_CHANNELS = [
   {
     icon: <Mail className="w-5 h-5 text-orange-500" />,
-    title: "Host Support",
-    email: "support@uncooked.dev",
-    sub: "Response under 2 hours for active event hosts.",
-  },
-  {
-    icon: <Building2 className="w-5 h-5 text-purple-500" />,
-    title: "Campus Partnerships",
-    email: "partners@uncooked.dev",
-    sub: "University councils, startup cells & club alliances.",
-  },
-  {
-    icon: <MessageSquare className="w-5 h-5 text-emerald-500" />,
-    title: "Community Discord",
-    email: "discord.gg/uncooked",
-    sub: "Connect with 5,000+ student organizers live.",
+    title: "Official Support & Inquiries",
+    email: "support@uncooked.in",
+    sub: "Direct channel for hosts, event ticketing, campus partnerships, and technical help.",
   },
 ];
 

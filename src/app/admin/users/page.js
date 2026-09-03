@@ -11,18 +11,35 @@ import {
   Edit3, 
   Check, 
   X,
-  AlertCircle
+  ArrowUpDown,
+  Mail,
+  KeyRound,
+  Eye,
+  Info,
+  Calendar,
+  Building,
+  CheckCircle2,
+  AlertTriangle,
+  Send
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function AdminUserGovernancePage() {
+  const router = useRouter();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [roleDrawerOpen, setRoleDrawerOpen] = useState(false);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
+  
+  // Inspector Drawer & Action States
+  const [inspectorUser, setInspectorUser] = useState(null);
+  const [roleModalUser, setRoleModalUser] = useState(null);
   const [newRole, setNewRole] = useState("USER");
   const [actionLoading, setActionLoading] = useState(false);
+  const [noticeMsg, setNoticeMsg] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -30,6 +47,8 @@ export default function AdminUserGovernancePage() {
       const url = new URL("/api/v2/admin/users", window.location.origin);
       if (search) url.searchParams.set("search", search);
       if (roleFilter) url.searchParams.set("role", roleFilter);
+      url.searchParams.set("sortBy", sortBy);
+      url.searchParams.set("sortOrder", sortOrder);
 
       const res = await fetch(url.toString());
       const payload = await res.json();
@@ -42,7 +61,7 @@ export default function AdminUserGovernancePage() {
     } finally {
       setLoading(false);
     }
-  }, [search, roleFilter]);
+  }, [search, roleFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     let isMounted = true;
@@ -56,18 +75,28 @@ export default function AdminUserGovernancePage() {
     };
   }, [fetchUsers]);
 
+  const handleSortChange = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+  };
+
   const handleRoleElevate = async () => {
-    if (!selectedUser) return;
+    if (!roleModalUser) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/v2/admin/users/${selectedUser.id}/role`, {
+      const res = await fetch(`/api/v2/admin/users/${roleModalUser.id}/role`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: newRole }),
       });
       const data = await res.json();
       if (res.ok) {
-        setRoleDrawerOpen(false);
+        setNoticeMsg({ type: "success", text: `Updated ${roleModalUser.email} role to ${newRole}` });
+        setRoleModalUser(null);
         fetchUsers();
       } else {
         alert(data.error?.message || data.error || "Failed to update role");
@@ -91,7 +120,11 @@ export default function AdminUserGovernancePage() {
         body: JSON.stringify({ lock: !isLocked, hours: 24 }),
       });
       if (res.ok) {
+        setNoticeMsg({ type: "success", text: `Account ${action}ed successfully.` });
         fetchUsers();
+        if (inspectorUser?.id === user.id) {
+          setInspectorUser(null);
+        }
       } else {
         const data = await res.json();
         alert(data.error?.message || data.error || "Action failed");
@@ -101,8 +134,27 @@ export default function AdminUserGovernancePage() {
     }
   };
 
+  const handleSendResetPassword = async (email) => {
+    if (!confirm(`Send password reset email to ${email}?`)) return;
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setNoticeMsg({ type: "success", text: `Password reset link dispatched to ${email}` });
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to send reset email");
+      }
+    } catch (err) {
+      alert("Error triggering password reset");
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Page Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -111,37 +163,81 @@ export default function AdminUserGovernancePage() {
             <span>User Governance & Access Control</span>
           </h1>
           <p className="text-xs text-gray-400 mt-1">
-            Manage user accounts, elevate roles, grant administrative permissions, and lock compromised credentials.
+            Search, sort, audit, elevate roles, and inspect granular profile security for all platform users.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono px-3 py-1.5 rounded-xl bg-[#14141c] border border-[#242434] text-gray-300">
+            Total Matched: <strong className="text-white">{users.length}</strong>
+          </span>
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 bg-[#101014] p-3 border border-[#1e1e26] rounded-2xl">
+      {noticeMsg && (
+        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{noticeMsg.text}</span>
+          </div>
+          <button onClick={() => setNoticeMsg(null)} className="text-emerald-300 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Filters & Sorting Bar */}
+      <div className="flex flex-col md:flex-row items-center gap-3 bg-[#101014] p-3 border border-[#1e1e26] rounded-2xl">
+        {/* Search */}
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-3" />
           <input
             type="text"
-            placeholder="Search by name, email, or department..."
+            placeholder="Search by name, email, department, or club..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-[#16161c] border border-[#242430] focus:border-[var(--accent-orange)] rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-500 outline-none transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        {/* Filters */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <Filter className="w-4 h-4 text-gray-500 hidden sm:block" />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="w-full sm:w-40 bg-[#16161c] border border-[#242430] text-xs text-gray-300 rounded-xl px-3 py-2 outline-none cursor-pointer"
+            className="w-full md:w-36 bg-[#16161c] border border-[#242430] text-xs text-gray-300 rounded-xl px-3 py-2 outline-none cursor-pointer"
           >
             <option value="">All Roles</option>
             <option value="USER">USER</option>
             <option value="ORGANIZER">ORGANIZER</option>
             <option value="ADMIN">ADMIN</option>
-
+            <option value="SUPER_ADMIN">SUPER ADMIN</option>
           </select>
+
+          {/* Sort By Dropdown */}
+          <div className="flex items-center gap-1 bg-[#16161c] border border-[#242430] rounded-xl px-2 py-1">
+            <span className="text-[11px] text-gray-400 font-mono pl-1">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-transparent text-xs text-white outline-none cursor-pointer py-1"
+            >
+              <option value="createdAt" className="bg-[#16161c]">Joined Date</option>
+              <option value="fullName" className="bg-[#16161c]">Name</option>
+              <option value="email" className="bg-[#16161c]">Email</option>
+              <option value="role" className="bg-[#16161c]">Role</option>
+              <option value="department" className="bg-[#16161c]">Department</option>
+            </select>
+
+            <button
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              title={`Toggle direction (${sortOrder.toUpperCase()})`}
+              className="p-1 text-gray-400 hover:text-white rounded hover:bg-[#242434] transition-colors"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -151,19 +247,39 @@ export default function AdminUserGovernancePage() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-[#1e1e28] text-gray-400 font-mono uppercase tracking-wider bg-[#131318]">
-                <th className="py-3 px-4">User</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Department</th>
+                <th 
+                  onClick={() => handleSortChange("fullName")}
+                  className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
+                >
+                  User Name & Email {sortBy === "fullName" && (sortOrder === "asc" ? "↑" : "↓")}
+                </th>
+                <th 
+                  onClick={() => handleSortChange("role")}
+                  className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
+                >
+                  Role {sortBy === "role" && (sortOrder === "asc" ? "↑" : "↓")}
+                </th>
+                <th 
+                  onClick={() => handleSortChange("department")}
+                  className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
+                >
+                  Department / Club {sortBy === "department" && (sortOrder === "asc" ? "↑" : "↓")}
+                </th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Joined</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th 
+                  onClick={() => handleSortChange("createdAt")}
+                  className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
+                >
+                  Joined {sortBy === "createdAt" && (sortOrder === "asc" ? "↑" : "↓")}
+                </th>
+                <th className="py-3 px-4 text-right">Actions & Controls</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#171720]">
               {loading ? (
                 <tr>
                   <td colSpan="6" className="py-8 text-center text-gray-500 font-mono">
-                    Loading users...
+                    Fetching user records...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
@@ -179,7 +295,7 @@ export default function AdminUserGovernancePage() {
                     <tr key={u.id} className="hover:bg-[#14141c] transition-colors">
                       <td className="py-3.5 px-4">
                         <div>
-                          <p className="font-semibold text-white">{u.fullName || "Unnamed User"}</p>
+                          <p className="font-semibold text-white">{u.fullName || u.name || "Unnamed User"}</p>
                           <p className="text-[11px] text-gray-400 font-mono">{u.email}</p>
                         </div>
                       </td>
@@ -199,7 +315,7 @@ export default function AdminUserGovernancePage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-gray-400">
-                        {u.department || "General"}
+                        {u.department || u.clubAssociation || "General"}
                       </td>
                       <td className="py-3.5 px-4">
                         {isLocked ? (
@@ -216,18 +332,38 @@ export default function AdminUserGovernancePage() {
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Inspect Profile */}
                           <button
-                            onClick={() => {
-                              setSelectedUser(u);
-                              setNewRole(u.role);
-                              setRoleDrawerOpen(true);
-                            }}
-                            title="Edit Role & Access"
+                            onClick={() => setInspectorUser(u)}
+                            title="Inspect Detailed Profile"
                             className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252533] text-gray-300 transition-colors cursor-pointer"
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5 text-blue-400" />
                           </button>
+
+                          {/* Direct Email */}
+                          <button
+                            onClick={() => router.push(`/admin/communications?email=${encodeURIComponent(u.email)}`)}
+                            title="Compose Direct Email"
+                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252533] text-gray-300 transition-colors cursor-pointer"
+                          >
+                            <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                          </button>
+
+                          {/* Role Edit */}
+                          <button
+                            onClick={() => {
+                              setRoleModalUser(u);
+                              setNewRole(u.role);
+                            }}
+                            title="Edit Role & Permissions"
+                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252533] text-gray-300 transition-colors cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                          </button>
+
+                          {/* Account Lock/Unlock */}
                           <button
                             onClick={() => handleToggleLock(u)}
                             title={isLocked ? "Unlock Account" : "Lock Account"}
@@ -250,19 +386,107 @@ export default function AdminUserGovernancePage() {
         </div>
       </div>
 
+      {/* User Inspector Modal */}
+      {inspectorUser && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-xl w-full bg-[#121216] border border-[#252533] rounded-2xl p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-[#1e1e28] pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-blue-400" />
+                  <span>User Profile Control & Audit</span>
+                </h3>
+                <p className="text-xs text-gray-400 font-mono mt-0.5">{inspectorUser.email}</p>
+              </div>
+              <button onClick={() => setInspectorUser(null)} className="p-1 text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-3.5 bg-[#181822] border border-[#242434] rounded-xl space-y-2">
+                <p className="text-gray-400 font-mono text-[10px] uppercase tracking-wider">Account Information</p>
+                <div className="space-y-1">
+                  <p className="text-white font-semibold">{inspectorUser.fullName || inspectorUser.name || "N/A"}</p>
+                  <p className="text-gray-400 font-mono text-[11px]">{inspectorUser.email}</p>
+                  <p className="text-gray-400">Phone: {inspectorUser.phoneE164 || "Not provided"}</p>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-[#181822] border border-[#242434] rounded-xl space-y-2">
+                <p className="text-gray-400 font-mono text-[10px] uppercase tracking-wider">Campus Details</p>
+                <div className="space-y-1">
+                  <p className="text-white font-medium">Department: {inspectorUser.department || "General"}</p>
+                  <p className="text-gray-400">Club: {inspectorUser.clubAssociation || "None"}</p>
+                  <p className="text-gray-400">Onboarded: {inspectorUser.onboardingCompleted ? "Yes" : "No"}</p>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-[#181822] border border-[#242434] rounded-xl space-y-2">
+                <p className="text-gray-400 font-mono text-[10px] uppercase tracking-wider">Security & Auth</p>
+                <div className="space-y-1">
+                  <p className="text-white font-mono">Role: <strong className="text-amber-400">{inspectorUser.role}</strong></p>
+                  <p className="text-gray-400">Auth Migration: {inspectorUser.authUserId ? "Supabase Linked" : "Legacy DB"}</p>
+                  <p className="text-gray-400">Failed Logins: {inspectorUser.failedLoginAttempts || 0}</p>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-[#181822] border border-[#242434] rounded-xl space-y-2">
+                <p className="text-gray-400 font-mono text-[10px] uppercase tracking-wider">Timestamps</p>
+                <div className="space-y-1 font-mono text-[11px]">
+                  <p className="text-gray-300">Joined: {new Date(inspectorUser.createdAt).toLocaleString()}</p>
+                  <p className="text-gray-400">Last Active: {inspectorUser.lastLoginAt ? new Date(inspectorUser.lastLoginAt).toLocaleString() : "N/A"}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Panel */}
+            <div className="border-t border-[#1e1e28] pt-4 space-y-3">
+              <p className="text-xs font-bold text-white uppercase tracking-wider">Quick Actions</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  onClick={() => {
+                    const email = inspectorUser.email;
+                    setInspectorUser(null);
+                    router.push(`/admin/communications?email=${encodeURIComponent(email)}`);
+                  }}
+                  className="px-3 py-2 bg-[#1b1b26] border border-[#2a2a3a] hover:border-emerald-500 text-emerald-400 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Send Broadcast</span>
+                </button>
+
+                <button
+                  onClick={() => handleSendResetPassword(inspectorUser.email)}
+                  className="px-3 py-2 bg-[#1b1b26] border border-[#2a2a3a] hover:border-amber-500 text-amber-400 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Reset Password</span>
+                </button>
+
+                <button
+                  onClick={() => handleToggleLock(inspectorUser)}
+                  className="px-3 py-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500 text-red-400 hover:text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Toggle Lock</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Role Elevation Drawer / Modal */}
-      {roleDrawerOpen && selectedUser && (
+      {roleModalUser && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-[#121216] border border-[#252533] rounded-2xl p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-[#1e1e28] pb-4">
               <div>
                 <h3 className="text-base font-bold text-white">Elevate User Role</h3>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">{selectedUser.email}</p>
+                <p className="text-xs text-gray-400 font-mono mt-0.5">{roleModalUser.email}</p>
               </div>
-              <button
-                onClick={() => setRoleDrawerOpen(false)}
-                className="p-1 text-gray-400 hover:text-white"
-              >
+              <button onClick={() => setRoleModalUser(null)} className="p-1 text-gray-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -287,14 +511,14 @@ export default function AdminUserGovernancePage() {
                   <Shield className="w-3.5 h-3.5 text-amber-400" /> Security Impact Notice
                 </p>
                 <p>
-                  Organiser can create events. Super Admin cannot be granted from this screen.
+                  Organizers gain event publishing access. Super Admin role cannot be granted from this console.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => setRoleDrawerOpen(false)}
+                onClick={() => setRoleModalUser(null)}
                 className="flex-1 px-4 py-2.5 bg-[#1a1a24] border border-[#2a2a35] rounded-xl text-xs font-medium text-gray-300 hover:text-white"
               >
                 Cancel
@@ -302,7 +526,7 @@ export default function AdminUserGovernancePage() {
               <button
                 onClick={handleRoleElevate}
                 disabled={actionLoading}
-                className="flex-1 px-4 py-2.5 bg-[var(--accent-orange)] rounded-xl text-xs font-bold text-black hover:opacity-90 transition-opacity"
+                className="flex-1 px-4 py-2.5 bg-[var(--accent-orange)] rounded-xl text-xs font-bold text-black hover:opacity-90 transition-opacity cursor-pointer"
               >
                 {actionLoading ? "Updating..." : "Save Role Assignment"}
               </button>

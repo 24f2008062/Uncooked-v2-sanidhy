@@ -1,11 +1,8 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { requireTicketHmacSecret } from "@/server/security/secrets";
 
 function secret() {
-  const value = process.env.TICKET_HMAC_SECRET || process.env.NEXTAUTH_SECRET;
-  if (!value) {
-    throw new Error("TICKET_HMAC_SECRET is not configured");
-  }
-  return value;
+  return requireTicketHmacSecret();
 }
 
 export function signTicketPayload({ registrationId, eventId, userId }) {

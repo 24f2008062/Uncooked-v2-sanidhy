@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/components/providers/SupabaseProvider";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
@@ -55,6 +55,9 @@ export default function DashboardPage() {
   const registrations = passes.length ? passes : profile?.registrations || [];
   const apps = profile?.opportunityApps || [];
   const host = profile?.hostApplication;
+  const isHost =
+    String(profile?.role || session?.user?.role || "").toUpperCase() === "ORGANIZER" ||
+    String(profile?.role || session?.user?.role || "").toUpperCase() === "SUPER_ADMIN";
 
   return (
     <>
@@ -71,11 +74,22 @@ export default function DashboardPage() {
               Welcome back, {name.split(" ")[0]}
             </h1>
             <p className="text-sm text-text-secondary mt-2">
-              Your passes, applications, and host status — signed in as {session?.user?.email}
+              Your passes, applications, and host status. Signed in as {session?.user?.email}
             </p>
           </div>
 
           <AccountNav />
+
+          {isHost && (
+            <div className="mb-6 p-4 rounded-2xl bg-card border border-border-subtle flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-text-secondary">
+                Host tools: open an event page, copy its id, then scan passes at the door.
+              </p>
+              <Link href="/create" className="btn-secondary text-xs min-h-[44px] px-4 inline-flex items-center">
+                Create event
+              </Link>
+            </div>
+          )}
 
           {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
 
@@ -114,7 +128,7 @@ export default function DashboardPage() {
                 </div>
                 {registrations.length === 0 ? (
                   <p className="text-sm text-text-secondary">
-                    No tickets yet. Register from an event page — the pass is bound to this account.
+                    No tickets yet. Register from an event page. The pass is bound to this account.
                   </p>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">

@@ -3,20 +3,24 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, User, Mail, MapPin, Lock, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, User, Mail, MapPin, Lock, AlertCircle, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 
 export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const supabase = createClient();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     location: "",
     password: "",
+    confirmPassword: "",
     ageAttested18: false,
     acceptTerms: false,
   });
@@ -26,16 +30,22 @@ export default function SignupPage() {
     setLoading(true);
     setErrorMsg("");
 
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMsg("Passwords do not match. Please verify both password fields.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 1. Call backend registration endpoint
+      // 1. Call server-side registration route for validation & DPDP consent persistence
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fullName: formData.name,
-          email: formData.email?.trim().toLowerCase(),
+          name: formData.name,
+          email: formData.email,
+          location: formData.location,
           password: formData.password,
-          department: formData.location,
           ageAttested18: formData.ageAttested18,
           acceptTerms: formData.acceptTerms,
         }),
@@ -43,25 +53,27 @@ export default function SignupPage() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        setErrorMsg(data.error?.message || data.error || "Failed to create account");
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error?.message || "Registration failed. Please check your inputs.");
         setLoading(false);
         return;
       }
 
-      // 2. Automatically log in after successful registration
-      const loginRes = await signIn("credentials", {
-        redirect: false,
+      // 2. Sign in with Supabase to establish client session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
-      if (loginRes?.error) {
+      if (signInError) {
+        setErrorMsg("Registration successful! Please sign in with your credentials.");
         router.push("/login");
-      } else {
-        router.push("/dashboard");
-        router.refresh();
+        return;
       }
+
+      // If successful, push to dashboard
+      router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       console.error("Signup submission error:", err);
       setErrorMsg("An unexpected error occurred. Please try again.");
@@ -116,7 +128,15 @@ export default function SignupPage() {
             {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
               <button
                 type="button"
-                onClick={() => signIn("google")}
+                onClick={async () => {
+                  const origin = window.location.origin;
+                  await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: {
+                      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/dashboard")}`,
+                    },
+                  });
+                }}
                 className="w-full py-3 rounded-2xl text-[14px] font-semibold bg-white text-black"
               >
                 Sign Up with Google
@@ -166,20 +186,71 @@ export default function SignupPage() {
                 />
               </div>
 
-              {/* Password */}
               <div className="relative group">
                 <Lock className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   autoComplete="new-password"
                   placeholder="Password (min 12 chars, letter + number)"
                   minLength={12}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-11 pr-5 py-3 text-[14px] rounded-xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6]"
+                  className="w-full pl-11 pr-12 py-3 text-[14px] rounded-xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6]"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+
+              {/* Confirm Password Field */}
+              <div className="relative group">
+                <Lock className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Confirm Password"
+                  minLength={12}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className={`w-full pl-11 pr-12 py-3 text-[14px] rounded-xl outline-none transition-all duration-300 bg-[#141414] border ${
+                    formData.confirmPassword && formData.password !== formData.confirmPassword
+                      ? "border-red-500/60 focus:border-red-500 focus:ring-red-500"
+                      : formData.confirmPassword && formData.password === formData.confirmPassword
+                      ? "border-emerald-500/60 focus:border-emerald-500 focus:ring-emerald-500"
+                      : "border-[#2a2a2a] focus:border-[#f472b6] focus:ring-[#f472b6]"
+                  } text-white placeholder-gray-500`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* Password match indicator */}
+              {formData.confirmPassword.length > 0 && (
+                <div className="text-xs flex items-center gap-1.5 px-1 py-0.5">
+                  {formData.password === formData.confirmPassword ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Passwords match
+                    </span>
+                  ) : (
+                    <span className="text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> Passwords do not match
+                    </span>
+                  )}
+                </div>
+              )}
 
               <label className="flex items-start gap-2 text-[11px] text-gray-400">
                 <input

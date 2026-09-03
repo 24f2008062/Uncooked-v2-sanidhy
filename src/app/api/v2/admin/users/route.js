@@ -10,6 +10,11 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const search = (searchParams.get("search") || "").slice(0, 80);
     const role = searchParams.get("role") || "";
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+
+    const validSortFields = ["createdAt", "fullName", "email", "role", "department"];
+    const orderField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
 
     const users = await prisma.user.findMany({
       where: {
@@ -21,6 +26,7 @@ export async function GET(req) {
                 { email: { contains: search, mode: "insensitive" } },
                 { fullName: { contains: search, mode: "insensitive" } },
                 { department: { contains: search, mode: "insensitive" } },
+                { clubAssociation: { contains: search, mode: "insensitive" } },
               ],
             }
           : {}),
@@ -32,14 +38,21 @@ export async function GET(req) {
         email: true,
         role: true,
         department: true,
+        clubAssociation: true,
+        phoneE164: true,
+        interests: true,
+        emailVerified: true,
         onboardingCompleted: true,
         failedLoginAttempts: true,
         lockedUntil: true,
         disabledAt: true,
+        disabledReason: true,
+        lastLoginAt: true,
         createdAt: true,
+        authUserId: true,
       },
-      orderBy: { createdAt: "desc" },
-      take: 50,
+      orderBy: { [orderField]: sortOrder },
+      take: 100,
     });
 
     return jsonOk({ users });

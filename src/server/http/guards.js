@@ -1,10 +1,10 @@
-import { getCurrentUser } from "@/server/auth/authentication";
+import { getCurrentUser, getAuthUserAndProfile } from "@/server/auth/authentication";
 import { isSuperAdmin } from "@/server/auth/authorization";
-import { isKillSwitchActive } from "@/server/auth/killSwitch";
+import { getKillSwitchState } from "@/server/auth/killSwitch";
 import { assertSameOrigin } from "@/server/http/csrf";
 import { jsonError } from "@/server/http/envelope";
 import { getClientIp, hashIp } from "@/server/http/ip";
-import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
+import { rateLimitAsync, rateLimitHeaders } from "@/server/http/rateLimit";
 
 export async function enforceMutationGuards(req, { rateKey, limit = 30, windowMs = 60_000, skipKillSwitch = false } = {}) {
   const csrfError = assertSameOrigin(req);
@@ -14,24 +14,36 @@ export async function enforceMutationGuards(req, { rateKey, limit = 30, windowMs
 
   const ip = getClientIp(req);
   const ipHash = hashIp(ip);
-  const result = rateLimit(`${rateKey}:${ipHash}`, limit, windowMs);
+  const result = await rateLimitAsync(`${rateKey}:${ipHash}`, limit, windowMs);
   if (!result.ok) {
     return jsonError("Too many requests. Please try again later.", 429, "RATE_LIMITED", rateLimitHeaders(result));
   }
 
-  if (!skipKillSwitch && (await isKillSwitchActive())) {
-    return jsonError("The platform is temporarily paused for maintenance.", 503, "KILL_SWITCH");
+  if (!skipKillSwitch) {
+    const kill = await getKillSwitchState();
+    if (kill.active) {
+      if (kill.unavailable) {
+        return jsonError("Service temporarily unavailable", 503, "DEPENDENCY_UNAVAILABLE");
+      }
+      return jsonError("The platform is temporarily paused for maintenance.", 503, "KILL_SWITCH");
+    }
   }
 
   return null;
 }
 
 export async function requireUser() {
-  const user = await getCurrentUser();
-  if (!user) {
+  const { authUser, user, state } = await getAuthUserAndProfile();
+  if (state === "NO_SUPABASE_SESSION") {
     return { error: jsonError("Please sign in to continue.", 401, "UNAUTHENTICATED") };
   }
-  return { user };
+  if (state === "AUTHENTICATED_BUT_PROFILE_MISSING") {
+    return { error: jsonError("Application profile missing or incomplete.", 409, "PROFILE_NOT_PROVISIONED") };
+  }
+  if (state === "ACCOUNT_BLOCKED" || !user) {
+    return { error: jsonError("Account is locked or disabled.", 403, "ACCOUNT_BLOCKED") };
+  }
+  return { user, authUser };
 }
 
 export async function requireRoles(roles = []) {

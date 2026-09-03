@@ -20,8 +20,8 @@ const body = [
   "DATABASE_SSL_REJECT_UNAUTHORIZED=true",
   "LEGAL_ENTITY_NAME=Uncooked",
   "GRIEVANCE_OFFICER_NAME=Grievance Officer",
-  "GRIEVANCE_EMAIL=privacy@uncooked.dev",
-  "SUPPORT_EMAIL=support@uncooked.dev",
+  "GRIEVANCE_EMAIL=support@uncooked.in",
+  "SUPPORT_EMAIL=support@uncooked.in",
   "NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=false",
   "",
 ].join("\n");

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/components/providers/SupabaseProvider";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -69,8 +69,12 @@ export default function EventDetailsPage() {
 
   useEffect(() => {
     let isMounted = true;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
     (async () => {
-      if (isMounted && id) {
+      if (isMounted) {
         await load();
       }
     })();
@@ -135,10 +139,26 @@ export default function EventDetailsPage() {
               <Loader2 className="w-5 h-5 animate-spin" /> Loading event
             </div>
           ) : !event ? (
-            <div className="p-10 rounded-3xl bg-card border border-border-subtle text-center">
-              <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" />
-              <h1 className="text-xl font-bold text-text-primary mb-2">Event unavailable</h1>
-              <p className="text-sm text-text-secondary">{error || "This listing is not public."}</p>
+            <div className="p-10 rounded-3xl bg-card border border-border-subtle text-center max-w-md mx-auto my-12 shadow-xl">
+              <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-text-primary mb-2">Event Unavailable</h1>
+              <p className="text-sm text-text-secondary mb-6">{error || "This event listing could not be found or is no longer public."}</p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={load}
+                  className="px-5 py-2.5 rounded-xl font-semibold text-xs bg-background text-text-primary border border-border-subtle hover:bg-border-subtle transition-colors"
+                >
+                  Try Again
+                </button>
+                <Link
+                  href="/events"
+                  className="px-5 py-2.5 rounded-xl font-semibold text-xs text-white"
+                  style={{ background: "linear-gradient(135deg, #ec4899 0%, #f97316 100%)" }}
+                >
+                  Explore Events
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

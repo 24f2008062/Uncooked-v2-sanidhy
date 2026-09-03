@@ -8,12 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "test": "node --import ./tests/register-loader.mjs --test tests/passwordPolicy.test.mjs tests/rateLimit.test.mjs tests/security/unit.test.mjs",
+    "test": "node --import ./tests/register-loader.mjs --test tests/passwordPolicy.test.mjs tests/rateLimit.test.mjs tests/security/unit.test.mjs tests/security/redirect-and-secrets.test.mjs tests/auraKnowledge.test.mjs tests/checkIn.test.mjs tests/rateLimitAsync.test.mjs tests/security/remediationSuite.test.mjs",
     "test:security": "node tests/security/http-suite.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.9.1",
+    "@supabase/ssr": "^0.12.5",
+    "@supabase/supabase-js": "^2.113.0",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",
@@ -21,8 +23,7 @@
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.34.0",
     "next": "16.3.2",
-    "next-auth": "^4.24.15",
-    "nodemailer": "^7.0.13",
+    "nodemailer": "^9.1.1",
     "ogl": "^1.0.11",
     "pg": "^8.23.0",
     "postprocessing": "^6.39.4",
@@ -43,6 +44,11 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "prisma": "^7.9.1",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.1",
+    "mysql2": "^3.22.0"
   }
 }

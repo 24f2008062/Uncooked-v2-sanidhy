@@ -3,12 +3,12 @@ import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
 import { enforceMutationGuards, requireRoles } from "@/server/http/guards";
 import { logAuditEvent } from "@/server/auth/audit";
 import { hashIp, getClientIp } from "@/server/http/ip";
-import { rateLimit, rateLimitHeaders } from "@/server/http/rateLimit";
+import { rateLimitAsync, rateLimitHeaders } from "@/server/http/rateLimit";
 import { publicEvent } from "@/server/services/eventsPublic";
 
 export async function GET(req) {
   try {
-    const rl = rateLimit(`rl_events_get:${hashIp(getClientIp(req))}`, 60, 60_000);
+    const rl = await rateLimitAsync(`rl_events_get:${hashIp(getClientIp(req))}`, 60, 60_000);
     if (!rl.ok) {
       return jsonError("Too many requests. Please try again later.", 429, "RATE_LIMITED", rateLimitHeaders(rl));
     }
@@ -21,6 +21,11 @@ export async function GET(req) {
       archived: false,
       status: { not: "Suspended" },
     };
+
+    // Trust catalog: only events created by verified organisers / admins
+    if (String(process.env.VERIFIED_HOSTS_ONLY || "").toLowerCase() === "true") {
+      whereClause.createdBy = { role: { in: ["ORGANIZER", "SUPER_ADMIN"] } };
+    }
 
     if (category && category !== "All") {
       whereClause.category = { equals: category, mode: "insensitive" };
@@ -41,7 +46,7 @@ export async function GET(req) {
       orderBy: { date: "asc" },
       include: {
         _count: { select: { registrations: true } },
-        createdBy: { select: { name: true, fullName: true } },
+        createdBy: { select: { name: true, fullName: true, role: true } },
       },
     });
 
@@ -76,9 +81,18 @@ export async function POST(req) {
       return jsonError("Title, category, date, and location are required", 400);
     }
 
-    const capacity = Math.min(Math.max(parseInt(body.capacity, 10) || 100, 1), 20000);
+    const unlimited = Boolean(body.unlimitedCapacity);
+    const capacity = unlimited
+      ? 20000
+      : Math.min(Math.max(parseInt(body.capacity, 10) || 100, 1), 20000);
     const price = Math.max(parseFloat(body.price) || 0, 0);
     const ticketType = body.ticketType === "Paid" || price > 0 ? "Paid" : "Free";
+    const waitlistEnabled = Boolean(body.waitlistEnabled);
+    const endDate = body.endDate ? new Date(body.endDate) : null;
+    const schedule =
+      endDate && !Number.isNaN(endDate.getTime())
+        ? JSON.stringify({ end: endDate.toISOString() })
+        : null;
 
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 48);
     const eventId = `${slug}-${Date.now().toString(36)}`;
@@ -92,9 +106,11 @@ export async function POST(req) {
         date,
         location,
         description,
+        schedule,
         ticketType,
         price: ticketType === "Paid" ? price : 0,
         capacity,
+        waitlistEnabled,
         createdById: auth.user.id,
         status: "Active",
       },
