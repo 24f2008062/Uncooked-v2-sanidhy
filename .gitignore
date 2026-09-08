@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+*.key
+*.cert
+*.crt
 
 # debug
 npm-debug.log*
@@ -30,9 +33,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (strict secret leakage prevention)
 .env*
+*.env
+*.env.*
 !.env.example
+.env.vault
 
 # vercel
 .vercel

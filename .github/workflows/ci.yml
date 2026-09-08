@@ -1,10 +1,11 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -21,20 +22,23 @@ env:
   NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
   NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
   SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
-  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/uncooked_ci?schema=public
-  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/uncooked_ci?schema=public
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/opportia_ci?schema=public
+  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/opportia_ci?schema=public
 
 jobs:
-  quality:
-    name: Quality gate
+  # --------------------------------------------------------------------------
+  # 1. Security & Environment Safety Gate
+  # --------------------------------------------------------------------------
+  security-env:
+    name: Security & Environment Gate
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
@@ -42,33 +46,122 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Dependency audit (high+)
+      - name: Verify environment files & secret entropy
+        run: npm run check:env
+
+      - name: Dependency vulnerability audit (High+)
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Unit + security unit suites
-        run: npm test
+  # --------------------------------------------------------------------------
+  # 2. Code Quality & Lint Gate
+  # --------------------------------------------------------------------------
+  code-quality:
+    name: Code Quality & Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: ESLint
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint
         run: npm run lint
 
-      - name: Production build
+  # --------------------------------------------------------------------------
+  # 3. Unit & Security Invariants Test Matrix (Node 20 & 22 LTS)
+  # --------------------------------------------------------------------------
+  unit-tests:
+    name: Unit Tests (Node ${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node-version: ["20", "22"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run test suite
+        run: npm test
+
+  # --------------------------------------------------------------------------
+  # 4. Production Build & Route Smoke Verification (with Turbopack Cache)
+  # --------------------------------------------------------------------------
+  build-and-smoke:
+    name: Production Build & Route Smoke Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Restore Next.js / Turbopack Cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-turbopack-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**') }}
+          restore-keys: |
+            next-turbopack-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Compile production build
         run: npm run build
         env:
           NEXT_PHASE: phase-production-build
 
-      - name: Verify critical routes exist in build output
+      - name: Verify all critical routes exist in build
+        run: npm run verify:routes
+
+  # --------------------------------------------------------------------------
+  # 5. Consolidated CI/CD Quality Gate (Single Branch Protection Check)
+  # --------------------------------------------------------------------------
+  ci-gate:
+    name: CI/CD Quality Gate
+    runs-on: ubuntu-latest
+    needs: [security-env, code-quality, unit-tests, build-and-smoke]
+    if: always()
+    steps:
+      - name: Evaluate pipeline results
         run: |
-          test -d .next
-          node -e "
-            const fs = require('fs');
-            const app = '.next/server/app';
-            const need = [
-              'api/health',
-              'api/events',
-              'create',
-              'host/scanner'
-            ];
-            // Soft check: build succeeded above; print marker files if present
-            console.log('build ok; .next present =', fs.existsSync('.next'));
-            need.forEach((p) => console.log('check', p));
-          "
+          if [ "${{ needs.security-env.result }}" != "success" ] || \
+             [ "${{ needs.code-quality.result }}" != "success" ] || \
+             [ "${{ needs.unit-tests.result }}" != "success" ] || \
+             [ "${{ needs.build-and-smoke.result }}" != "success" ]; then
+            echo "❌ One or more required CI/CD jobs failed."
+            echo "  security-env:    ${{ needs.security-env.result }}"
+            echo "  code-quality:    ${{ needs.code-quality.result }}"
+            echo "  unit-tests:      ${{ needs.unit-tests.result }}"
+            echo "  build-and-smoke: ${{ needs.build-and-smoke.result }}"
+            exit 1
+          fi
+          echo "🎉 All CI/CD quality gates passed successfully!"
