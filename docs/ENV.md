@@ -20,6 +20,9 @@ Provide secrets later via your secret manager / Vercel dashboard. This file is t
 | `TICKET_HMAC_SECRET` | 64+ random, **≠** `NEXTAUTH_SECRET` | QR / pass HMAC |
 | `DATABASE_URL` | Postgres URL (prefer **pooler** in prod) | Prisma runtime |
 | `DIRECT_URL` | Postgres direct URL | Migrations / `prisma db push` |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://<ref>.supabase.co` | Supabase API endpoint (client + server auth) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Anon Key | Browser / SSR Supabase client session management |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role Key | Server-only administrative auth & role synchronization |
 
 Generate secrets:
 
