@@ -8,6 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import Link from "next/link";
 
 const LightRays = dynamic(() => import("@/components/ui/LightRays"), {
@@ -102,6 +103,7 @@ const CATEGORIES = ["All", "Internship", "Freelance", "Full Time", "Bounty"];
 export default function OpportunitiesPage() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModalItem, setActiveModalItem] = useState(null);
@@ -206,7 +208,7 @@ export default function OpportunitiesPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-4xl sm:text-5xl font-bold tracking-tight text-text-primary mb-3 text-center"
             >
-              Work Opportunities
+              {t("opportunities.title", "Work Opportunities")}
             </motion.h1>
 
             <motion.p
@@ -215,7 +217,7 @@ export default function OpportunitiesPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-text-secondary text-sm sm:text-base max-w-3xl leading-relaxed mx-auto text-center"
             >
-              Discover internships, freelance gigs, full-time roles, and bounties posted directly by our tech partners and campus startups.
+              {t("opportunities.subtitle", "Discover internships, freelance gigs, full-time roles, and bounties posted directly by our tech partners and campus startups.")}
             </motion.p>
           </div>
 
@@ -228,7 +230,7 @@ export default function OpportunitiesPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search roles, skills, or companies..."
+                placeholder={t("opportunities.searchPlaceholder", "Search roles, skills, or companies...")}
                 className="w-full bg-background border border-border-subtle rounded-full pl-11 pr-4 py-2.5 text-xs sm:text-sm text-text-primary placeholder-text-secondary/60 focus:outline-none focus:border-[var(--accent-orange)] transition-colors"
               />
             </div>
@@ -247,7 +249,7 @@ export default function OpportunitiesPage() {
                         : "bg-background text-text-secondary border border-border-subtle hover:text-text-primary hover:border-border-hover"
                     }`}
                   >
-                    {cat}
+                    {cat === "All" ? t("common.all", "All") : cat}
                   </button>
                 );
               })}
@@ -258,7 +260,7 @@ export default function OpportunitiesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {filteredOpportunities.length === 0 ? (
               <div className="col-span-full py-16 text-center text-text-secondary">
-                No opportunities found matching your search.
+                {t("opportunities.noFound", "No opportunities found matching your search.")}
               </div>
             ) : (
               filteredOpportunities.map((item, idx) => (

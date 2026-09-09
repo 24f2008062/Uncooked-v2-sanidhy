@@ -4,8 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function Footer() {
+  const { t } = useLanguage();
   const currentYear = new Date().getFullYear();
   const [isIntersecting, setIsIntersecting] = useState(false);
   const textRef = useRef(null);
@@ -26,19 +28,11 @@ export default function Footer() {
   }, []);
 
   const footerLinks = {
-    product: [
-      { label: "Events", href: "/events" },
-      { label: "Opportunities", href: "/opportunities" },
-      { label: "Host an Event", href: "/host" },
-      { label: "Host application", href: "/host/apply" },
-      { label: "About", href: "/about" },
-      { label: "Contact", href: "/contact" },
-    ],
     legal: [
-      { label: "Terms", href: "/terms" },
-      { label: "Privacy", href: "/privacy" },
-      { label: "Security", href: "/security" },
-      { label: "Cookies", href: "/cookies" },
+      { label: t("footer.terms", "Terms"), href: "/terms" },
+      { label: t("footer.privacy", "Privacy"), href: "/privacy" },
+      { label: t("footer.security", "Security"), href: "/security" },
+      { label: t("footer.cookies", "Cookies"), href: "/cookies" },
     ],
   };
 
@@ -82,34 +76,16 @@ export default function Footer() {
     >
       <div className="max-w-6xl mx-auto px-6 py-10">
         <div className="flex flex-wrap items-center justify-between gap-6">
-          {/* Logo & Links */}
-          <div className="flex items-center gap-6 flex-wrap">
-            <Link href="/" className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[var(--accent-orange)]" />
-              <span
-                className="text-xl font-bold tracking-tight"
-                style={{ color: "var(--text-primary)" }}
-              >
-                OPPORTIA
-              </span>
-            </Link>
-            {footerLinks.product.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-sm transition-colors duration-200"
-                style={{ color: "var(--text-muted)" }}
-                onMouseEnter={(e) => {
-                  e.target.style.color = "var(--text-secondary)";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.color = "var(--text-muted)";
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[var(--accent-orange)]" />
+            <span
+              className="text-xl font-bold tracking-tight"
+              style={{ color: "var(--text-primary)" }}
+            >
+              OPPORTIA
+            </span>
+          </Link>
 
           {/* Social Links */}
           <div className="flex items-center gap-4">
@@ -157,7 +133,7 @@ export default function Footer() {
             ))}
           </div>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            © {currentYear} Opportia Portal. All rights reserved.
+            © {currentYear} Opportia Portal. {t("footer.allRightsReserved", "All rights reserved.")}
           </p>
         </div>
       </div>

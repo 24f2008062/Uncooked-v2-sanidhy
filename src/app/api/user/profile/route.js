@@ -37,7 +37,7 @@ export async function GET() {
           orderBy: { registeredAt: "desc" },
         },
         eventsCreated: {
-          where: { deletedAt: null },
+          where: { archived: false },
           orderBy: { createdAt: "desc" },
         },
         hostApplication: true,

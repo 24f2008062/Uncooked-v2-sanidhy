@@ -8,6 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -150,6 +151,7 @@ const CATEGORIES = ["All", "Hackathons", "Cultural Fests", "Workshops", "Sports 
 
 export default function EventsPage() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModalEvent, setActiveModalEvent] = useState(null);
@@ -258,7 +260,7 @@ export default function EventsPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-4xl sm:text-5xl font-bold tracking-tight text-text-primary mb-3 text-center"
             >
-              Discover Campus Events
+              {t("events.title", "Discover Campus Events")}
             </motion.h1>
 
             <motion.p
@@ -267,7 +269,7 @@ export default function EventsPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-text-secondary text-sm sm:text-base max-w-3xl leading-relaxed mx-auto text-center mb-8"
             >
-              Explore hackathons, workshops, cultural fests, sports leagues, and party meetups across 120+ active campuses.
+              {t("events.subtitle", "Explore hackathons, workshops, cultural fests, sports leagues, and party meetups across 120+ active campuses.")}
             </motion.p>
 
             {/* Top Minimal Stats Bar */}
@@ -281,21 +283,21 @@ export default function EventsPage() {
                 <span className="text-lg md:text-xl font-bold font-mono text-text-primary">
                   3,500
                 </span>
-                <span className="text-xs text-text-secondary font-mono">Registrations</span>
+                <span className="text-xs text-text-secondary font-mono">{t("dashboard.stats.passes", "Registrations")}</span>
               </div>
               <div className="h-8 w-px bg-border-subtle" />
               <div className="flex flex-col items-center relative">
                 <span className="text-lg md:text-xl font-bold font-mono text-text-primary">
                   7,645
                 </span>
-                <span className="text-xs text-text-secondary font-mono">Students Active</span>
+                <span className="text-xs text-text-secondary font-mono">{t("events.activeStudents", "Students Active")}</span>
               </div>
               <div className="h-8 w-px bg-border-subtle" />
               <div className="flex flex-col items-center relative">
                 <span className="text-lg md:text-xl font-bold font-mono text-text-primary">
                   8
                 </span>
-                <span className="text-xs text-text-secondary font-mono">Campus Events</span>
+                <span className="text-xs text-text-secondary font-mono">{t("nav.events", "Campus Events")}</span>
               </div>
             </motion.div>
           </div>
@@ -309,7 +311,7 @@ export default function EventsPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search events by title, host, or location..."
+                placeholder={t("events.searchPlaceholder", "Search events by title, host, or location...")}
                 className="w-full bg-background border border-border-subtle rounded-full pl-11 pr-4 py-2.5 text-xs sm:text-sm text-text-primary placeholder-text-secondary/60 focus:outline-none focus:border-[var(--accent-orange)] transition-colors"
               />
             </div>
@@ -328,7 +330,7 @@ export default function EventsPage() {
                         : "bg-background text-text-secondary border border-border-subtle hover:text-text-primary hover:border-border-hover"
                     }`}
                   >
-                    {cat}
+                    {cat === "All" ? t("common.all", "All") : cat}
                   </button>
                 );
               })}
@@ -339,7 +341,7 @@ export default function EventsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
             {filteredEvents.length === 0 ? (
               <div className="col-span-full py-16 text-center text-text-secondary">
-                No events found matching your search.
+                {t("events.noEventsFound", "No events found matching your search.")}
               </div>
             ) : (
               filteredEvents.map((item, idx) => (

@@ -14,7 +14,7 @@ export function sanitizeNotificationPayload({ title, body, mediaUrl, kind = "ANN
     const safe = safeHttpsUrl(String(mediaUrl).trim().slice(0, MEDIA_MAX));
     cleanMedia = safe || null;
   }
-  const cleanKind = ["ANNOUNCEMENT", "SYSTEM"].includes(String(kind).toUpperCase())
+  const cleanKind = ["ANNOUNCEMENT", "SYSTEM", "EVENT_UPDATE"].includes(String(kind).toUpperCase())
     ? String(kind).toUpperCase()
     : "ANNOUNCEMENT";
   if (!cleanTitle || !cleanBody) {
@@ -85,6 +85,56 @@ export async function createInAppNotificationForEmails({
   return { notification, recipientCount: users.length };
 }
 
+/**
+ * Fan-out by user ids (event registrants). Same Notification + Recipient model.
+ */
+export async function createInAppNotificationForUserIds({
+  userIds,
+  title,
+  body,
+  mediaUrl,
+  kind = "EVENT_UPDATE",
+  broadcastId = null,
+  createdById = null,
+}) {
+  const payload = sanitizeNotificationPayload({ title, body, mediaUrl, kind });
+  const uniqueIds = [...new Set((userIds || []).map((id) => String(id || "").trim()).filter(Boolean))];
+  if (uniqueIds.length === 0) {
+    return { notification: null, recipientCount: 0 };
+  }
+
+  const users = await prisma.user.findMany({
+    where: { id: { in: uniqueIds }, deletedAt: null, disabledAt: null },
+    select: { id: true },
+  });
+  if (users.length === 0) {
+    return { notification: null, recipientCount: 0 };
+  }
+
+  const notification = await prisma.notification.create({
+    data: {
+      broadcastId: broadcastId || null,
+      title: payload.title,
+      body: payload.body,
+      mediaUrl: payload.mediaUrl,
+      kind: payload.kind,
+      createdById: createdById || null,
+    },
+  });
+
+  for (let i = 0; i < users.length; i += INSERT_BATCH) {
+    const chunk = users.slice(i, i + INSERT_BATCH);
+    await prisma.notificationRecipient.createMany({
+      data: chunk.map((u) => ({
+        notificationId: notification.id,
+        userId: u.id,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  return { notification, recipientCount: users.length };
+}
 export async function listNotificationsForUser(userId, { limit = 20, cursor } = {}) {
   const take = Math.min(Math.max(Number(limit) || 20, 1), 50);
   const where = {

@@ -1,8 +1,10 @@
 import { Inter, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { LanguageProvider } from "@/components/providers/LanguageProvider";
 import SupabaseProvider from "@/components/providers/SupabaseProvider";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import CookieNotice from "@/components/legal/CookieNotice";
+import LocationPrompt from "@/components/location/LocationPrompt";
 import "./globals.css";
 
 const inter = Inter({
@@ -65,13 +67,17 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300 overflow-x-hidden w-full max-w-full">
         <SupabaseProvider>
-          <ThemeProvider>
-            <ScrollToTop />
-            <CookieNotice />
-            {children}
-          </ThemeProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <ScrollToTop />
+              <CookieNotice />
+              <LocationPrompt />
+              {children}
+            </ThemeProvider>
+          </LanguageProvider>
         </SupabaseProvider>
       </body>
     </html>
   );
 }
+

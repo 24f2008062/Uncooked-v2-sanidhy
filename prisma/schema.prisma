@@ -220,8 +220,12 @@ model BulletinUpdate {
   eventId   String
   title     String
   content   String
+  authorId  String?
+  mediaUrl  String?
   createdAt DateTime @default(now())
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, createdAt])
 }
 
 model UserActivity {

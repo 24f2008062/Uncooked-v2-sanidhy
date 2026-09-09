@@ -81,9 +81,9 @@ export default function NotificationBell() {
         aria-label="Notifications"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="relative p-2 rounded-full hover:bg-white/5 transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        className="relative p-2 rounded-full hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] transition-colors text-[var(--text-primary)] flex items-center justify-center cursor-pointer"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-4 h-4 text-[var(--text-primary)]" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--accent-orange)] text-white text-[10px] font-bold flex items-center justify-center">
             {badge}
@@ -106,7 +106,7 @@ export default function NotificationBell() {
                 type="button"
                 disabled={unreadCount === 0}
                 onClick={() => markRead({ all: true })}
-                className="text-[11px] font-medium text-[var(--accent-orange)] disabled:opacity-40 flex items-center gap-1"
+                className="text-[11px] font-medium text-[var(--accent-orange)] disabled:opacity-40 flex items-center gap-1 cursor-pointer"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark all read
@@ -115,11 +115,11 @@ export default function NotificationBell() {
 
             <div className="overflow-y-auto max-h-[min(60vh,420px)]">
               {loading && items.length === 0 ? (
-                <div className="p-6 flex justify-center text-gray-500">
+                <div className="p-6 flex justify-center text-[var(--text-secondary)]">
                   <Loader2 className="w-5 h-5 animate-spin" />
                 </div>
               ) : items.length === 0 ? (
-                <p className="p-6 text-xs text-gray-500 text-center">No notifications yet.</p>
+                <p className="p-6 text-xs text-[var(--text-secondary)] text-center">No notifications yet.</p>
               ) : (
                 <ul className="divide-y divide-[var(--border-subtle)]">
                   {items.map((n) => (
@@ -129,7 +129,7 @@ export default function NotificationBell() {
                         onClick={() => {
                           if (!n.readAt) markRead({ ids: [n.id] });
                         }}
-                        className="w-full text-left px-4 py-3 hover:bg-white/[0.03] transition-colors"
+                        className="w-full text-left px-4 py-3 hover:bg-[var(--border-subtle)] transition-colors cursor-pointer"
                       >
                         <div className="flex items-start gap-2">
                           {!n.readAt && (
@@ -139,10 +139,10 @@ export default function NotificationBell() {
                             <p className="text-xs font-semibold text-[var(--text-primary)] line-clamp-1">
                               {n.title}
                             </p>
-                            <p className="text-[11px] text-gray-400 mt-1 line-clamp-2 whitespace-pre-wrap">
+                            <p className="text-[11px] text-[var(--text-secondary)] mt-1 line-clamp-2 whitespace-pre-wrap">
                               {n.body}
                             </p>
-                            <p className="text-[10px] text-gray-500 mt-1.5">
+                            <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
                               {formatRelative(n.createdAt)}
                             </p>
                           </div>

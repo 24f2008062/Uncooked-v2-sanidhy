@@ -122,7 +122,7 @@ function buildEmailTemplate({ title, preheader, bodyHtml, actionButton }) {
     </div>
     <div class="footer">
       <p>&copy; ${new Date().getFullYear()} Opportia Portal. All rights reserved.</p>
-      <p><a href="${APP_URL}/privacy">Privacy Policy</a> &bull; <a href="${APP_URL}/help">Support Desk</a></p>
+      <p><a href="${APP_URL}/privacy">Privacy Policy</a> &bull; <a href="${APP_URL}/contact">Contact Support</a></p>
     </div>
   </div>
 </body>

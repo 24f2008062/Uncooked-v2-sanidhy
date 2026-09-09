@@ -10,6 +10,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import TicketPassCard from "@/components/events/TicketPassCard";
+import EventBroadcastPanel from "@/components/events/EventBroadcastPanel";
 import {
   ArrowLeft,
   Calendar,
@@ -227,6 +228,11 @@ export default function EventDetailsPage() {
                   <h2 className="text-sm font-bold text-text-primary mb-3">About</h2>
                   <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{event.description}</p>
                 </section>
+
+                <EventBroadcastPanel
+                  eventId={id}
+                  enabled={authStatus === "authenticated"}
+                />
 
                 {event.schedule && (
                   <section className="p-6 rounded-3xl bg-card border border-border-subtle">

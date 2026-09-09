@@ -42,6 +42,12 @@
   --glass-bg: rgba(26, 26, 26, 0.7);
   --glass-border: rgba(255, 255, 255, 0.06);
   --glass-blur: 20px;
+  --glass-dropdown-bg: rgba(18, 18, 24, 0.72);
+  --glass-dropdown-border: rgba(255, 255, 255, 0.12);
+  --glass-dropdown-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
+  --glass-inner-bg: rgba(255, 255, 255, 0.04);
+  --glass-inner-border: rgba(255, 255, 255, 0.08);
+  --glass-item-hover: rgba(255, 255, 255, 0.08);
 
   /* Shadows */
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -74,10 +80,10 @@
 
 [data-theme="light"] {
   /* Core Backgrounds */
-  --bg-primary: #ffffff;
+  --bg-primary: #f8f9fa;
   --bg-secondary: #f4f4f5;
-  --bg-card: #e4e4e7;
-  --bg-card-hover: #d4d4d8;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f4f4f5;
   --bg-elevated: #ffffff;
 
   /* Text */
@@ -93,6 +99,12 @@
   /* Glassmorphism */
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-dropdown-bg: rgba(255, 255, 255, 0.78);
+  --glass-dropdown-border: rgba(0, 0, 0, 0.08);
+  --glass-dropdown-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+  --glass-inner-bg: rgba(0, 0, 0, 0.03);
+  --glass-inner-border: rgba(0, 0, 0, 0.06);
+  --glass-item-hover: rgba(0, 0, 0, 0.05);
 
   /* Font fallback */
   --background: var(--bg-primary);
@@ -105,11 +117,14 @@
   --color-primary: var(--bg-primary);
   --color-secondary: var(--bg-secondary);
   --color-card: var(--bg-card);
+  --color-card-hover: var(--bg-card-hover);
+  --color-elevated: var(--bg-elevated);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-border-subtle: var(--border-subtle);
   --color-border-hover: var(--border-hover);
+  --color-border-active: var(--border-active);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
@@ -315,6 +330,24 @@ img {
 .btn-primary:active {
   transform: translateY(0);
   background: #d4d4d4;
+}
+
+[data-theme="light"] .btn-primary {
+  background: #09090b;
+  color: #ffffff;
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background: #27272a;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .btn-primary:active {
+  background: #3f3f46;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary {
@@ -541,6 +574,13 @@ img {
   transition: all var(--transition-base);
 }
 
+[data-theme="light"] .navbar {
+  background: rgba(255, 255, 255, 0.85);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
 .navbar.scrolled {
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(20px);
@@ -548,12 +588,21 @@ img {
   border-bottom: 1px solid var(--glass-border);
 }
 
-.navbar.force-dark-top:not(.scrolled) {
+:root:not([data-theme="light"]) .navbar.force-dark-top:not(.scrolled),
+[data-theme="dark"] .navbar.force-dark-top:not(.scrolled) {
   --text-primary: #f5f5f5 !important;
   --text-secondary: #a0a0a0 !important;
   --text-muted: #666666 !important;
   --border-subtle: rgba(255, 255, 255, 0.08) !important;
   --border-hover: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="light"] .navbar.force-dark-top:not(.scrolled) {
+  --text-primary: #09090b !important;
+  --text-secondary: #52525b !important;
+  --text-muted: #71717a !important;
+  --border-subtle: rgba(0, 0, 0, 0.08) !important;
+  --border-hover: rgba(0, 0, 0, 0.15) !important;
 }
 
 /* ============================================================================
@@ -753,4 +802,20 @@ img {
 .pt-safe {
   padding-top: env(safe-area-inset-top, 1rem);
 }
+
+/* Glass dropdown custom scrollbar */
+.glass-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.glass-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.glass-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+}
+[data-theme="light"] .glass-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+}
+
 

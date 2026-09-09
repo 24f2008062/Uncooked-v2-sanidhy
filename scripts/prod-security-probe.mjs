@@ -45,7 +45,6 @@ async function probePages() {
     "/cookies",
     "/events",
     "/opportunities",
-    "/help",
     "/privacy",
     "/terms",
     "/security",

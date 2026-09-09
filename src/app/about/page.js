@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import Link from "next/link";
 import Image from "next/image";
@@ -280,8 +279,6 @@ export default function AboutPage() {
 
         </div>
       </main>
-
-      <Footer />
     </>
   );
 }
