@@ -57,6 +57,7 @@ model User {
   auditLogs            AuditLog[]               @relation("AdminAuditLogs")
   consents             ConsentRecord[]
   eventsCreated        Event[]                  @relation("EventCreator")
+  notificationInbox    NotificationRecipient[]
 
   @@index([role, createdAt])
   @@index([deletedAt])
@@ -343,4 +344,35 @@ model BroadcastJob {
 
   @@index([status, createdAt])
   @@index([adminId, createdAt])
+}
+
+/** Team announcement shown in the user notification bell. */
+model Notification {
+  id          String   @id @default(cuid())
+  broadcastId String?
+  title       String
+  body        String
+  mediaUrl    String?
+  kind        String   @default("ANNOUNCEMENT") // ANNOUNCEMENT | SYSTEM
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  recipients NotificationRecipient[]
+
+  @@index([createdAt])
+  @@index([broadcastId])
+}
+
+model NotificationRecipient {
+  id             String    @id @default(cuid())
+  notificationId String
+  userId         String
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt, createdAt])
 }

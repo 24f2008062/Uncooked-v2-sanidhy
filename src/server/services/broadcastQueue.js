@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { sendAdminBroadcastEmail } from "@/lib/email/service";
 import { logAuditEvent } from "@/server/auth/audit";
+import { createInAppNotificationForEmails } from "@/server/services/notifications";
 
 const BATCH_SIZE = 25;
 const MAX_RECIPIENTS = 500;
@@ -32,7 +33,10 @@ export async function resolveBroadcastRecipients(audience, targetEmails = []) {
  * Process a queued broadcast job with bounded batches and backoff.
  * Idempotent: RUNNING/DONE jobs are no-ops if already past PENDING (except RUNNING resume).
  */
-export async function processBroadcastJob(jobId, { senderName = "Opportia Admin Desk" } = {}) {
+export async function processBroadcastJob(
+  jobId,
+  { senderName = "Opportia Admin Desk", inAppNotification = true } = {}
+) {
   const job = await prisma.broadcastJob.findUnique({ where: { id: jobId } });
   if (!job) return null;
   if (job.status === "DONE") return job;
@@ -63,6 +67,37 @@ export async function processBroadcastJob(jobId, { senderName = "Opportia Admin 
   } catch {
     parsedDetails = {};
   }
+
+  const wantInApp =
+    parsedDetails.inAppNotification !== undefined
+      ? Boolean(parsedDetails.inAppNotification)
+      : inAppNotification !== false;
+
+  // In-app inbox dual-write (once per job).
+  if (wantInApp && !parsedDetails.inAppNotificationId) {
+    try {
+      const { notification, recipientCount } = await createInAppNotificationForEmails({
+        emails: recipients,
+        title: fresh.subject,
+        body: fresh.message,
+        mediaUrl: fresh.mediaUrl,
+        kind: "ANNOUNCEMENT",
+        broadcastId: fresh.id,
+        createdById: fresh.adminId,
+      });
+      if (notification) {
+        parsedDetails.inAppNotificationId = notification.id;
+        parsedDetails.inAppRecipientCount = recipientCount;
+        await prisma.broadcastJob.update({
+          where: { id: jobId },
+          data: { details: JSON.stringify({ ...parsedDetails, recipients }) },
+        });
+      }
+    } catch (err) {
+      console.error("[Broadcast] in-app notification fan-out failed:", err.message);
+    }
+  }
+
   const alreadyDone = new Set(Array.isArray(parsedDetails.delivered) ? parsedDetails.delivered : []);
   const delivered = [...alreadyDone];
 

@@ -20,6 +20,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 export const AVATAR_OPTIONS = [
   { id: "male", name: "Male", src: "/avatars/male.svg" },
@@ -242,6 +243,7 @@ export default function Navbar({ forceDarkTop = false }) {
 
           {isLoggedIn ? (
             <div className="flex items-center gap-2.5">
+              <NotificationBell />
               {/* Quick Dashboard Link */}
               <Link
                 href="/dashboard"
@@ -419,6 +421,7 @@ export default function Navbar({ forceDarkTop = false }) {
 
         {/* Mobile Controls: Instant Theme Toggle & Menu Hamburger */}
         <div className="flex md:hidden items-center gap-2 z-50">
+          {isLoggedIn && <NotificationBell />}
           <button 
             onClick={toggleTheme}
             className="p-2 min-w-[38px] min-h-[38px] rounded-full hover:bg-white/10 transition-colors border border-border-subtle flex items-center justify-center cursor-pointer"

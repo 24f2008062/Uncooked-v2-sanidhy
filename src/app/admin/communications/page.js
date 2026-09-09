@@ -35,6 +35,7 @@ function CommunicationsContent() {
   const [message, setMessage] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
   const [showMediaInput, setShowMediaInput] = useState(false);
+  const [inAppNotification, setInAppNotification] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
@@ -122,19 +123,21 @@ function CommunicationsContent() {
           message,
           mediaUrl: mediaUrl.trim() || undefined,
           targetEmails: audience === "SPECIFIC" ? selectedEmails : [],
+          inAppNotification,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Broadcast delivery failed.");
+        throw new Error(data.error?.message || data.error || data.message || "Broadcast delivery failed.");
       }
 
       setStatusMsg({ type: "success", text: data.message });
       setSubject("");
       setMessage("");
       setMediaUrl("");
+      setInAppNotification(true);
       if (audience === "SPECIFIC") setSelectedEmails([]);
       fetchHistory();
     } catch (err) {
@@ -408,6 +411,21 @@ function CommunicationsContent() {
                 />
               </div>
 
+              <label className="flex items-start gap-3 p-3 rounded-xl bg-[#141419] border border-[#25252e] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={inAppNotification}
+                  onChange={(e) => setInAppNotification(e.target.checked)}
+                  className="mt-0.5 rounded border-[#333] bg-[#0a0a0a] text-blue-500 focus:ring-blue-500"
+                />
+                <span className="text-xs text-gray-300 leading-relaxed">
+                  <span className="font-semibold text-white">Also send in-app notification</span>
+                  <span className="block text-gray-500 mt-0.5">
+                    Recipients will see this in their navbar notification bell (in addition to email).
+                  </span>
+                </span>
+              </label>
+
               {/* Submit Button */}
               <div className="pt-2 flex justify-end">
                 <button
@@ -416,7 +434,11 @@ function CommunicationsContent() {
                   className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-lg shadow-blue-600/20"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  {loading ? "Dispatching..." : "Send Email Broadcast"}
+                  {loading
+                    ? "Dispatching..."
+                    : inAppNotification
+                      ? "Send Email + In-app"
+                      : "Send Email Broadcast"}
                 </button>
               </div>
             </form>

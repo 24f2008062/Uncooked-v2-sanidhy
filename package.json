@@ -11,7 +11,7 @@
     "verify:routes": "node scripts/verify-build-routes.mjs",
     "ci:local": "node scripts/run-ci-local.mjs",
     "postinstall": "prisma generate",
-    "test": "node --import ./tests/register-loader.mjs --test tests/passwordPolicy.test.mjs tests/rateLimit.test.mjs tests/security/unit.test.mjs tests/security/redirect-and-secrets.test.mjs tests/auraKnowledge.test.mjs tests/checkIn.test.mjs tests/rateLimitAsync.test.mjs tests/security/remediationSuite.test.mjs",
+    "test": "node --import ./tests/register-loader.mjs --test tests/passwordPolicy.test.mjs tests/rateLimit.test.mjs tests/security/unit.test.mjs tests/security/redirect-and-secrets.test.mjs tests/auraKnowledge.test.mjs tests/checkIn.test.mjs tests/rateLimitAsync.test.mjs tests/security/remediationSuite.test.mjs tests/notifications.test.mjs",
     "test:security": "node tests/security/http-suite.mjs"
   },
   "dependencies": {

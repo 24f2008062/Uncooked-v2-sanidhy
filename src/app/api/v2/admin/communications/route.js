@@ -62,6 +62,7 @@ export async function POST(req) {
 
     const body = await req.json();
     const { audience, subject, message, targetEmails, mediaUrl } = body;
+    const inAppNotification = body.inAppNotification !== false;
     const idempotencyKey =
       String(req.headers.get("idempotency-key") || body.idempotencyKey || "").trim() ||
       crypto.createHash("sha256").update(`${user.id}|${audience}|${subject}|${message}`).digest("hex").slice(0, 48);
@@ -97,14 +98,18 @@ export async function POST(req) {
         mediaUrl: mediaUrl ? String(mediaUrl).slice(0, 500) : null,
         status: "PENDING",
         totalRecipients: recipientEmails.length,
-        details: JSON.stringify({ recipients: recipientEmails, delivered: [] }),
+        details: JSON.stringify({
+          recipients: recipientEmails,
+          delivered: [],
+          inAppNotification,
+        }),
       },
     });
 
     const senderName = user.fullName || user.name || "Opportia Admin Desk";
     after(async () => {
       try {
-        await processBroadcastJob(job.id, { senderName });
+        await processBroadcastJob(job.id, { senderName, inAppNotification });
       } catch (err) {
         console.error("[Broadcast] background job failed:", err.message);
         await prisma.broadcastJob
@@ -123,7 +128,10 @@ export async function POST(req) {
         jobId: job.id,
         status: "PENDING",
         totalRecipients: recipientEmails.length,
-        message: `Broadcast queued for ${recipientEmails.length} recipient(s).`,
+        inAppNotification,
+        message: inAppNotification
+          ? `Broadcast queued for ${recipientEmails.length} recipient(s) (email + in-app).`
+          : `Broadcast queued for ${recipientEmails.length} recipient(s) (email only).`,
       },
       { status: 202 }
     );
