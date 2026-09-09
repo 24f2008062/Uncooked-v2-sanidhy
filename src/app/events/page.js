@@ -229,7 +229,7 @@ export default function EventsPage() {
         {/* Background Ambient Glows */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-        {/* LightRays WebGL shader animation */}
+        {/* LightRays WebGL shader animation (static, no cursor movement) */}
         <div className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0">
           <LightRays
             raysOrigin="top-center"
@@ -241,8 +241,8 @@ export default function EventsPage() {
             noiseAmount={0.06}
             distortion={0.08}
             fadeDistance={1.3}
-            followMouse={true}
-            mouseInfluence={0.15}
+            followMouse={false}
+            mouseInfluence={0.0}
             lightMode={theme === "light"}
             className={theme === "light" ? "opacity-50" : "opacity-90"}
           />

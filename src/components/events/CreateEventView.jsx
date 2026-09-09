@@ -476,8 +476,8 @@ export default function CreateEventView({ isModal = false, onClose }) {
         pulsating={true}
         noiseAmount={0.05}
         distortion={0.08}
-        followMouse={true}
-        mouseInfluence={0.15}
+        followMouse={false}
+        mouseInfluence={0.0}
         className="opacity-45"
       />
 
