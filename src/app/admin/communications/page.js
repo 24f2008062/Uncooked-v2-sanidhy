@@ -19,6 +19,7 @@ import {
   Check
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import AdminRemoteImage from "@/components/ui/AdminRemoteImage";
 
 function CommunicationsContent() {
   const searchParams = useSearchParams();
@@ -374,11 +375,13 @@ function CommunicationsContent() {
                     />
                     {mediaUrl && (
                       <div className="p-2 bg-[#181822] border border-[#262634] rounded-xl flex items-center gap-3">
-                        <img 
-                          src={mediaUrl} 
-                          alt="Media Preview" 
-                          className="w-12 h-12 object-cover rounded-lg border border-[#333344]" 
-                          onError={(e) => { e.target.style.display = 'none'; }}
+                        <AdminRemoteImage
+                          src={mediaUrl}
+                          alt="Media Preview"
+                          width={48}
+                          height={48}
+                          className="w-12 h-12 object-cover rounded-lg border border-[#333344]"
+                          onError={(e) => { e.target.style.display = "none"; }}
                         />
                         <div className="text-[11px] text-gray-400 truncate">
                           <p className="font-semibold text-white">Media Attached</p>
@@ -509,12 +512,14 @@ function CommunicationsContent() {
 
                 {/* Media Image Banner Render */}
                 {mediaUrl && (
-                  <div className="rounded-xl overflow-hidden border border-[#282838] bg-[#14141d]">
-                    <img 
-                      src={mediaUrl} 
-                      alt="Banner Preview" 
-                      className="w-full max-h-56 object-cover" 
-                      onError={(e) => { e.target.style.display = 'none'; }}
+                  <div className="rounded-xl overflow-hidden border border-[#282838] bg-[#14141d] relative w-full max-h-56">
+                    <AdminRemoteImage
+                      src={mediaUrl}
+                      alt="Banner Preview"
+                      width={960}
+                      height={320}
+                      className="w-full max-h-56 object-cover"
+                      onError={(e) => { e.target.style.display = "none"; }}
                     />
                   </div>
                 )}

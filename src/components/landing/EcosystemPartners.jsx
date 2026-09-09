@@ -26,7 +26,7 @@ export default function EcosystemPartners() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-3xl md:text-5xl font-bold tracking-tight text-text-primary text-center max-w-3xl leading-tight"
+          className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight text-text-primary text-center max-w-3xl leading-tight"
         >
           Ready to Join Campus Events?
         </motion.h2>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="cyberBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#022c22"/>
+      <stop offset="50%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="visorCyber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <circle cx="50" cy="50" r="50" fill="url(#cyberBg)"/>
+  
+  <!-- Cybernetic Grid Collar & High-tech Jacket -->
+  <path d="M22 100 C22 76 34 70 50 70 C66 70 78 76 78 100 Z" fill="#0f172a"/>
+  <!-- Neon Piping on Collar -->
+  <path d="M36 72 L48 88 L44 100" fill="none" stroke="#22d3ee" stroke-width="1.8"/>
+  <path d="M64 72 L52 88 L56 100" fill="none" stroke="#22d3ee" stroke-width="1.8"/>
+
+  <!-- Neck with Tech Implants -->
+  <rect x="44" y="58" width="12" height="14" rx="2" fill="#fed7aa"/>
+  <line x1="46" y1="62" x2="46" y2="70" stroke="#06b6d4" stroke-width="1.2"/>
+  <line x1="54" y1="62" x2="54" y2="70" stroke="#06b6d4" stroke-width="1.2"/>
+
+  <!-- Head / Face -->
+  <path d="M34 42 C34 28 41 24 50 24 C59 24 66 28 66 42 C66 56 59 63 50 63 C41 63 34 56 34 42 Z" fill="#fed7aa"/>
+  
+  <!-- Neon Undercut Cyber Hair -->
+  <path d="M30 38 C30 22 42 15 54 15 C66 15 70 24 68 36 C64 26 56 22 48 22 C38 22 34 28 30 38 Z" fill="#06b6d4"/>
+  <path d="M66 24 C72 26 74 34 70 42 C69 36 68 30 66 24 Z" fill="#a855f7"/>
+
+  <!-- Cyber VR Neon Visor Display -->
+  <polygon points="30,34 70,34 68,47 32,47" fill="#030712"/>
+  <polygon points="31,35 69,35 67,46 33,46" fill="url(#visorCyber)" opacity="0.9"/>
+  <!-- Digital HUD scanlines -->
+  <line x1="35" y1="39" x2="65" y2="39" stroke="#ffffff" stroke-width="1" opacity="0.8"/>
+  <line x1="38" y1="42" x2="56" y2="42" stroke="#ffffff" stroke-width="0.8" opacity="0.6"/>
+  <circle cx="61" cy="42" r="1" fill="#f43f5e"/>
+
+  <!-- Tech Ear Piece -->
+  <rect x="28" y="38" width="3" height="8" rx="1.5" fill="#22d3ee"/>
+  <rect x="69" y="38" width="3" height="8" rx="1.5" fill="#22d3ee"/>
+
+  <!-- Mouth -->
+  <path d="M46 54 Q50 56 54 54" fill="none" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

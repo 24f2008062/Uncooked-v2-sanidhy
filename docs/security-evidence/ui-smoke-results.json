@@ -1,0 +1,123 @@
+{
+  "target": "https://uncooked-v2.vercel.app",
+  "when": "2026-09-09T17:03:26.820Z",
+  "pass": 22,
+  "fail": 1,
+  "results": [
+    {
+      "name": "home loads",
+      "ok": true,
+      "detail": "title=Opportia Portal: Delightful Campus Events Start Here"
+    },
+    {
+      "name": "nav link visible: Events",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "nav link visible: Opportunities",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "nav link visible: About",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "nav link visible: Contact",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "nav link visible: Help",
+      "ok": false,
+      "detail": ""
+    },
+    {
+      "name": "events page after click",
+      "ok": true,
+      "detail": "https://uncooked-v2.vercel.app/events"
+    },
+    {
+      "name": "events page has content cards/links",
+      "ok": true,
+      "detail": "count=33"
+    },
+    {
+      "name": "opportunities page",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "login email input",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "login password input",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "login submit button",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "login wrong password shows user-facing error",
+      "ok": true,
+      "detail": "We use necessary cookies to keep you signed in. We do not use advertising cookies. Cookie notice and privacy policy. OK OPPORTIA Login to Opportia Access your campus events, passes, and host dashboa"
+    },
+    {
+      "name": "signup has password",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "signup has submit",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "contact submit visible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "dashboard redirects to login when anon",
+      "ok": true,
+      "detail": "https://uncooked-v2.vercel.app/login?redirectTo=%2Fdashboard"
+    },
+    {
+      "name": "admin redirects to login when anon",
+      "ok": true,
+      "detail": "https://uncooked-v2.vercel.app/login?redirectTo=%2Fadmin"
+    },
+    {
+      "name": "legal page /privacy has substance",
+      "ok": true,
+      "detail": "chars=7292"
+    },
+    {
+      "name": "legal page /terms has substance",
+      "ok": true,
+      "detail": "chars=3276"
+    },
+    {
+      "name": "legal page /security has substance",
+      "ok": true,
+      "detail": "chars=2451"
+    },
+    {
+      "name": "legal page /cookies has substance",
+      "ok": true,
+      "detail": "chars=971"
+    },
+    {
+      "name": "brand Opportia present on home",
+      "ok": true,
+      "detail": "We use necessary cookies to keep you signed in. We do not use advertising cookies. Cookie notice and privacy policy. OK"
+    }
+  ]
+}

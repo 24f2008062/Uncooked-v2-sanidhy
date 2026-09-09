@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, User, ShieldCheck, CalendarPlus } from "lucide-react";
+import { LayoutDashboard, User, ShieldCheck, CalendarPlus, Settings } from "lucide-react";
 
 const TABS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/profile", label: "Profile", icon: User },
+  { href: "/settings", label: "Settings", icon: Settings },
   { href: "/create", label: "Create event", icon: CalendarPlus },
   { href: "/host/apply", label: "Host application", icon: ShieldCheck },
 ];
@@ -15,7 +16,7 @@ export default function AccountNav() {
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-card border border-border-subtle mb-8">
+    <div className="flex items-center overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-card border border-border-subtle mb-8 max-w-full">
       {TABS.map((tab) => {
         const Icon = tab.icon;
         const active = pathname === tab.href;
@@ -23,7 +24,7 @@ export default function AccountNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
+            className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-semibold shrink-0 whitespace-nowrap transition-colors ${
               active
                 ? "bg-[var(--accent-orange)] text-white shadow-md"
                 : "text-text-secondary hover:text-text-primary hover:bg-background"

@@ -5,7 +5,7 @@ import { rateLimitAsync, rateLimitHeaders } from "@/server/http/rateLimit";
 import { safeInternalPath } from "@/lib/safeRedirect";
 
 const ADMIN_PREFIXES = ["/admin", "/api/v2/admin"];
-const AUTH_REQUIRED_PAGES = ["/dashboard", "/profile", "/host/apply", "/create", "/host/scanner"];
+const AUTH_REQUIRED_PAGES = ["/dashboard", "/profile", "/settings", "/host/apply", "/create", "/host/scanner"];
 
 function isAdminPath(pathname) {
   return ADMIN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -66,8 +66,24 @@ export async function middleware(request) {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey || supabaseUrl.includes("placeholder")) {
-    if (isAdminPath(pathname) || AUTH_REQUIRED_PAGES.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
+  const anonParts = String(supabaseKey || "").split(".");
+  const anonLooksValid =
+    (anonParts.length === 3 && String(supabaseKey).startsWith("eyJ")) ||
+    String(supabaseKey || "").startsWith("sb_publishable_");
+  const supabaseBroken =
+    !supabaseUrl ||
+    !supabaseKey ||
+    supabaseUrl.includes("placeholder") ||
+    supabaseUrl.includes("uncooked-dev-project.supabase.co") ||
+    !anonLooksValid;
+
+  if (supabaseBroken) {
+    // Auth APIs + gated pages fail closed when Supabase Auth env is invalid.
+    if (
+      pathname.startsWith("/api/auth") ||
+      isAdminPath(pathname) ||
+      AUTH_REQUIRED_PAGES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
+    ) {
       return serviceUnavailable(pathname);
     }
     response.headers.set("x-request-id", crypto.randomUUID());

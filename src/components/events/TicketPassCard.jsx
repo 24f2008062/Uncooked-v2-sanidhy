@@ -1,6 +1,14 @@
 "use client";
 
-import { QRCodeSVG } from "qrcode.react";
+import dynamic from "next/dynamic";
+
+const QRCodeSVG = dynamic(
+  () => import("qrcode.react").then((mod) => mod.QRCodeSVG),
+  {
+    ssr: false,
+    loading: () => <div className="w-24 h-24 bg-zinc-200 rounded-lg animate-pulse" />,
+  }
+);
 
 export default function TicketPassCard({ title, status, location, dateLabel, payload, passId }) {
   return (

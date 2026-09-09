@@ -69,7 +69,7 @@ export default function CareerCatalyst() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-3xl md:text-5xl font-bold tracking-tight text-text-primary leading-tight"
+              className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight text-text-primary leading-tight"
             >
               Exclusive Work Opportunities
             </motion.h2>

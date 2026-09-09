@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="rockBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#180303"/>
+      <stop offset="50%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <circle cx="50" cy="50" r="50" fill="url(#rockBg)"/>
+  
+  <!-- Leather Jacket with Studs -->
+  <path d="M22 100 C22 76 34 68 50 68 C66 68 78 76 78 100 Z" fill="#09090b"/>
+  <!-- Silver Lapels -->
+  <path d="M38 70 L48 95 L40 100 Z" fill="#27272a"/>
+  <path d="M62 70 L52 95 L60 100 Z" fill="#27272a"/>
+  <circle cx="36" cy="74" r="1" fill="#e4e4e7"/>
+  <circle cx="64" cy="74" r="1" fill="#e4e4e7"/>
+  <circle cx="42" cy="84" r="1" fill="#e4e4e7"/>
+  <circle cx="58" cy="84" r="1" fill="#e4e4e7"/>
+
+  <!-- Neck -->
+  <rect x="44" y="58" width="12" height="14" rx="2" fill="#fed7aa"/>
+  
+  <!-- Head / Face -->
+  <path d="M34 42 C34 28 41 24 50 24 C59 24 66 28 66 42 C66 56 59 63 50 63 C41 63 34 56 34 42 Z" fill="#fed7aa"/>
+  
+  <!-- Spiky Punk Hair -->
+  <path d="M30 36 L26 22 L36 26 L42 12 L48 22 L54 10 L58 22 L66 14 L68 28 L74 24 L70 38 C66 26 56 22 50 22 C40 22 34 28 30 36 Z" fill="#18181b"/>
+  
+  <!-- Black Rockstar Sunglasses -->
+  <polygon points="34,36 48,36 45,46 36,46" fill="#000000"/>
+  <polygon points="52,36 66,36 64,46 55,46" fill="#000000"/>
+  <line x1="48" y1="38" x2="52" y2="38" stroke="#000000" stroke-width="2"/>
+  <!-- Lens reflection glare -->
+  <line x1="36" y1="38" x2="42" y2="44" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
+  <line x1="54" y1="38" x2="60" y2="44" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
+
+  <!-- Lightning Bolt Face Tattoo -->
+  <path d="M60 48 L56 54 L59 54 L55 60 L62 53 L58 53 Z" fill="url(#boltGrad)"/>
+
+  <!-- Smirk -->
+  <path d="M46 54 Q51 57 56 53" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

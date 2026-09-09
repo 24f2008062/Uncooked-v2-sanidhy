@@ -36,6 +36,10 @@ export async function GET() {
           include: { event: true, ticketTier: true },
           orderBy: { registeredAt: "desc" },
         },
+        eventsCreated: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: "desc" },
+        },
         hostApplication: true,
         opportunityApps: {
           include: { opportunity: true },
@@ -81,11 +85,17 @@ export async function PUT(req) {
       privacyNomineeEmail = raw || null;
     }
 
+    let phoneE164;
+    if (body.phoneE164 !== undefined) {
+      phoneE164 = String(body.phoneE164 || "").trim().slice(0, 30) || null;
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: auth.user.id },
       data: {
         ...(fullName !== undefined && { fullName }),
         ...(name !== undefined && { name }),
+        ...(phoneE164 !== undefined && { phoneE164 }),
         ...(department !== undefined && { department: department || null }),
         ...(clubAssociation !== undefined && { clubAssociation: clubAssociation || null }),
         ...(privacyNomineeName !== undefined && { privacyNomineeName: privacyNomineeName || null }),

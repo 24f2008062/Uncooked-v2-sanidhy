@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AgentWidget from "@/components/ui/AgentWidget";
+import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import { 
   Mail, 
   MessageSquare, 
@@ -84,7 +84,7 @@ export default function ContactPage() {
   return (
     <>
       <Navbar forceDarkTop={true} />
-      <AgentWidget />
+      <LazyAgentWidget />
 
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 relative overflow-hidden">
         {/* Background Ambient Glows */}

@@ -23,6 +23,7 @@ import {
   PauseCircle,
   PlayCircle
 } from "lucide-react";
+import AdminRemoteImage from "@/components/ui/AdminRemoteImage";
 
 export default function AdminEventsPage() {
   const [events, setEvents] = useState([]);
@@ -329,11 +330,13 @@ export default function AdminEventsPage() {
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           {evt.bannerUrl ? (
-                            <img
+                            <AdminRemoteImage
                               src={evt.bannerUrl}
                               alt=""
+                              width={40}
+                              height={40}
                               className="w-10 h-10 rounded-lg object-cover border border-[#2a2a3a] shrink-0"
-                              onError={(e) => { e.target.style.display = 'none'; }}
+                              onError={(e) => { e.target.style.display = "none"; }}
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">

@@ -615,10 +615,11 @@ img {
    ============================================================================ */
 
 .text-hero {
-  font-size: clamp(2.5rem, 7vw, 6rem);
+  font-size: clamp(2rem, 7vw, 6rem);
   line-height: 0.95;
   letter-spacing: -0.02em;
   font-weight: 700;
+  word-break: break-word;
 }
 
 .text-section-title {
@@ -734,3 +735,22 @@ img {
     border-width: 0.5px;
   }
 }
+
+/* Touch-optimized horizontal scrolling without visual scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area padding utilities for mobile notch and home indicator */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 1rem);
+}
+

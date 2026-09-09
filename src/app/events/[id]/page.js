@@ -8,7 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AgentWidget from "@/components/ui/AgentWidget";
+import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import TicketPassCard from "@/components/events/TicketPassCard";
 import {
   ArrowLeft,
@@ -122,7 +122,7 @@ export default function EventDetailsPage() {
   return (
     <>
       <Navbar forceDarkTop />
-      <AgentWidget />
+      <LazyAgentWidget />
       <main className="min-h-screen bg-primary pt-28 pb-24 relative overflow-hidden">
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
 
@@ -172,6 +172,7 @@ export default function EventDetailsPage() {
                     src={event.bannerUrl || FALLBACK_BANNER}
                     alt={event.title}
                     fill
+                    unoptimized={Boolean(event.bannerUrl && !event.bannerUrl.startsWith("/") && !event.bannerUrl.includes("unsplash.com"))}
                     className="object-cover"
                     sizes="(max-width: 1024px) 100vw, 60vw"
                     priority

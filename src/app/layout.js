@@ -46,6 +46,14 @@ export const metadata = {
   },
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#0a0a0a",
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }) {
   return (
     <html
@@ -53,10 +61,9 @@ export default function RootLayout({ children }) {
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <meta name="theme-color" content="#0a0a0a" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300">
+      <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300 overflow-x-hidden w-full max-w-full">
         <SupabaseProvider>
           <ThemeProvider>
             <ScrollToTop />

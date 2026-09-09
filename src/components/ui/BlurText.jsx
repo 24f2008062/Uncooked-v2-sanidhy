@@ -44,17 +44,21 @@ const BlurText = ({
   const ref = useRef(null);
 
   useEffect(() => {
-    if (!ref.current) return;
+    const element = ref.current;
+    if (!element) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry?.isIntersecting) {
           setInView(true);
-          observer.unobserve(ref.current);
+          if (entry.target) {
+            observer.unobserve(entry.target);
+          }
+          observer.disconnect();
         }
       },
       { threshold, rootMargin }
     );
-    observer.observe(ref.current);
+    observer.observe(element);
     return () => observer.disconnect();
   }, [threshold, rootMargin]);
 

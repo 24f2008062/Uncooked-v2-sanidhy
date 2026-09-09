@@ -96,6 +96,47 @@ if (fs.existsSync(envLocalPath)) {
   } else {
     console.log('✅ DATABASE_URL: Configured.');
   }
+
+  // Supabase Auth public config (login/signup hard-depend on these)
+  const supabaseUrl = parsed.NEXT_PUBLIC_SUPABASE_URL || '';
+  const anonKey = parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const serviceKey = parsed.SUPABASE_SERVICE_ROLE_KEY || '';
+
+  if (!supabaseUrl) {
+    console.error('❌ NEXT_PUBLIC_SUPABASE_URL is missing.');
+    failed = true;
+  } else if (supabaseUrl.includes('uncooked-dev-project.supabase.co')) {
+    console.error('❌ NEXT_PUBLIC_SUPABASE_URL points at dead host uncooked-dev-project.supabase.co');
+    console.error('   Use https://<live-project-ref>.supabase.co from the Supabase project tied to DATABASE_URL.');
+    failed = true;
+  } else if (!supabaseUrl.includes('.supabase.co')) {
+    console.warn('⚠️  NEXT_PUBLIC_SUPABASE_URL does not look like a *.supabase.co host.');
+  } else {
+    console.log('✅ NEXT_PUBLIC_SUPABASE_URL: Present.');
+  }
+
+  const anonParts = anonKey.split('.');
+  if (!anonKey) {
+    console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY is missing.');
+    failed = true;
+  } else if (!(anonParts.length === 3 && anonKey.startsWith('eyJ')) && !anonKey.startsWith('sb_publishable_')) {
+    console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY looks truncated/invalid (need full 3-part JWT or sb_publishable_…).');
+    console.error(`   Current length=${anonKey.length}, jwtParts=${anonParts.length}`);
+    failed = true;
+  } else {
+    console.log('✅ NEXT_PUBLIC_SUPABASE_ANON_KEY: Looks structurally valid.');
+  }
+
+  const serviceParts = serviceKey.split('.');
+  if (!serviceKey) {
+    console.warn('⚠️  SUPABASE_SERVICE_ROLE_KEY is missing (admin/migrate paths will fail).');
+  } else if (!(serviceParts.length === 3 && serviceKey.startsWith('eyJ')) && !serviceKey.startsWith('sb_secret_')) {
+    console.error('❌ SUPABASE_SERVICE_ROLE_KEY looks truncated/invalid.');
+    console.error(`   Current length=${serviceKey.length}, jwtParts=${serviceParts.length}`);
+    failed = true;
+  } else {
+    console.log('✅ SUPABASE_SERVICE_ROLE_KEY: Looks structurally valid.');
+  }
 } else {
   console.log('ℹ️  No .env.local found. Copy .env.example to .env.local to configure your local environment.');
 }

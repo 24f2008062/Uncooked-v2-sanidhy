@@ -1,11 +1,21 @@
 "use client";
 
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import InteractiveMesh from "./InteractiveMesh";
-import GridScan from "@/components/ui/GridScan";
 import BlurText from "@/components/ui/BlurText";
+
+const GridScan = dynamic(() => import("@/components/ui/GridScan"), {
+  ssr: false,
+  loading: () => null,
+});
+const CreateEventModal = dynamic(() => import("@/components/events/CreateEventModal"), {
+  ssr: false,
+  loading: () => null,
+});
 
 /*
   Floating cards use percentage-based positioning so they scale with
@@ -109,6 +119,8 @@ const farRightCards = [
 ];
 
 export default function HeroSection() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   return (
     <section
       className="hero-section relative w-full overflow-hidden text-white"
@@ -292,19 +304,6 @@ export default function HeroSection() {
       {/* Center Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[100vh] min-h-[100dvh] px-4 sm:px-6 text-center pt-24 pb-16">
         
-        {/* Prominent Local Campus Identity Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#161619]/90 border border-[#2c2c32] text-xs font-semibold text-amber-400 shadow-[0_0_25px_rgba(249,115,22,0.15)] backdrop-blur-md"
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span>⚡ Live Across Lucknow &amp; Campus Networks</span>
-        </motion.div>
 
         {/* Brand badge */}
         <motion.div
@@ -363,12 +362,13 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.55 }}
           className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 pointer-events-auto"
         >
-          <Link
-            href="/create"
-            className="btn-primary px-6 sm:px-8 py-3 text-sm sm:text-base min-h-[44px] inline-flex items-center justify-center"
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="btn-primary px-6 sm:px-8 py-3 text-sm sm:text-base min-h-[44px] inline-flex items-center justify-center cursor-pointer"
           >
             Create Your First Event
-          </Link>
+          </button>
           <Link
             href="/events"
             className="btn-secondary px-6 sm:px-8 py-3 text-sm sm:text-base min-h-[44px] inline-flex items-center justify-center gap-2"
@@ -388,6 +388,12 @@ export default function HeroSection() {
           background:
             "linear-gradient(to top, var(--bg-primary), transparent)",
         }}
+      />
+
+      {/* Interactive Luma-Style Create Event Modal Popup */}
+      <CreateEventModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
       />
     </section>
   );

@@ -1,4 +1,5 @@
-/** @type {import('next').NextConfig} */
+const isDev = process.env.NODE_ENV === "development";
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -14,11 +15,13 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      // Next.js still needs 'unsafe-inline' for some runtime bootstrapping.
-      // 'unsafe-eval' removed to reduce XSS blast radius.
-      "script-src 'self' 'unsafe-inline'",
+      // In development, Next.js / React debugging and Turbopack require 'unsafe-eval' for callstack reconstruction.
+      // In production, 'unsafe-eval' is excluded to satisfy OWASP CSP requirements.
+      isDev
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+        : "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://images.unsplash.com https://ui-avatars.com https://*.supabase.co",
+      "img-src 'self' data: blob: https://images.unsplash.com https://ui-avatars.com https://*.supabase.co https://cmseducation.org https://*.cmseducation.org",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
       "frame-ancestors 'none'",
@@ -32,15 +35,34 @@ const securityHeaders = [
 
 const nextConfig = {
   poweredByHeader: false,
+  compress: true,
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "ui-avatars.com" },
       { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "https", hostname: "cmseducation.org" },
+      { protocol: "https", hostname: "*.cmseducation.org" },
     ],
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "framer-motion", "recharts"],
+    optimizePackageImports: [
+      "lucide-react",
+      "framer-motion",
+      "recharts",
+      "date-fns",
+      "ogl",
+      "three",
+      "postprocessing",
+    ],
+  },
+  compiler: {
+    // Keep error/warn in production logs; drop noisy debug console.*
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "warn"] }
+        : false,
   },
   async headers() {
     return [

@@ -21,6 +21,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import AdminRemoteImage from "@/components/ui/AdminRemoteImage";
 
 export default function AdminDashboardPage() {
   const [telemetry, setTelemetry] = useState(null);
@@ -89,11 +90,11 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto pb-12 w-full">
       {/* Header Title */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Operations & Telemetry</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Operations & Telemetry</h1>
           <p className="text-xs text-gray-400 mt-1">
             Real-time platform metrics, live event catalog, opportunities, and system governance.
           </p>
@@ -101,7 +102,7 @@ export default function AdminDashboardPage() {
         <button
           onClick={fetchStats}
           disabled={loading}
-          className="px-3.5 py-2 bg-[#141419] border border-[#252530] hover:border-[#353545] rounded-xl text-xs text-gray-300 flex items-center gap-2 transition-all cursor-pointer"
+          className="self-start sm:self-auto px-3.5 py-2 bg-[#141419] border border-[#252530] hover:border-[#353545] rounded-xl text-xs text-gray-300 flex items-center gap-2 transition-all cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-gray-400 ${loading ? "animate-spin" : ""}`} />
           <span>Refresh Telemetry</span>
@@ -109,18 +110,18 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Emergency Kill-Switch Banner */}
-      <div className={`p-5 rounded-2xl border transition-all ${
+      <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
         killSwitch 
           ? "bg-red-500/10 border-red-500/40 text-red-200" 
           : "bg-[#121216] border-[#22222a] text-gray-300"
       }`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-xl ${killSwitch ? "bg-red-500/20 text-red-400" : "bg-[#1a1a22] text-amber-400"}`}>
-              <ShieldAlert className="w-6 h-6" />
+          <div className="flex items-start sm:items-center gap-3">
+            <div className={`p-2.5 sm:p-3 rounded-xl shrink-0 ${killSwitch ? "bg-red-500/20 text-red-400" : "bg-[#1a1a22] text-amber-400"}`}>
+              <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-sm font-bold text-white">Global Emergency Platform Kill-Switch</h3>
                 {killSwitch && (
                   <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider bg-red-500/20 text-red-400 rounded font-mono font-bold">
@@ -137,7 +138,7 @@ export default function AdminDashboardPage() {
           </div>
           <button
             onClick={() => setKillSwitchModal(true)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 text-center ${
               killSwitch
                 ? "bg-emerald-500 text-black hover:bg-emerald-400"
                 : "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white"
@@ -149,14 +150,14 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Telemetry Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
         {/* Total Users Card */}
-        <div className="p-5 bg-[#101014] border border-[#1e1e26] rounded-2xl">
+        <div className="p-4 sm:p-5 bg-[#101014] border border-[#1e1e26] rounded-2xl">
           <div className="flex items-center justify-between text-gray-400 mb-2">
             <span className="text-xs font-medium uppercase tracking-wider">Total Accounts</span>
             <Users className="w-4 h-4 text-blue-400" />
           </div>
-          <p className="text-2xl font-extrabold text-white">
+          <p className="text-xl sm:text-2xl font-extrabold text-white">
             {loading ? "..." : telemetry?.totalUsers ?? 0}
           </p>
           <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-500">
@@ -246,7 +247,13 @@ export default function AdminDashboardPage() {
                 <div key={evt.id} className="p-3 bg-[#141419] border border-[#22222e] rounded-xl flex items-center justify-between text-xs">
                   <div className="flex items-center gap-3">
                     {evt.bannerUrl ? (
-                      <img src={evt.bannerUrl} alt="" className="w-9 h-9 rounded-lg object-cover border border-[#2a2a3a]" />
+                      <AdminRemoteImage
+                        src={evt.bannerUrl}
+                        alt=""
+                        width={36}
+                        height={36}
+                        className="w-9 h-9 rounded-lg object-cover border border-[#2a2a3a]"
+                      />
                     ) : (
                       <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold flex items-center justify-center">
                         {evt.title.slice(0, 2).toUpperCase()}

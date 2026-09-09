@@ -107,6 +107,7 @@ export async function POST(req) {
         location,
         description,
         schedule,
+        bannerUrl: typeof body.bannerUrl === "string" ? body.bannerUrl.trim().slice(0, 500) : null,
         ticketType,
         price: ticketType === "Paid" ? price : 0,
         capacity,
