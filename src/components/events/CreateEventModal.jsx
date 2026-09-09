@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 
 const CreateEventView = dynamic(() => import("./CreateEventView"), {
   ssr: false,
@@ -64,6 +65,17 @@ export default function CreateEventModal({ isOpen, onClose }) {
           className="fixed inset-0 z-[1000] overflow-y-auto bg-[#0a0512] text-white selection:bg-pink-500/30"
           style={{ overscrollBehavior: "contain" }}
         >
+          {/* Stationary Pinned Close Button: stays pinned at top-right at all times */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="fixed top-4 right-4 sm:top-6 sm:right-8 z-[1100] w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 text-white border border-white/20 backdrop-blur-xl cursor-pointer shadow-2xl flex items-center justify-center transition-colors"
+            title="Close"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+
           <motion.div
             initial={{ opacity: 0, scale: 0.98, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

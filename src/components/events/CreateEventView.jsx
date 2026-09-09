@@ -481,19 +481,21 @@ export default function CreateEventView({ isModal = false, onClose }) {
         className="opacity-45"
       />
 
-      {/* Top-Right Floating Dismiss Cross (✕) Button: strictly right-aligned, NO navbar on this screen */}
-      <button
-        type="button"
-        onClick={() => {
-          if (onClose) onClose();
-          else router.push("/");
-        }}
-        className="fixed top-4 right-4 sm:top-6 sm:right-8 z-[1050] w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white/90 hover:text-white border border-white/20 backdrop-blur-xl transition-all duration-200 active:scale-90 cursor-pointer shadow-2xl flex items-center justify-center group"
-        title="Close"
-        aria-label="Close"
-      >
-        <X className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90 text-white" />
-      </button>
+      {/* Top-Right Stationary Dismiss Cross (✕) Button: strictly right-aligned, pinned at top-right of screen */}
+      {!isModal && (
+        <button
+          type="button"
+          onClick={() => {
+            if (onClose) onClose();
+            else router.push("/");
+          }}
+          className="fixed top-4 right-4 sm:top-6 sm:right-8 z-[1050] w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 text-white border border-white/20 backdrop-blur-xl cursor-pointer shadow-2xl flex items-center justify-center transition-colors"
+          title="Close"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5 text-white" />
+        </button>
+      )}
 
       {/* Main Content Container (Pure Event Creation Interface with No Navbar) */}
       <main className="relative z-10 w-full max-w-[1050px] my-auto">
