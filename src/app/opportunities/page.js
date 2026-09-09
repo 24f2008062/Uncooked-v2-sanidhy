@@ -2,11 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import Link from "next/link";
+
+const LightRays = dynamic(() => import("@/components/ui/LightRays"), {
+  ssr: false,
+});
 import { 
   Search, 
   Briefcase, 
@@ -95,6 +101,7 @@ const CATEGORIES = ["All", "Internship", "Freelance", "Full Time", "Bounty"];
 
 export default function OpportunitiesPage() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModalItem, setActiveModalItem] = useState(null);
@@ -169,6 +176,25 @@ export default function OpportunitiesPage() {
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 relative overflow-hidden">
         {/* Background Ambient Glows */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-purple-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+        {/* LightRays WebGL shader animation (static, no cursor movement) */}
+        <div className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0">
+          <LightRays
+            raysOrigin="top-center"
+            raysColor={theme === "light" ? "#a855f7" : "#ffffff"}
+            raysSpeed={1.0}
+            lightSpread={1.0}
+            rayLength={2.2}
+            pulsating={true}
+            noiseAmount={0.06}
+            distortion={0.08}
+            fadeDistance={1.3}
+            followMouse={false}
+            mouseInfluence={0.0}
+            lightMode={theme === "light"}
+            className={theme === "light" ? "opacity-50" : "opacity-90"}
+          />
+        </div>
 
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
