@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AgentWidget from "@/components/ui/AgentWidget";
+import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -93,7 +93,7 @@ export default function AboutPage() {
   return (
     <>
       <Navbar forceDarkTop={true} />
-      <AgentWidget />
+      <LazyAgentWidget />
 
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 overflow-hidden">
         {/* Background Ambient Glows */}

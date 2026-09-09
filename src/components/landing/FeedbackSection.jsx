@@ -145,7 +145,7 @@ export default function FeedbackSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-3xl md:text-5xl font-bold tracking-tight text-text-primary leading-tight mb-4"
+            className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight text-text-primary leading-tight mb-4"
           >
             Attended an event? <span className="text-[var(--accent-orange)]">Share your thoughts raw.</span>
           </motion.h2>
@@ -160,8 +160,8 @@ export default function FeedbackSection() {
           </motion.p>
         </div>
 
-        {/* Grid: Form on Left, Verified Logs on Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Grid: Form on Left, Reviews on Right — Perfectly Aligned */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
           {/* Submission Form Component */}
           <motion.div
@@ -169,125 +169,125 @@ export default function FeedbackSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-5 bg-card border border-border-subtle rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden"
+            className="lg:col-span-5 bg-card border border-border-subtle rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between h-full relative overflow-hidden"
           >
-            <div className="flex items-center gap-2 mb-6">
-              <MessageSquare className="w-5 h-5 text-[var(--accent-orange)]" />
-              <h3 className="text-lg font-bold text-text-primary">Submit Your Feedback</h3>
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <MessageSquare className="w-5 h-5 text-[var(--accent-orange)]" />
+                <h3 className="text-lg font-bold text-text-primary">Submit Your Feedback</h3>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Star Rating Select */}
+                <div>
+                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
+                    Rating
+                  </label>
+                  {renderStars(rating, true)}
+                </div>
+
+                {/* Name Input */}
+                <div>
+                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
+                    Your Name / Handle
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={authorName}
+                    onChange={(e) => setAuthorName(e.target.value)}
+                    placeholder="e.g. Samarth Verma"
+                    className="w-full bg-background border border-border-subtle rounded-xl px-4 py-2.5 text-xs sm:text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-[var(--accent-orange)] transition-colors"
+                  />
+                </div>
+
+                {/* Role / Event Input */}
+                <div>
+                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
+                    Role / Campus Event (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={roleEvent}
+                    onChange={(e) => setRoleEvent(e.target.value)}
+                    placeholder="e.g. Lead, Hackathon 2026"
+                    className="w-full bg-background border border-border-subtle rounded-xl px-4 py-2.5 text-xs sm:text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-[var(--accent-orange)] transition-colors"
+                  />
+                </div>
+
+                {/* Review Textarea */}
+                <div>
+                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
+                    Raw Review / Feedback
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    placeholder="Write your raw review or experience about the event and platform..."
+                    className="w-full bg-background border border-border-subtle rounded-xl p-3 text-xs sm:text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-[var(--accent-orange)] transition-colors resize-none"
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="w-full py-3.5 rounded-xl font-bold text-xs text-white shadow-lg transition-all duration-300 hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
+                  style={{
+                    background: "linear-gradient(135deg, #ec4899 0%, #f97316 100%)",
+                    boxShadow: "0 10px 25px -5px rgba(249, 115, 22, 0.35)",
+                  }}
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Submit Review
+                </button>
+
+                <AnimatePresence>
+                  {isSubmitted && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span>Review logged! Your feedback is now live on the campus stream.</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </form>
             </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Star Rating Select */}
-              <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
-                  Rating
-                </label>
-                {renderStars(rating, true)}
-              </div>
-
-              {/* Name Input */}
-              <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
-                  Your Name / Handle
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                  placeholder="e.g. Samarth Verma"
-                  className="w-full bg-background border border-border-subtle rounded-xl px-4 py-2.5 text-xs sm:text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-[var(--accent-orange)] transition-colors"
-                />
-              </div>
-
-              {/* Role / Event Input */}
-              <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
-                  Role / Campus Event (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={roleEvent}
-                  onChange={(e) => setRoleEvent(e.target.value)}
-                  placeholder="e.g. Lead, Hackathon 2026"
-                  className="w-full bg-background border border-border-subtle rounded-xl px-4 py-2.5 text-xs sm:text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-[var(--accent-orange)] transition-colors"
-                />
-              </div>
-
-              {/* Review Textarea */}
-              <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
-                  Raw Review / Feedback
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="Write your raw review or experience about the event and platform..."
-                  className="w-full bg-background border border-border-subtle rounded-xl p-3 text-xs sm:text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-[var(--accent-orange)] transition-colors resize-none"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className="w-full py-3.5 rounded-xl font-bold text-xs text-white shadow-lg transition-all duration-300 hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
-                style={{
-                  background: "linear-gradient(135deg, #ec4899 0%, #f97316 100%)",
-                  boxShadow: "0 10px 25px -5px rgba(249, 115, 22, 0.35)",
-                }}
-              >
-                <Send className="w-3.5 h-3.5" />
-                Submit Review
-              </button>
-
-              <AnimatePresence>
-                {isSubmitted && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span>Review logged! Your feedback is now live on the campus stream.</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </form>
           </motion.div>
 
-          {/* Verified Attendee Logs Column */}
-          <div className="lg:col-span-7 flex flex-col space-y-4">
-            <div className="flex items-center justify-between px-2">
+          {/* Attendee Reviews Column — Matching Symmetrical Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.25 }}
+            className="lg:col-span-7 bg-card border border-border-subtle rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col h-full relative overflow-hidden"
+          >
+            {/* Header aligned identically to left form header */}
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="text-xs font-bold uppercase tracking-wider text-text-primary">
-                  Verified Attendee Logs ({reviews.length} entries)
-                </span>
+                <Sparkles className="w-5 h-5 text-[var(--accent-orange)]" />
+                <h3 className="text-lg font-bold text-text-primary">Attendee Reviews</h3>
               </div>
-              {reviews.length > 0 && (
-                <button
-                  onClick={() => setReviews([])}
-                  className="text-[10px] text-text-secondary hover:text-red-400 transition-colors cursor-pointer"
-                >
-                  Clear Feed
-                </button>
-              )}
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-background border border-border-subtle text-text-secondary">
+                {reviews.length} reviews
+              </span>
             </div>
 
             {/* Reviews Stream / Cards */}
             {reviews.length > 0 ? (
-              <div className="space-y-4 max-h-[540px] overflow-y-auto pr-1 no-scrollbar">
+              <div className="flex-1 overflow-y-auto space-y-3.5 pr-1.5 max-h-[460px] sm:max-h-[500px]">
                 {reviews.map((rev) => (
-                  <motion.div
+                  <div
                     key={rev.id}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-card border border-border-subtle rounded-2xl p-5 shadow-md hover:border-border-hover transition-all duration-200 group relative"
+                    className="bg-background/60 border border-border-subtle rounded-2xl p-4 sm:p-5 shadow-sm hover:border-border-hover transition-all duration-200 group relative"
                   >
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between mb-2.5">
                       <div className="flex items-center gap-3">
                         <div className="relative w-10 h-10 rounded-full overflow-hidden border border-border-subtle shrink-0">
                           <Image
@@ -320,15 +320,15 @@ export default function FeedbackSection() {
                     <p className="text-xs sm:text-sm text-text-secondary leading-relaxed italic">
                       &quot;{rev.text}&quot;
                     </p>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             ) : (
               /* Fallback State Indicator */
-              <div className="bg-card border border-border-subtle border-dashed rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-3">
+              <div className="flex-1 border border-border-subtle border-dashed rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-3">
                 <AlertCircle className="w-8 h-8 text-gray-500" />
                 <p className="text-text-secondary text-xs sm:text-sm max-w-sm">
-                  No active logs. Submit yours to initialize the feed.
+                  No active reviews yet. Submit yours to initialize the feed.
                 </p>
                 <button
                   onClick={() => setReviews(INITIAL_REVIEWS)}
@@ -338,7 +338,7 @@ export default function FeedbackSection() {
                 </button>
               </div>
             )}
-          </div>
+          </motion.div>
 
         </div>
       </div>

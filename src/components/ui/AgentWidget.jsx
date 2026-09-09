@@ -56,7 +56,7 @@ export default function AgentWidget() {
   );
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 font-sans max-w-[calc(100vw-2rem)]">
       <AnimatePresence>
         {isOpen ? (
           <motion.div
@@ -64,7 +64,7 @@ export default function AgentWidget() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 20 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="w-[90vw] max-w-[370px] sm:w-[380px] bg-card border border-border-subtle rounded-3xl shadow-2xl overflow-hidden flex flex-col backdrop-blur-xl"
+            className="w-[calc(100vw-2rem)] max-w-[370px] sm:w-[380px] max-h-[85vh] bg-card border border-border-subtle rounded-3xl shadow-2xl overflow-hidden flex flex-col backdrop-blur-xl"
             style={{
               boxShadow: "0 20px 50px rgba(0,0,0,0.5), 0 0 20px rgba(249, 115, 22, 0.15)",
             }}
@@ -101,7 +101,7 @@ export default function AgentWidget() {
 
             <div
               ref={listRef}
-              className="p-5 flex-grow overflow-y-auto max-h-[380px] min-h-[320px] flex flex-col bg-background/40"
+              className="p-4 sm:p-5 flex-grow overflow-y-auto max-h-[min(380px,50vh)] min-h-[220px] sm:min-h-[300px] flex flex-col bg-background/40"
             >
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center text-center my-auto py-2 space-y-4">

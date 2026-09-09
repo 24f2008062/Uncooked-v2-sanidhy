@@ -78,7 +78,7 @@ export default function SignupPage() {
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#0a0a0a]">
       
       {/* Left Column - Signup Form */}
-      <div className="w-full lg:w-[48%] xl:w-[42%] flex flex-col justify-center px-6 sm:px-10 lg:px-16 py-10 min-h-screen relative overflow-hidden">
+      <div className="w-full lg:w-[48%] xl:w-[42%] flex flex-col justify-center px-4 sm:px-10 lg:px-16 py-8 sm:py-10 min-h-screen relative overflow-hidden">
         
         {/* Background ambient glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -90,10 +90,10 @@ export default function SignupPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-full max-w-[420px] mx-auto relative z-10 flex flex-col justify-center h-full py-6"
+          className="w-full max-w-[420px] mx-auto relative z-10 flex flex-col justify-center h-full py-4 sm:py-6"
         >
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 mb-8">
+          <Link href="/" className="flex items-center gap-3 mb-6 sm:mb-8">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f472b6] to-[#f97316] flex items-center justify-center shadow-[0_0_20px_rgba(244,114,182,0.3)]">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
@@ -101,9 +101,9 @@ export default function SignupPage() {
           </Link>
 
           {/* Headers */}
-          <div className="mb-6">
+          <div className="mb-5 sm:mb-6">
             <h1 className="text-[28px] sm:text-[36px] leading-tight font-bold text-white mb-2 tracking-tight">
-              Get Started with Opportia
+              Create an Account
             </h1>
             <p className="text-[14px] text-gray-400 font-medium">
               Create your account to host, register, and discover campus events

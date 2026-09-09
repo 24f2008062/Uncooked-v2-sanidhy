@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AgentWidget from "@/components/ui/AgentWidget";
+import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import Link from "next/link";
 import { 
   Search, 
@@ -28,7 +28,7 @@ const OPPORTUNITIES = [
     title: "Social Media Marketing Intern",
     company: "OPPORTIA",
     type: "Internship",
-    pay: "$ TBD",
+    pay: "₹ TBD",
     location: "Remote",
     desc: "Help us grow Opportia across campus social media and student community channels. You will be building viral content and host spotlights.",
     skills: ["Social Media Management", "Content Creation", "Community Engagement"],
@@ -39,7 +39,7 @@ const OPPORTUNITIES = [
     title: "Frontend Developer Intern",
     company: "NeonTech Labs",
     type: "Internship",
-    pay: "$20/hr",
+    pay: "₹20,000 / mo",
     location: "Remote",
     desc: "Join our core frontend team to build next-gen interactive React and Next.js applications with smooth micro-animations.",
     skills: ["React", "Next.js", "Tailwind"],
@@ -50,7 +50,7 @@ const OPPORTUNITIES = [
     title: "Backend Engineering Intern",
     company: "CloudScale Inc",
     type: "Internship",
-    pay: "$25/hr",
+    pay: "₹25,000 / mo",
     location: "Hybrid",
     desc: "Help scale our Go microservices handling millions of concurrent telemetry requests daily across campus nodes.",
     skills: ["Go", "Kubernetes", "AWS"],
@@ -61,7 +61,7 @@ const OPPORTUNITIES = [
     title: "UI/UX Design Freelance",
     company: "Creative Studios",
     type: "Freelance",
-    pay: "$40/hr",
+    pay: "₹1,500 / hr",
     location: "Hybrid",
     desc: "Design a high-converting landing page and onboarding flow for a new consumer app with glassmorphic aesthetic.",
     skills: ["Figma", "Prototyping", "User Research"],
@@ -72,7 +72,7 @@ const OPPORTUNITIES = [
     title: "AI Agent Developer Bounty",
     company: "DeepMind Campus Lab",
     type: "Bounty",
-    pay: "$750 Bounty",
+    pay: "₹60,000 Bounty",
     location: "Remote",
     desc: "Build an autonomous AI subagent plugin for automated calendar synchronization and live attendee notifications.",
     skills: ["Python", "LangChain", "OpenAI API"],
@@ -83,7 +83,7 @@ const OPPORTUNITIES = [
     title: "Campus Growth Lead",
     company: "OPPORTIA Ecosystem",
     type: "Full Time",
-    pay: "$30/hr",
+    pay: "₹35,000 / mo",
     location: "On Campus",
     desc: "Lead event partnerships, ambassador networks, and host verification across 25+ university campuses.",
     skills: ["Community Building", "Event Logistics", "Outreach"],
@@ -126,7 +126,7 @@ export default function OpportunitiesPage() {
               title: row.title,
               company: row.company,
               type: row.type,
-              pay: row.stipend || "Undisclosed",
+              pay: row.stipend ? (row.stipend.startsWith("₹") ? row.stipend : `₹${row.stipend}`) : "Undisclosed",
               location: row.location,
               desc: row.description,
               skills: [],
@@ -164,7 +164,7 @@ export default function OpportunitiesPage() {
   return (
     <>
       <Navbar forceDarkTop={true} />
-      <AgentWidget />
+      <LazyAgentWidget />
 
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 relative overflow-hidden">
         {/* Background Ambient Glows */}
@@ -207,15 +207,15 @@ export default function OpportunitiesPage() {
               />
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full md:w-auto justify-start md:justify-end">
+            {/* Category Filter Pills (Horizontal Touch Swipe on Mobile) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full md:w-auto justify-start md:justify-end overflow-x-auto no-scrollbar py-1 max-w-full">
               {CATEGORIES.map((cat) => {
                 const isSelected = selectedCategory === cat;
                 return (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                    className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                       isSelected
                         ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
                         : "bg-background text-text-secondary border border-border-subtle hover:text-text-primary hover:border-border-hover"
@@ -350,7 +350,7 @@ export default function OpportunitiesPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-card border border-border-subtle rounded-3xl p-6 sm:p-8 shadow-2xl z-10 overflow-hidden"
+              className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-card border border-border-subtle rounded-3xl p-5 sm:p-8 shadow-2xl z-10"
             >
               <button
                 onClick={() => setActiveModalItem(null)}

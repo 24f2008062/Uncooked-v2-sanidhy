@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="partyBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c2d12"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Circle with energetic aura -->
+  <circle cx="50" cy="50" r="50" fill="url(#partyBg)"/>
+
+  <!-- Fun Confetti & Sparkles -->
+  <polygon points="20,20 22,23 25,21 23,24 24,27 21,25 18,27 20,24" fill="#fef08a"/>
+  <circle cx="80" cy="22" r="2" fill="#38bdf8"/>
+  <circle cx="86" cy="34" r="1.5" fill="#fef08a"/>
+  <polygon points="15,60 17,62 19,60 18,63 20,65 17,64 15,66 16,63" fill="#ffffff" opacity="0.8"/>
+  <circle cx="82" cy="74" r="2" fill="#ffffff" opacity="0.7"/>
+
+  <!-- Bright Hoodie -->
+  <path d="M20 100 C20 74 34 68 50 68 C66 68 80 74 80 100 Z" fill="#4338ca"/>
+  <!-- Hoodie Drawstrings & Collar -->
+  <path d="M42 70 Q50 78 58 70" fill="none" stroke="#f43f5e" stroke-width="3"/>
+  <circle cx="43" cy="84" r="1.5" fill="#ffffff"/>
+  <circle cx="57" cy="84" r="1.5" fill="#ffffff"/>
+
+  <!-- Neck -->
+  <rect x="44" y="58" width="12" height="13" rx="2" fill="#fed7aa"/>
+
+  <!-- Head / Face -->
+  <path d="M34 42 C34 27 41 23 50 23 C59 23 66 27 66 42 C66 56 59 63 50 63 C41 63 34 56 34 42 Z" fill="#fed7aa"/>
+
+  <!-- Messy Cool Wavy Hair -->
+  <path d="M32 36 C30 20 44 14 54 14 C66 14 72 22 68 36 C64 26 56 22 48 22 C38 22 34 28 32 36 Z" fill="#92400e"/>
+  <path d="M48 14 C42 10 35 14 34 20" fill="none" stroke="#92400e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M56 14 C64 11 69 16 68 22" fill="none" stroke="#92400e" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Cool Tinted Sunglasses -->
+  <rect x="33" y="35" width="14" height="11" rx="3.5" fill="#18181b"/>
+  <rect x="53" y="35" width="14" height="11" rx="3.5" fill="#18181b"/>
+  <line x1="47" y1="39" x2="53" y2="39" stroke="#18181b" stroke-width="2.5"/>
+  <line x1="31" y1="38" x2="33" y2="38" stroke="#18181b" stroke-width="2"/>
+  <line x1="67" y1="38" x2="69" y2="38" stroke="#18181b" stroke-width="2"/>
+  
+  <!-- Lens Color Fade inside sunglasses -->
+  <rect x="34.5" y="36.5" width="11" height="8" rx="2" fill="#fbbf24" opacity="0.6"/>
+  <rect x="54.5" y="36.5" width="11" height="8" rx="2" fill="#fbbf24" opacity="0.6"/>
+  <line x1="36" y1="38" x2="43" y2="43" stroke="#ffffff" stroke-width="1.2" opacity="0.8"/>
+  <line x1="56" y1="38" x2="63" y2="43" stroke="#ffffff" stroke-width="1.2" opacity="0.8"/>
+
+  <!-- Big Joyful Smile with Teeth -->
+  <path d="M42 51 Q50 60 58 51 Z" fill="#991b1b"/>
+  <path d="M44 51 Q50 54 56 51" fill="#ffffff"/>
+</svg>

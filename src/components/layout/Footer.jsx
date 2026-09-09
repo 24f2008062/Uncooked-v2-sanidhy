@@ -170,9 +170,9 @@ export default function Footer() {
       >
         {/* Base subtle dark text */}
         <span 
-          className="font-black leading-none tracking-tighter col-start-1 row-start-1"
+          className="font-black leading-none tracking-tighter col-start-1 row-start-1 max-w-full"
           style={{
-            fontSize: "clamp(100px, 20vw, 300px)",
+            fontSize: "clamp(42px, 16vw, 300px)",
             background: "linear-gradient(to bottom, rgba(244,114,182,0.08) 0%, rgba(249,115,22,0.02) 50%, transparent 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -183,9 +183,9 @@ export default function Footer() {
         </span>
         {/* Glowing orange text on scroll */}
         <span 
-          className="font-black leading-none tracking-tighter col-start-1 row-start-1 transition-opacity duration-[1500ms] ease-out"
+          className="font-black leading-none tracking-tighter col-start-1 row-start-1 transition-opacity duration-[1500ms] ease-out max-w-full"
           style={{
-            fontSize: "clamp(100px, 20vw, 300px)",
+            fontSize: "clamp(42px, 16vw, 300px)",
             background: "linear-gradient(to bottom, var(--accent-orange) 0%, transparent 80%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",

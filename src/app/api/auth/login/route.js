@@ -5,6 +5,7 @@ import { jsonError, jsonOk, readJson } from "@/server/http/envelope";
 import { isAccountBlocked } from "@/server/auth/authentication";
 import { clearFailedLogins, recordFailedLogin } from "@/server/auth/loginLockout";
 import { syncAuthAppMetadata } from "@/lib/supabase/admin";
+import { getSupabasePublicConfig } from "@/lib/supabase/env";
 
 const GENERIC_FAIL = "Invalid email or password.";
 
@@ -16,6 +17,16 @@ export async function POST(req) {
       windowMs: 15 * 60 * 1000,
     });
     if (blocked) return blocked;
+
+    const envIssues = getSupabasePublicConfig().issues;
+    if (envIssues.length) {
+      console.error("[AUTH_LOGIN] supabase env invalid:", envIssues.join("; "));
+      return jsonError(
+        "Sign-in is temporarily unavailable. Authentication is misconfigured.",
+        503,
+        "AUTH_MISCONFIGURED"
+      );
+    }
 
     const parsed = await readJson(req);
     if (parsed.error) return parsed.error;
@@ -46,7 +57,20 @@ export async function POST(req) {
     }
 
     const supabase = await createClient();
-    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    let data;
+    let error;
+    try {
+      const result = await supabase.auth.signInWithPassword({ email, password });
+      data = result.data;
+      error = result.error;
+    } catch (networkErr) {
+      console.error("[AUTH_LOGIN] supabase unreachable:", networkErr?.message || networkErr);
+      return jsonError(
+        "Sign-in is temporarily unavailable. Please try again shortly.",
+        503,
+        "AUTH_UPSTREAM_UNAVAILABLE"
+      );
+    }
 
     // JIT migrate legacy hash accounts, then retry once.
     if (error && user && !user.authUserId && user.passwordHash) {

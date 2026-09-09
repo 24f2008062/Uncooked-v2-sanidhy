@@ -44,6 +44,11 @@ function LoginForm() {
       if (!res.ok || data.success === false) {
         if (res.status === 429) {
           setErrorMsg("Too many sign-in attempts. Please wait and try again.");
+        } else if (res.status === 503) {
+          setErrorMsg(
+            data.error?.message ||
+              "Sign-in is temporarily unavailable. Please try again shortly."
+          );
         } else {
           setErrorMsg(data.error?.message || "Invalid email or password. Please try again.");
         }
@@ -63,7 +68,7 @@ function LoginForm() {
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#0a0a0a]">
       
       {/* Left Column - Form */}
-      <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center px-6 sm:px-12 lg:px-24 py-12 min-h-screen relative overflow-hidden">
+      <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center px-4 sm:px-12 lg:px-24 py-8 sm:py-12 min-h-screen relative overflow-hidden">
         
         {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -78,7 +83,7 @@ function LoginForm() {
           className="w-full max-w-[400px] mx-auto relative z-10 flex flex-col justify-center h-full"
         >
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 mb-16">
+          <Link href="/" className="flex items-center gap-3 mb-10 sm:mb-16">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f472b6] to-[#f97316] flex items-center justify-center shadow-[0_0_20px_rgba(244,114,182,0.3)]">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
@@ -86,8 +91,8 @@ function LoginForm() {
           </Link>
 
           {/* Headers */}
-          <div className="mb-8">
-            <h1 className="text-[32px] sm:text-[40px] leading-tight font-bold text-white mb-2 tracking-tight">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-[28px] sm:text-[40px] leading-tight font-bold text-white mb-2 tracking-tight">
               Login to Opportia
             </h1>
             <p className="text-[15px] text-gray-400 font-medium">

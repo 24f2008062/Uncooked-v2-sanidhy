@@ -14,26 +14,26 @@ export default function PrivacyPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-32 pb-24" style={{ background: "var(--bg-primary)" }}>
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="mb-12">
+      <main className="min-h-screen pt-28 sm:pt-32 pb-24" style={{ background: "var(--bg-primary)" }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="mb-8 sm:mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6">
               <span className="w-2 h-2 rounded-full bg-pink-500" />
               <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">
                 Version {LEGAL.privacyVersion} · India · {DPDP.actShort} · {DPDP.rulesShort}
               </span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>
+            <h1 className="text-3xl sm:text-5xl font-bold mb-4 sm:mb-6" style={{ color: "var(--text-primary)" }}>
               Privacy <span className="gradient-text">Notice</span>
             </h1>
-            <p className="text-lg leading-relaxed max-w-2xl" style={{ color: "var(--text-secondary)" }}>
+            <p className="text-base sm:text-lg leading-relaxed max-w-2xl" style={{ color: "var(--text-secondary)" }}>
               {LEGAL.dataFiduciaryNotice} This notice is provided in clear language as required by Section 5 of the
               Act and Rule 3 of the {DPDP.rulesShort} (notified {DPDP.rulesNotifyDate}).
             </p>
           </div>
 
           <div className="space-y-6 text-sm text-gray-400 leading-relaxed">
-            <div className="p-8 rounded-2xl border border-[var(--border-subtle)] bg-[#111]">
+            <div className="p-5 sm:p-8 rounded-2xl border border-[var(--border-subtle)] bg-[#111]">
               <div className="flex items-center gap-4 mb-6">
                 <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400">
                   <UserSquare2 className="w-6 h-6" />

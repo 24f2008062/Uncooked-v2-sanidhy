@@ -5,6 +5,7 @@ import { enforceMutationGuards } from "@/server/http/guards";
 import { getClientIp, fingerprintIp } from "@/server/http/clientIp";
 import { validatePasswordPolicy } from "@/server/utils/passwordUtils";
 import { requireAuthSecret } from "@/server/security/secrets";
+import { getSupabasePublicConfig } from "@/lib/supabase/env";
 
 export async function POST(req) {
   try {
@@ -14,6 +15,21 @@ export async function POST(req) {
       windowMs: 15 * 60 * 1000,
     });
     if (blocked) return blocked;
+
+    const envIssues = getSupabasePublicConfig().issues;
+    if (envIssues.length) {
+      console.error("[REGISTER] supabase env invalid:", envIssues.join("; "));
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "AUTH_MISCONFIGURED",
+            message: "Registration is temporarily unavailable. Authentication is misconfigured.",
+          },
+        },
+        { status: 503 }
+      );
+    }
 
     let authSecret;
     try {

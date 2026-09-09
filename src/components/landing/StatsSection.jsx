@@ -84,7 +84,7 @@ export default function StatsSection() {
       <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 xl:px-12 flex flex-col items-center">
         
         {/* Top Minimal Stats */}
-        <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24 mb-16 text-center">
+        <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-12 md:gap-24 mb-10 sm:mb-16 text-center">
           {topStats.map((stat, i) => (
             <div key={i} className="flex flex-col items-center relative">
               <span className="text-xl md:text-2xl font-bold mb-1 font-mono">
@@ -99,7 +99,7 @@ export default function StatsSection() {
         </div>
 
         {/* Separator line with gradient fade */}
-        <div className="w-[120%] -ml-[10%] h-px bg-gradient-to-r from-transparent via-white/5 to-transparent mb-16" />
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-10 sm:mb-16" />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">

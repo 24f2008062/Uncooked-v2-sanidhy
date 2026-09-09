@@ -1,11 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getSupabasePublicConfig } from "@/lib/supabase/env";
 
 export async function createClient() {
   const cookieStore = await cookies();
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+  const { url, anonKey, issues } = getSupabasePublicConfig();
+  if (issues.length) {
+    console.error("[supabase/server]", issues.join("; "));
+  }
+  const supabaseUrl = url || "https://placeholder.supabase.co";
+  const supabaseKey = anonKey || "placeholder-anon-key";
 
   return createServerClient(
     supabaseUrl,

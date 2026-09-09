@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AgentWidget from "@/components/ui/AgentWidget";
+import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -48,7 +48,7 @@ const EVENTS = [
     date: "Sep 20, 2026",
     time: "6:00 PM",
     location: "Sunset Pavilion Grounds",
-    price: "$15 Ticket",
+    price: "₹499 Ticket",
     isFree: false,
     image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=600&auto=format&fit=crop",
     attendees: "850 registered",
@@ -216,7 +216,7 @@ export default function EventsPage() {
   return (
     <>
       <Navbar forceDarkTop={true} />
-      <AgentWidget />
+      <LazyAgentWidget />
 
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 relative overflow-hidden">
         {/* Background Ambient Glows */}
@@ -288,15 +288,15 @@ export default function EventsPage() {
               />
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full md:w-auto justify-start md:justify-end">
+            {/* Category Filter Pills (Horizontal Touch Swipe on Mobile) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full md:w-auto justify-start md:justify-end overflow-x-auto no-scrollbar py-1 max-w-full">
               {CATEGORIES.map((cat) => {
                 const isSelected = selectedCategory === cat;
                 return (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                    className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                       isSelected
                         ? "bg-[var(--accent-orange)] text-white shadow-md shadow-orange-500/20"
                         : "bg-background text-text-secondary border border-border-subtle hover:text-text-primary hover:border-border-hover"
@@ -330,6 +330,7 @@ export default function EventsPage() {
                       src={item.image}
                       alt={item.title}
                       fill
+                      unoptimized={Boolean(item.image && !item.image.startsWith("/") && !item.image.includes("unsplash.com"))}
                       sizes="(max-width: 768px) 100vw, 33vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
