@@ -17,14 +17,11 @@ import {
   Plus,
   Upload,
   Lock,
-  Shield,
-  Key,
   Calendar,
   Globe,
   ExternalLink,
   X,
   ChevronRight,
-  ChevronsUpDown,
   Monitor,
   Smartphone,
   Trash2,
@@ -32,8 +29,9 @@ import {
   Sparkles,
   Loader2,
   MinusCircle,
-  Fingerprint,
   RefreshCw,
+  Bell,
+  Mail,
 } from "lucide-react";
 
 const AVATAR_OPTIONS = [
@@ -92,26 +90,14 @@ function SettingsPageInner() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
-  const [twoFactorStep, setTwoFactorStep] = useState(1); // 1 = send code, 2 = enter code
-  const [twoFactorCode, setTwoFactorCode] = useState("");
-  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
-  const [twoFactorError, setTwoFactorError] = useState("");
-
-  const [passkeys, setPasskeys] = useState([]);
-  const [passkeyModalOpen, setPasskeyModalOpen] = useState(false);
-  const [passkeyRegistering, setPasskeyRegistering] = useState(false);
-
   // Third Party Accounts State
-  const [thirdParty, setThirdParty] = useState({
+  const [thirdParty] = useState({
     google: true,
-    github: false,
-    zoom: false,
   });
 
   // Account Syncing State
   const [calendarSynced, setCalendarSynced] = useState(false);
+
 
   // Active Devices State (populated dynamically with real client device)
   const [activeDevices, setActiveDevices] = useState([]);
@@ -120,20 +106,12 @@ function SettingsPageInner() {
   const [deletePasswordInput, setDeletePasswordInput] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Preferences State
-  const [notifications, setNotifications] = useState({
-    eventInvites: ["Email", "WhatsApp", "Push"],
-    eventReminders: ["Email", "WhatsApp", "Push"],
-    eventBlasts: ["Email", "WhatsApp", "Push"],
-    eventUpdates: ["Email", "Push"],
-    feedbackRequests: ["Email"],
-    guestRegistrations: ["Email", "Push"],
-    feedbackResponses: ["Email"],
-    newMembers: ["Email", "Push"],
-    eventSubmissions: ["Email"],
-    productUpdates: ["Email"],
+  // Preferences State - Email Notifications
+  const [emailNotifications, setEmailNotifications] = useState({
+    eventReminders: true,
+    hostAlerts: true,
+    productUpdates: false,
   });
-  const [activeNotificationKey, setActiveNotificationKey] = useState(null);
 
   // Payment State
   const [addCardModalOpen, setAddCardModalOpen] = useState(false);
@@ -172,25 +150,12 @@ function SettingsPageInner() {
 
     // 3. Load Security & Integration States
     setHasPassword(localStorage.getItem("user_has_password") === "true");
-    setTwoFactorEnabled(localStorage.getItem("user_2fa_enabled") === "true");
     setCalendarSynced(localStorage.getItem("user_calendar_synced") === "true");
 
-    const realDev = getRealClientDevice();
-    const storedPasskeys = localStorage.getItem("user_passkeys");
-    if (storedPasskeys) {
+    const storedEmailNotifs = localStorage.getItem("user_email_notifications");
+    if (storedEmailNotifs) {
       try {
-        setPasskeys(JSON.parse(storedPasskeys));
-      } catch {
-        setPasskeys([{ id: "pk-1", name: `${realDev.os} Platform Key`, createdAt: "Sep 2026" }]);
-      }
-    } else {
-      setPasskeys([{ id: "pk-1", name: `${realDev.os} Platform Key`, createdAt: "Sep 2026" }]);
-    }
-
-    const storedTP = localStorage.getItem("user_third_party");
-    if (storedTP) {
-      try {
-        setThirdParty(JSON.parse(storedTP));
+        setEmailNotifications(JSON.parse(storedEmailNotifs));
       } catch {}
     }
 
@@ -270,13 +235,16 @@ function SettingsPageInner() {
     }
   };
 
-  const handleToggleNotificationChannel = (key, channel) => {
-    setNotifications((prev) => {
-      const current = prev[key] || [];
-      const has = current.includes(channel);
-      const updated = has ? current.filter((c) => c !== channel) : [...current, channel];
-      return { ...prev, [key]: updated.length > 0 ? updated : ["Email"] };
+  const handleToggleEmailNotification = (key) => {
+    setEmailNotifications((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem("user_email_notifications", JSON.stringify(next));
+      } catch {}
+      return next;
     });
+    setToastMessage("Notification preferences saved");
+    setTimeout(() => setToastMessage(""), 2000);
   };
 
   const handleAddCard = (e) => {
@@ -369,175 +337,6 @@ function SettingsPageInner() {
     }
   };
 
-  // Handle 2FA OTP Send
-  const handleSend2FAOtp = async () => {
-    setTwoFactorLoading(true);
-    setTwoFactorError("");
-    try {
-      const res = await fetch("/api/user/2fa/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: primaryEmail }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setTwoFactorError(data.message || "Failed to send verification code");
-        return;
-      }
-      setTwoFactorStep(2);
-      setToastMessage(`Verification code sent to ${data.email || primaryEmail}`);
-      setTimeout(() => setToastMessage(""), 3000);
-    } catch {
-      setTwoFactorError("Failed to send OTP. Please check your connection.");
-    } finally {
-      setTwoFactorLoading(false);
-    }
-  };
-
-  // Handle 2FA OTP Verify & Enable
-  const handleVerify2FAOtp = async (e) => {
-    e.preventDefault();
-    if (!twoFactorCode || twoFactorCode.trim().length !== 6) {
-      setTwoFactorError("Please enter the 6-digit verification code");
-      return;
-    }
-    setTwoFactorLoading(true);
-    setTwoFactorError("");
-    try {
-      const res = await fetch("/api/user/2fa/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: twoFactorCode.trim(),
-          action: "enable",
-          email: primaryEmail,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setTwoFactorError(data.message || "Invalid or expired code");
-        return;
-      }
-      setTwoFactorEnabled(true);
-      localStorage.setItem("user_2fa_enabled", "true");
-      setTwoFactorModalOpen(false);
-      setTwoFactorStep(1);
-      setTwoFactorCode("");
-      setToastMessage("Two-Factor Authentication is now enabled!");
-      setTimeout(() => setToastMessage(""), 3000);
-    } catch {
-      setTwoFactorError("Failed to verify code");
-    } finally {
-      setTwoFactorLoading(false);
-    }
-  };
-
-  // Handle 2FA Disable
-  const handleDisable2FA = async () => {
-    setTwoFactorLoading(true);
-    try {
-      await fetch("/api/user/2fa/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "disable", email: primaryEmail }),
-      });
-      setTwoFactorEnabled(false);
-      localStorage.setItem("user_2fa_enabled", "false");
-      setTwoFactorModalOpen(false);
-      setToastMessage("Two-Factor Authentication disabled");
-      setTimeout(() => setToastMessage(""), 2500);
-    } catch {
-      setTwoFactorError("Failed to disable 2FA");
-    } finally {
-      setTwoFactorLoading(false);
-    }
-  };
-
-  // Handle WebAuthn Passkey Registration
-  const handleRegisterPasskey = async () => {
-    setPasskeyRegistering(true);
-    const realDev = getRealClientDevice();
-    try {
-      if (typeof window !== "undefined" && window.PublicKeyCredential) {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-        const userId = new Uint8Array(16);
-        window.crypto.getRandomValues(userId);
-
-        try {
-          const credential = await navigator.credentials.create({
-            publicKey: {
-              challenge,
-              rp: { name: "Opportia", id: window.location.hostname === "localhost" ? "localhost" : window.location.hostname },
-              user: {
-                id: userId,
-                name: primaryEmail || "user@opportia.in",
-                displayName: firstName ? `${firstName} ${lastName}`.trim() : "Demo User",
-              },
-              pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-              authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "preferred" },
-              timeout: 60000,
-            },
-          });
-          if (credential) {
-            const newPk = {
-              id: "pk-" + Date.now(),
-              name: `${realDev.os} Platform Key (${realDev.browser})`,
-              createdAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-            };
-            const updated = [...passkeys, newPk];
-            setPasskeys(updated);
-            localStorage.setItem("user_passkeys", JSON.stringify(updated));
-            setToastMessage("Passkey registered via biometric authenticator!");
-            setTimeout(() => setToastMessage(""), 3000);
-            return;
-          }
-        } catch (promptErr) {
-          console.warn("[WEBAUTHN_PROMPT_NOTICE]", promptErr?.message);
-        }
-      }
-
-      // Local enrollment fallback
-      const fallbackPk = {
-        id: "pk-" + Date.now(),
-        name: `${realDev.os} Device Key (${realDev.browser})`,
-        createdAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      };
-      const updated = [...passkeys, fallbackPk];
-      setPasskeys(updated);
-      localStorage.setItem("user_passkeys", JSON.stringify(updated));
-      setToastMessage("Passkey securely saved to this device!");
-      setTimeout(() => setToastMessage(""), 3000);
-    } catch (err) {
-      console.error(err);
-      setToastMessage("Could not register passkey");
-      setTimeout(() => setToastMessage(""), 2500);
-    } finally {
-      setPasskeyRegistering(false);
-    }
-  };
-
-  const handleDeletePasskey = (id) => {
-    const updated = passkeys.filter((p) => p.id !== id);
-    setPasskeys(updated);
-    localStorage.setItem("user_passkeys", JSON.stringify(updated));
-    setToastMessage("Passkey removed");
-    setTimeout(() => setToastMessage(""), 2000);
-  };
-
-  // Toggle Third Party Account Linking (Google, GitHub, Zoom)
-  const handleToggleThirdParty = (provider) => {
-    const isLinked = !!thirdParty[provider];
-    const nextState = { ...thirdParty, [provider]: !isLinked };
-    setThirdParty(nextState);
-    localStorage.setItem("user_third_party", JSON.stringify(nextState));
-    setToastMessage(
-      !isLinked
-        ? `${provider.charAt(0).toUpperCase() + provider.slice(1)} account linked successfully!`
-        : `${provider.charAt(0).toUpperCase() + provider.slice(1)} account unlinked`
-    );
-    setTimeout(() => setToastMessage(""), 2500);
-  };
 
   // Sync Google Calendar Directly
   const handleSyncGoogleCalendar = () => {
@@ -917,67 +716,6 @@ function SettingsPageInner() {
                     </button>
                   </div>
 
-                  {/* Two-Factor Authentication */}
-                  <div className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Shield className="w-4 h-4 text-text-secondary shrink-0" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-text-primary">
-                            {t("settings.security.twoFactor", "Two-Factor Authentication")}
-                          </span>
-                          {twoFactorEnabled && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                              {t("settings.security.twoFactorEnabled", "Enabled")}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-text-muted">
-                          {twoFactorEnabled
-                            ? t("settings.security.twoFactorActiveDesc", "Email OTP verification is enabled for {email}.", {
-                                email: primaryEmail || "your account",
-                              })
-                            : t("settings.security.twoFactorInactiveDesc", "Add an extra layer of security with email verification OTP.")}
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setTwoFactorModalOpen(true)}
-                      className="px-3.5 py-1.5 rounded-xl bg-secondary hover:bg-card-hover border border-border-subtle text-text-primary text-xs font-bold shrink-0 transition-colors cursor-pointer"
-                    >
-                      {twoFactorEnabled
-                        ? t("settings.security.manage2fa", "Manage 2FA")
-                        : t("settings.security.enable2fa", "Enable 2FA")}
-                    </button>
-                  </div>
-
-                  {/* Passkeys */}
-                  <div className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Key className="w-4 h-4 text-text-secondary shrink-0" />
-                      <div>
-                        <div className="text-xs font-bold text-text-primary">
-                          {t("settings.security.passkeys", "Passkeys")}
-                        </div>
-                        <div className="text-[11px] text-text-muted">
-                          {passkeys.length > 0
-                            ? t("settings.security.passkeysDescActive", "You have {count} active passkey{s}.", {
-                                count: passkeys.length,
-                                s: passkeys.length > 1 ? "s" : "",
-                              })
-                            : t("settings.security.passkeysDescInactive", "Sign in instantly with Windows Hello, Touch ID, or security key.")}
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setPasskeyModalOpen(true)}
-                      className="px-3.5 py-1.5 rounded-xl bg-secondary hover:bg-card-hover border border-border-subtle text-text-primary text-xs font-bold shrink-0 transition-colors cursor-pointer"
-                    >
-                      {t("settings.security.managePasskeys", "Manage Passkeys")}
-                    </button>
-                  </div>
                 </div>
               </section>
 
@@ -990,7 +728,7 @@ function SettingsPageInner() {
                   {t("settings.thirdParty.desc", "Link your accounts to sign in to Opportia and automate your workflows.")}
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="max-w-md">
                   {/* Google */}
                   <div className="p-3.5 rounded-2xl bg-card border border-border-subtle flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
@@ -1006,74 +744,6 @@ function SettingsPageInner() {
                       <Check className="w-3 h-3 stroke-[3]" />
                     </div>
                   </div>
-
-                  {/* GitHub */}
-                  <div className="p-3.5 rounded-2xl bg-card border border-border-subtle flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <GitHubIcon className="w-5 h-5 text-text-primary shrink-0" />
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-text-primary">{t("settings.thirdParty.github", "GitHub")}</div>
-                        <div className="text-[11px] text-text-muted">
-                          {thirdParty.github
-                            ? t("settings.thirdParty.connected", "Connected")
-                            : t("settings.thirdParty.notLinked", "Not Linked")}
-                        </div>
-                      </div>
-                    </div>
-                    {thirdParty.github ? (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleThirdParty("github")}
-                        className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 cursor-pointer"
-                        title={t("settings.thirdParty.unlinkAccount", "Unlink Account")}
-                      >
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleThirdParty("github")}
-                        className="w-7 h-7 rounded-lg bg-secondary hover:bg-card-hover border border-border-subtle flex items-center justify-center text-text-primary transition-colors cursor-pointer"
-                        title={t("settings.thirdParty.linkAccount", "Link Account")}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Zoom */}
-                  <div className="p-3.5 rounded-2xl bg-card border border-border-subtle flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <ZoomIcon className="w-5 h-5 text-blue-500 shrink-0" />
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-text-primary">{t("settings.thirdParty.zoom", "Zoom")}</div>
-                        <div className="text-[11px] text-text-muted">
-                          {thirdParty.zoom
-                            ? t("settings.thirdParty.connected", "Connected")
-                            : t("settings.thirdParty.notLinked", "Not Linked")}
-                        </div>
-                      </div>
-                    </div>
-                    {thirdParty.zoom ? (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleThirdParty("zoom")}
-                        className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 cursor-pointer"
-                        title={t("settings.thirdParty.unlinkAccount", "Unlink Account")}
-                      >
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleThirdParty("zoom")}
-                        className="w-7 h-7 rounded-lg bg-secondary hover:bg-card-hover border border-border-subtle flex items-center justify-center text-text-primary transition-colors cursor-pointer"
-                        title={t("settings.thirdParty.linkAccount", "Link Account")}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
                 </div>
               </section>
 
@@ -1083,7 +753,7 @@ function SettingsPageInner() {
                   {t("settings.syncing.title", "Account Syncing")}
                 </h2>
 
-                <div className="rounded-2xl bg-card border border-border-subtle divide-y divide-border-subtle">
+                <div className="rounded-2xl bg-card border border-border-subtle">
                   {/* Calendar Syncing with Google */}
                   <div className="p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -1117,31 +787,6 @@ function SettingsPageInner() {
                           ? t("settings.syncing.reSyncGoogle", "Re-sync Calendar")
                           : t("settings.syncing.syncGoogle", "Sync with Google Calendar")}
                       </span>
-                    </button>
-                  </div>
-
-                  {/* Sync Contacts with Google */}
-                  <div className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <GoogleIcon className="w-4 h-4 text-text-secondary shrink-0" />
-                      <div>
-                        <div className="text-xs font-bold text-text-primary">
-                          {t("settings.syncing.contactsTitle", "Sync Contacts with Google")}
-                        </div>
-                        <div className="text-[11px] text-text-muted">
-                          {t("settings.syncing.contactsDesc", "Sync your Gmail contacts to easily invite them to your events.")}
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setToastMessage("Google Contacts sync scheduled successfully!");
-                        setTimeout(() => setToastMessage(""), 2500);
-                      }}
-                      className="px-3.5 py-1.5 rounded-xl bg-secondary hover:bg-card-hover border border-border-subtle text-text-primary text-xs font-bold shrink-0 transition-colors cursor-pointer"
-                    >
-                      {t("settings.syncing.enableSyncing", "Enable Syncing")}
                     </button>
                   </div>
                 </div>
@@ -1356,80 +1001,109 @@ function SettingsPageInner() {
               </section>
 
               {/* SECTION: Notifications */}
-              <section className="space-y-6 pt-6 border-t border-border-subtle">
+              <section className="space-y-4 pt-6 border-t border-border-subtle">
                 <div>
-                  <h2 className="text-base font-bold text-text-primary tracking-tight">Notifications</h2>
+                  <h2 className="text-base font-bold text-text-primary tracking-tight">Email Notifications</h2>
                   <p className="text-xs text-text-muted mt-1">
-                    Choose how you would like to be notified about updates, invites and subscriptions.
+                    Manage the email updates you receive from Opportia for your events and account.
                   </p>
                 </div>
 
-                {/* Group 1: Events You Attend */}
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-text-muted tracking-wider">Events You Attend</h3>
-                  <div className="space-y-1.5">
-                    {[
-                      { key: "eventInvites", label: "Event Invites", icon: "✉️" },
-                      { key: "eventReminders", label: "Event Reminders", icon: "⏰" },
-                      { key: "eventBlasts", label: "Event Blasts", icon: "📢" },
-                      { key: "eventUpdates", label: "Event Updates", icon: "🔄" },
-                      { key: "feedbackRequests", label: "Feedback Requests", icon: "💬" },
-                    ].map((item) => (
-                      <NotificationRow
-                        key={item.key}
-                        label={item.label}
-                        channels={notifications[item.key] || ["Email"]}
-                        onToggle={(channel) => handleToggleNotificationChannel(item.key, channel)}
+                <div className="rounded-2xl bg-card border border-border-subtle divide-y divide-border-subtle">
+                  {/* Event Reminders & Passes */}
+                  <div className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-4 h-4 text-text-secondary shrink-0" />
+                      <div>
+                        <div className="text-xs font-bold text-text-primary">
+                          Event Reminders & Passes
+                        </div>
+                        <div className="text-[11px] text-text-muted">
+                          Receive email reminders 24h before events you attend, schedule updates, and QR tickets.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={emailNotifications.eventReminders}
+                      onClick={() => handleToggleEmailNotification("eventReminders")}
+                      className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                        emailNotifications.eventReminders
+                          ? "bg-[var(--accent-orange)]"
+                          : "bg-secondary border border-border-subtle"
+                      }`}
+                    >
+                      <span
+                        className={`block w-4 h-4 rounded-full bg-white transition-transform ${
+                          emailNotifications.eventReminders ? "translate-x-6" : "translate-x-1"
+                        }`}
                       />
-                    ))}
+                    </button>
                   </div>
-                </div>
 
-                {/* Group 2: Events You Host */}
-                <div className="space-y-2 pt-4">
-                  <h3 className="text-xs font-semibold text-text-muted tracking-wider">Events You Host</h3>
-                  <div className="space-y-1.5">
-                    {[
-                      { key: "guestRegistrations", label: "Guest Registrations", icon: "👥" },
-                      { key: "feedbackResponses", label: "Feedback Responses", icon: "⭐" },
-                    ].map((item) => (
-                      <NotificationRow
-                        key={item.key}
-                        label={item.label}
-                        channels={notifications[item.key] || ["Email"]}
-                        onToggle={(channel) => handleToggleNotificationChannel(item.key, channel)}
+                  {/* Organizer & Registration Alerts */}
+                  <div className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-text-secondary shrink-0" />
+                      <div>
+                        <div className="text-xs font-bold text-text-primary">
+                          Organizer & Registration Alerts
+                        </div>
+                        <div className="text-[11px] text-text-muted">
+                          Get notified when guests register for your hosted events, check in, or submit inquiries.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={emailNotifications.hostAlerts}
+                      onClick={() => handleToggleEmailNotification("hostAlerts")}
+                      className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                        emailNotifications.hostAlerts
+                          ? "bg-[var(--accent-orange)]"
+                          : "bg-secondary border border-border-subtle"
+                      }`}
+                    >
+                      <span
+                        className={`block w-4 h-4 rounded-full bg-white transition-transform ${
+                          emailNotifications.hostAlerts ? "translate-x-6" : "translate-x-1"
+                        }`}
                       />
-                    ))}
+                    </button>
                   </div>
-                </div>
 
-                {/* Group 3: Calendars You Manage */}
-                <div className="space-y-2 pt-4">
-                  <h3 className="text-xs font-semibold text-text-muted tracking-wider">Calendars You Manage</h3>
-                  <div className="space-y-1.5">
-                    {[
-                      { key: "newMembers", label: "New Members", icon: "👤" },
-                      { key: "eventSubmissions", label: "Event Submissions", icon: "📑" },
-                    ].map((item) => (
-                      <NotificationRow
-                        key={item.key}
-                        label={item.label}
-                        channels={notifications[item.key] || ["Email"]}
-                        onToggle={(channel) => handleToggleNotificationChannel(item.key, channel)}
+                  {/* Platform & Community Updates */}
+                  <div className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Bell className="w-4 h-4 text-text-secondary shrink-0" />
+                      <div>
+                        <div className="text-xs font-bold text-text-primary">
+                          Platform & Community Updates
+                        </div>
+                        <div className="text-[11px] text-text-muted">
+                          Occasional updates on new features, product improvements, and campus community highlights.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={emailNotifications.productUpdates}
+                      onClick={() => handleToggleEmailNotification("productUpdates")}
+                      className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                        emailNotifications.productUpdates
+                          ? "bg-[var(--accent-orange)]"
+                          : "bg-secondary border border-border-subtle"
+                      }`}
+                    >
+                      <span
+                        className={`block w-4 h-4 rounded-full bg-white transition-transform ${
+                          emailNotifications.productUpdates ? "translate-x-6" : "translate-x-1"
+                        }`}
                       />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Group 4: Opportia Updates */}
-                <div className="space-y-2 pt-4">
-                  <h3 className="text-xs font-semibold text-text-muted tracking-wider">Opportia</h3>
-                  <div className="space-y-1.5">
-                    <NotificationRow
-                      label="Product Updates"
-                      channels={notifications.productUpdates || ["Email"]}
-                      onToggle={(channel) => handleToggleNotificationChannel("productUpdates", channel)}
-                    />
+                    </button>
                   </div>
                 </div>
               </section>
@@ -1837,256 +1511,6 @@ function SettingsPageInner() {
       </AnimatePresence>
 
       {/* ========================================================================= */}
-      {/* MODAL: Two-Factor Authentication (Email OTP) Modal */}
-      {/* ========================================================================= */}
-      <AnimatePresence>
-        {twoFactorModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-elevated border border-border-subtle rounded-3xl p-5 sm:p-6 shadow-2xl text-text-primary space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500">
-                    <Shield className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-text-primary">{t("settings.twoFactorModal.title", "Two-Factor Authentication")}</h3>
-                    <p className="text-xs text-text-muted">{t("settings.twoFactorModal.subtitle", "Email verification OTP")}</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTwoFactorModalOpen(false);
-                    setTwoFactorError("");
-                  }}
-                  className="p-1 rounded-lg text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {twoFactorError && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-500 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{twoFactorError}</span>
-                </div>
-              )}
-
-              {twoFactorEnabled ? (
-                <div className="space-y-4 pt-1">
-                  <div className="p-4 rounded-2xl bg-secondary border border-border-subtle flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-bold text-text-primary">{t("settings.twoFactorModal.activeTitle", "2FA is currently active")}</div>
-                      <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
-                        {t("settings.twoFactorModal.activeDesc", "Your account is protected. Every time you log in, an OTP verification code is sent to your email.")}{" "}
-                        <strong className="text-text-primary">{primaryEmail || "your email"}</strong>.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setTwoFactorModalOpen(false)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-                    >
-                      {t("common.close", "Close")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={twoFactorLoading}
-                      onClick={handleDisable2FA}
-                      className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-md disabled:opacity-50"
-                    >
-                      {twoFactorLoading ? t("common.loading", "Disabling...") : t("settings.twoFactorModal.disableBtn", "Disable 2FA")}
-                    </button>
-                  </div>
-                </div>
-              ) : twoFactorStep === 1 ? (
-                <div className="space-y-4 pt-1">
-                  <p className="text-xs text-text-secondary leading-relaxed">
-                    {t("settings.twoFactorModal.step1Desc", "Protect your Opportia account from unauthorized access. When enabled, signing in requires a secure 6-digit one-time code sent directly to:")}
-                  </p>
-
-                  <div className="p-3 rounded-xl bg-secondary border border-border-subtle font-mono text-xs text-text-primary flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span>{primaryEmail || "user@opportia.in"}</span>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setTwoFactorModalOpen(false)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-                    >
-                      {t("common.cancel", "Cancel")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={twoFactorLoading}
-                      onClick={handleSend2FAOtp}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent-orange)] text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-md disabled:opacity-50"
-                    >
-                      {twoFactorLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Shield className="w-3.5 h-3.5" />}
-                      <span>{t("settings.twoFactorModal.sendCodeBtn", "Send 6-Digit Code")}</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleVerify2FAOtp} className="space-y-4 pt-1">
-                  <p className="text-xs text-text-secondary">
-                    {t("settings.twoFactorModal.step2Desc", "We sent a 6-digit verification code to {email}. Enter the code below to complete setup:", { email: primaryEmail || "your email" })}
-                  </p>
-
-                  <div>
-                    <label className="block text-xs text-text-muted mb-1.5 font-medium">{t("settings.twoFactorModal.codeLabel", "6-Digit Verification Code")}</label>
-                    <input
-                      required
-                      maxLength={6}
-                      type="text"
-                      placeholder="••••••"
-                      value={twoFactorCode}
-                      onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      className="w-full bg-secondary border border-border-subtle rounded-xl px-4 py-3 text-center text-xl font-mono tracking-widest text-text-primary placeholder:text-text-muted focus:border-[var(--accent-orange)] focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-text-muted">
-                    <button
-                      type="button"
-                      onClick={handleSend2FAOtp}
-                      className="hover:text-text-primary underline cursor-pointer"
-                    >
-                      {t("common.resend", "Resend code")}
-                    </button>
-                    <span>{t("common.expiresIn", "Expires in 10 minutes", { time: "10 minutes" })}</span>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setTwoFactorStep(1)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-                    >
-                      {t("common.back", "Back")}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={twoFactorLoading || twoFactorCode.length !== 6}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent-orange)] text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-md disabled:opacity-50"
-                    >
-                      {twoFactorLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      <span>{t("settings.twoFactorModal.verifyBtn", "Verify & Enable 2FA")}</span>
-                    </button>
-                  </div>
-                </form>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ========================================================================= */}
-      {/* MODAL: Passkeys Management Modal */}
-      {/* ========================================================================= */}
-      <AnimatePresence>
-        {passkeyModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-elevated border border-border-subtle rounded-3xl p-5 sm:p-6 shadow-2xl text-text-primary space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500">
-                    <Fingerprint className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-text-primary">{t("settings.passkeyModal.title", "Manage Passkeys")}</h3>
-                    <p className="text-xs text-text-muted">{t("settings.passkeyModal.subtitle", "Biometric & hardware security credentials")}</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPasskeyModalOpen(false)}
-                  className="p-1 rounded-lg text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <p className="text-xs text-text-secondary leading-relaxed">
-                {t("settings.passkeyModal.desc", "Passkeys let you sign in to Opportia seamlessly and securely using Windows Hello, Touch ID, Face ID, or a FIDO2 hardware security key.")}
-              </p>
-
-              {/* Registered Passkeys List */}
-              <div className="space-y-2 pt-1">
-                <div className="text-[11px] font-bold text-text-muted uppercase tracking-wider">
-                  {t("settings.passkeyModal.registeredCount", "Registered Passkeys ({count})", { count: passkeys.length })}
-                </div>
-
-                {passkeys.length === 0 ? (
-                  <div className="p-4 rounded-2xl bg-secondary border border-border-subtle text-center text-xs text-text-muted">
-                    {t("settings.passkeyModal.noPasskeys", "No passkeys registered yet. Click below to add your device key.")}
-                  </div>
-                ) : (
-                  passkeys.map((pk) => (
-                    <div
-                      key={pk.id}
-                      className="p-3.5 rounded-2xl bg-secondary border border-border-subtle flex items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Key className="w-4 h-4 text-orange-500 shrink-0" />
-                        <div>
-                          <div className="text-xs font-bold text-text-primary">{pk.name}</div>
-                          <div className="text-[11px] text-text-muted">{t("settings.passkeyModal.registeredOn", "Registered on {date}", { date: pk.createdAt })}</div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePasskey(pk.id)}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-red-500 hover:bg-card transition-colors cursor-pointer"
-                        title="Delete passkey"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="pt-3 flex items-center justify-between border-t border-border-subtle">
-                <button
-                  type="button"
-                  onClick={() => setPasskeyModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-                >
-                  {t("common.done", "Done")}
-                </button>
-                <button
-                  type="button"
-                  disabled={passkeyRegistering}
-                  onClick={handleRegisterPasskey}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent-orange)] text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-md disabled:opacity-50"
-                >
-                  {passkeyRegistering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                  <span>{t("settings.passkeyModal.registerBtn", "Register New Passkey")}</span>
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ========================================================================= */}
       {/* MODAL 2: Add Card Modal */}
       {/* ========================================================================= */}
       <AnimatePresence>
@@ -2360,45 +1784,7 @@ export default function SettingsPage() {
 // SUB-COMPONENTS & BRAND ICONS
 // ---------------------------------------------------------------------------
 
-function NotificationRow({ label, channels, onToggle }) {
-  const [open, setOpen] = useState(false);
-  const options = ["Email", "WhatsApp", "Push"];
 
-  return (
-    <div className="p-3 rounded-2xl bg-card border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 relative">
-      <span className="text-xs font-semibold text-text-primary">{label}</span>
-      <div className="relative self-start sm:self-auto">
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-card-hover border border-border-subtle text-[11px] font-semibold text-text-secondary flex items-center gap-1.5 transition-colors cursor-pointer"
-        >
-          <span>{channels.join(", ")}</span>
-          <ChevronsUpDown className="w-3 h-3 text-text-muted" />
-        </button>
-
-        {open && (
-          <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-elevated border border-border-subtle p-2 shadow-2xl z-20 space-y-1">
-            {options.map((opt) => {
-              const active = channels.includes(opt);
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => onToggle(opt)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-secondary text-left transition-colors cursor-pointer"
-                >
-                  <span className={active ? "text-text-primary font-bold" : "text-text-muted"}>{opt}</span>
-                  {active && <Check className="w-3 h-3 text-emerald-500 stroke-[3]" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // Perforated Receipt Graphic matching Screenshot 5
 function ReceiptIllustration() {
@@ -2445,25 +1831,7 @@ function GoogleIcon(props) {
   );
 }
 
-function GitHubIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-      />
-    </svg>
-  );
-}
 
-function ZoomIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M4.5 5.5A2.5 2.5 0 0 0 2 8v8a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 16 16V8a2.5 2.5 0 0 0-2.5-2.5h-9zm13 4.5v4l4.5 3V7l-4.5 3z" />
-    </svg>
-  );
-}
 
 function SolanaIcon(props) {
   return (
