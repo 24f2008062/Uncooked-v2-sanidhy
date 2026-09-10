@@ -95,8 +95,7 @@ function SettingsPageInner() {
     google: true,
   });
 
-  // Account Syncing State
-  const [calendarSynced, setCalendarSynced] = useState(false);
+
 
 
   // Active Devices State (populated dynamically with real client device)
@@ -150,7 +149,6 @@ function SettingsPageInner() {
 
     // 3. Load Security & Integration States
     setHasPassword(localStorage.getItem("user_has_password") === "true");
-    setCalendarSynced(localStorage.getItem("user_calendar_synced") === "true");
 
     const storedEmailNotifs = localStorage.getItem("user_email_notifications");
     if (storedEmailNotifs) {
@@ -338,19 +336,7 @@ function SettingsPageInner() {
   };
 
 
-  // Sync Google Calendar Directly
-  const handleSyncGoogleCalendar = () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-    const icsFeedUrl = `${origin}/api/calendar/ical/feed`;
-    const googleCalUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(icsFeedUrl)}`;
 
-    setCalendarSynced(true);
-    localStorage.setItem("user_calendar_synced", "true");
-    setToastMessage("Opening Google Calendar to sync your Opportia events...");
-    setTimeout(() => setToastMessage(""), 3500);
-
-    window.open(googleCalUrl, "_blank", "noopener,noreferrer");
-  };
 
   // Revoke device session
   const handleRevokeDevice = (id) => {
@@ -747,50 +733,7 @@ function SettingsPageInner() {
                 </div>
               </section>
 
-              {/* SECTION: Account Syncing */}
-              <section className="space-y-3 pt-6 border-t border-border-subtle">
-                <h2 className="text-base font-bold text-text-primary tracking-tight">
-                  {t("settings.syncing.title", "Account Syncing")}
-                </h2>
 
-                <div className="rounded-2xl bg-card border border-border-subtle">
-                  {/* Calendar Syncing with Google */}
-                  <div className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-4 h-4 text-text-secondary shrink-0" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-text-primary">
-                            {t("settings.syncing.calendarTitle", "Calendar Syncing")}
-                          </span>
-                          {calendarSynced && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                              {t("settings.syncing.syncedBadge", "Synced")}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-text-muted">
-                          {calendarSynced
-                            ? t("settings.syncing.calendarDescActive", "Your Opportia schedule is actively synced with your Google Calendar.")
-                            : t("settings.syncing.calendarDescInactive", "Directly sync your campus events and schedule into your Google Calendar.")}
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSyncGoogleCalendar}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-secondary hover:bg-card-hover border border-border-subtle text-text-primary text-xs font-bold shrink-0 transition-colors cursor-pointer"
-                    >
-                      <GoogleIcon className="w-3.5 h-3.5" />
-                      <span>
-                        {calendarSynced
-                          ? t("settings.syncing.reSyncGoogle", "Re-sync Calendar")
-                          : t("settings.syncing.syncGoogle", "Sync with Google Calendar")}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </section>
 
               {/* SECTION: Active Devices */}
               <section className="space-y-3 pt-6 border-t border-border-subtle">

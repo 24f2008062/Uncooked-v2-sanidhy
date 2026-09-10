@@ -39,6 +39,7 @@ const LightRays = dynamic(() => import("@/components/ui/LightRays"), {
   loading: () => null,
 });
 import DeferredWebGL from "@/components/ui/DeferredWebGL";
+import { GoogleMapsIcon } from "@/components/ui/GoogleMapsButton";
 
 function LinkedInIcon({ className = "w-4 h-4" }) {
   return (
@@ -1019,36 +1020,72 @@ export default function CreateEventView({ isModal = false, onClose }) {
                 <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 shrink-0">
                   <MapPin className="w-4 h-4" />
                 </div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-white/90 flex items-center justify-between">
-                    <span>{location || "Add Event Location"}</span>
-                    {!isEditingLocation && (
-                      <span className="text-[11px] text-white/40 hover:text-white">Edit</span>
-                    )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-white/90 flex items-center justify-between gap-2">
+                    <span className="truncate">{location || "Add Event Location"}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const query = location.trim() || [city, state].filter(Boolean).join(", ") || "Lucknow";
+                          const targetUrl = location.trim().startsWith("http") && (location.includes("google.com/maps") || location.includes("maps.app.goo.gl"))
+                            ? location.trim()
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+                          window.open(targetUrl, "_blank", "noopener,noreferrer");
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-medium text-white/80 hover:text-white transition-all active:scale-95 cursor-pointer shadow-sm"
+                        title="Search or verify location on Google Maps"
+                      >
+                        <GoogleMapsIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span>Google Maps</span>
+                        <ExternalLink className="w-2.5 h-2.5 text-white/40" />
+                      </button>
+                      {!isEditingLocation && (
+                        <span className="text-[11px] text-white/40 hover:text-white">Edit</span>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs text-white/40">
-                    Offline location or virtual meeting link
+                  <p className="text-xs text-white/40 mt-0.5">
+                    Offline venue address or virtual meeting link
                   </p>
                 </div>
               </div>
 
               {isEditingLocation && (
-                <div className="mt-3 pt-3 border-t border-white/10 flex gap-2">
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. Campus Innovation Center, Lucknow or Google Meet URL"
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-white/30"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingLocation(false)}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white cursor-pointer"
-                  >
-                    Done
-                  </button>
+                <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="e.g. Campus Innovation Center, Lucknow or Google Maps URL"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-white/30"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingLocation(false)}
+                      className="px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-white/50 pt-1">
+                    <span>Paste venue address or Google Maps link</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const query = location.trim() || [city, state].filter(Boolean).join(", ") || "Lucknow";
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, "_blank", "noopener,noreferrer");
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200 transition-colors cursor-pointer"
+                    >
+                      <GoogleMapsIcon className="w-3 h-3" />
+                      <span>{location.trim() ? "Verify on Google Maps" : "Search Google Maps"}</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

@@ -11,6 +11,7 @@ import Footer from "@/components/layout/Footer";
 import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import TicketPassCard from "@/components/events/TicketPassCard";
 import EventBroadcastPanel from "@/components/events/EventBroadcastPanel";
+import GoogleMapsButton from "@/components/ui/GoogleMapsButton";
 import {
   ArrowLeft,
   Calendar,
@@ -210,12 +211,25 @@ export default function EventDetailsPage() {
                     <p className="text-xs font-semibold text-text-primary">{when.date}</p>
                     <p className="text-[11px] text-text-secondary">{when.time}</p>
                   </div>
-                  <div className="p-4 rounded-2xl bg-card border border-border-subtle">
-                    <MapPin className="w-4 h-4 text-[var(--accent-orange)] mb-2" />
-                    <p className="text-xs font-semibold text-text-primary">{event.location}</p>
-                    <p className="text-[11px] text-text-secondary">
-                      {[event.zone, event.city, event.state].filter(Boolean).join(" · ")}
-                    </p>
+                  <div className="p-4 rounded-2xl bg-card border border-border-subtle flex flex-col justify-between">
+                    <div>
+                      <MapPin className="w-4 h-4 text-[var(--accent-orange)] mb-2" />
+                      <p className="text-xs font-semibold text-text-primary">{event.location}</p>
+                      <p className="text-[11px] text-text-secondary">
+                        {[event.zone, event.city, event.state].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                    {event.location && (
+                      <div className="mt-3 pt-2.5 border-t border-border-subtle">
+                        <GoogleMapsButton
+                          location={event.location}
+                          city={event.city}
+                          state={event.state}
+                          label="Open in Google Maps"
+                          className="w-full justify-center !bg-background hover:!bg-card-hover border-border-subtle shadow-sm"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="p-4 rounded-2xl bg-card border border-border-subtle">
                     <Users className="w-4 h-4 text-[var(--accent-orange)] mb-2" />
