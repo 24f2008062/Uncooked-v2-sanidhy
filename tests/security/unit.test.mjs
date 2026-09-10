@@ -73,6 +73,54 @@ test("publicEventListItem omits full description/schedule/prizePool", () => {
   assert.equal(view.spotsLeft, 9);
 });
 
+test("publicEventListItem strips data: banners; keeps https", () => {
+  const dataBanner = `data:image/jpeg;base64,${"A".repeat(5000)}`;
+  const slim = publicEventListItem({
+    id: "e3",
+    title: "Fest",
+    type: "Fest",
+    category: "Fest",
+    date: new Date(),
+    location: "Hall",
+    description: "Hi",
+    ticketType: "Free",
+    capacity: 10,
+    status: "Active",
+    bannerUrl: dataBanner,
+  });
+  assert.equal(slim.bannerUrl, null);
+
+  const https = publicEventListItem({
+    id: "e4",
+    title: "Fest",
+    type: "Fest",
+    category: "Fest",
+    date: new Date(),
+    location: "Hall",
+    description: "Hi",
+    ticketType: "Free",
+    capacity: 10,
+    status: "Active",
+    bannerUrl: "https://images.unsplash.com/photo.jpg",
+  });
+  assert.equal(https.bannerUrl, "https://images.unsplash.com/photo.jpg");
+
+  const detail = publicEvent({
+    id: "e5",
+    title: "Fest",
+    type: "Fest",
+    category: "Fest",
+    date: new Date(),
+    location: "Hall",
+    description: "Full",
+    ticketType: "Free",
+    capacity: 10,
+    status: "Active",
+    bannerUrl: dataBanner,
+  });
+  assert.equal(detail.bannerUrl, dataBanner);
+});
+
 test("HMAC rejects tampered ticket signatures", () => {
   const sig = signTicketPayload({ registrationId: "r1", eventId: "e1", userId: "u1" });
   assert.equal(verifyTicketPayload({ registrationId: "r1", eventId: "e1", userId: "u1", sig }), true);

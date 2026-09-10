@@ -8,6 +8,8 @@ function getSecurityHeaders() {
     { key: "X-DNS-Prefetch-Control", value: "off" },
     { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
     { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+    // Prefer CORP over reflecting Access-Control-Allow-Origin: * (Vercel default on some assets).
+    { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
     {
       key: "Strict-Transport-Security",
       value: "max-age=63072000; includeSubDomains; preload",
@@ -16,15 +18,17 @@ function getSecurityHeaders() {
       key: "Content-Security-Policy",
       value: [
         "default-src 'self'",
-        // In development, Next.js / React debugging and Turbopack require 'unsafe-eval' for callstack reconstruction.
-        // In production, 'unsafe-eval' is excluded to satisfy OWASP CSP requirements.
+        // Next still needs 'unsafe-inline' for hydration/styles; block inline *handlers* + frames.
         isDev
           ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
           : "script-src 'self' 'unsafe-inline'",
+        "script-src-attr 'none'",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https://images.unsplash.com https://ui-avatars.com https://*.supabase.co https://cmseducation.org https://*.cmseducation.org",
         "font-src 'self' data:",
         "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+        "worker-src 'self' blob:",
+        "frame-src 'none'",
         "frame-ancestors 'none'",
         "base-uri 'self'",
         "form-action 'self'",

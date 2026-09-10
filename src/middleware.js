@@ -42,6 +42,18 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
+  // Same-origin app: answer preflight without auth and without ACOA: *.
+  if (request.method === "OPTIONS" && pathname.startsWith("/api/")) {
+    return new NextResponse(null, {
+      status: 204,
+      headers: {
+        Allow: "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Cache-Control": "no-store",
+        "Cross-Origin-Resource-Policy": "same-origin",
+      },
+    });
+  }
+
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secretOk(secret)) {
     return serviceUnavailable(pathname);
@@ -181,6 +193,7 @@ export async function middleware(request) {
   }
 
   response.headers.set("x-request-id", crypto.randomUUID());
+  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
   return response;
 }
 
