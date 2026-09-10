@@ -159,6 +159,7 @@ function SettingsPageInner() {
     }
 
     // 4. Real Active Device Detection (eliminates fake mock iOS fixtures)
+    const realDev = getRealClientDevice();
     let storedDevs = [];
     try {
       const rawDevs = localStorage.getItem("user_active_devices");
