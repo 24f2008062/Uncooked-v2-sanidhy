@@ -93,6 +93,16 @@ export async function POST(req) {
 
     const auth = await requireRoles(["ORGANIZER"]);
     if (auth.error) return auth.error;
+    if (auth.error) {
+      if (auth.error.status === 403) {
+        return jsonError(
+          "Host verification required. Only approved organizers can create and publish events.",
+          403,
+          "HOST_NOT_VERIFIED"
+        );
+      }
+      return auth.error;
+    }
 
     const parsed = await readJson(req);
     if (parsed.error) return parsed.error;

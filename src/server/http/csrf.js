@@ -19,6 +19,23 @@ function allowedOrigins() {
   return origins;
 }
 
+function isAllowedDevLoopback(origin) {
+  if (process.env.NODE_ENV === "production" || !origin) return false;
+  try {
+    const parsed = new URL(origin);
+    if (parsed.protocol !== "http:") return false;
+    const host = parsed.hostname;
+    if (host !== "localhost" && host !== "127.0.0.1") return false;
+    const port = parsed.port;
+    if (port && (!/^[0-9]{1,5}$/.test(port) || Number(port) > 65535 || Number(port) < 1)) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function assertSameOrigin(req) {
   const method = req.method.toUpperCase();
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
@@ -47,6 +64,9 @@ export function assertSameOrigin(req) {
   }
 
   if (!allowed.has(origin)) {
+    if (isAllowedDevLoopback(origin)) {
+      return null;
+    }
     return "Cross-origin request blocked";
   }
 

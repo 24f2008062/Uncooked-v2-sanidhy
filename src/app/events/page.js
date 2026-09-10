@@ -32,7 +32,8 @@ import {
   QrCode,
   Clock,
   CheckSquare,
-  Award
+  Award,
+  ExternalLink
 } from "lucide-react";
 
 const EVENTS = [
@@ -394,9 +395,24 @@ export default function EventsPage() {
                           <Calendar className="w-3.5 h-3.5 text-[var(--accent-orange)] shrink-0" />
                           <span>{item.date} at {item.time}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-3.5 h-3.5 text-[var(--accent-orange)] shrink-0" />
-                          <span>{item.location}</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <MapPin className="w-3.5 h-3.5 text-[var(--accent-orange)] shrink-0" />
+                            <span className="truncate">{item.location}</span>
+                          </div>
+                          {item.location && (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[11px] text-text-muted hover:text-[var(--accent-orange)] shrink-0 inline-flex items-center gap-0.5 transition-colors"
+                              title="Open location on Google Maps"
+                            >
+                              <span>Maps</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="w-3.5 h-3.5 text-[var(--accent-orange)] shrink-0" />
@@ -473,9 +489,24 @@ export default function EventsPage() {
                   <div className="p-6 flex-grow flex flex-col justify-between">
                     <div>
                       {/* Location */}
-                      <div className="flex items-center gap-1.5 text-xs text-text-secondary mb-2">
-                        <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                        <span>{item.location}</span>
+                      <div className="flex items-center justify-between gap-1.5 text-xs text-text-secondary mb-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          <span className="truncate">{item.location}</span>
+                        </div>
+                        {item.location && (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[11px] text-text-muted hover:text-blue-400 shrink-0 inline-flex items-center gap-0.5 transition-colors"
+                            title="Open location on Google Maps"
+                          >
+                            <span>Maps</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        )}
                       </div>
 
                       {/* Title */}

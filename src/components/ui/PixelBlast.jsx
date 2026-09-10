@@ -372,12 +372,18 @@ export default function PixelBlast({
       }
 
       const canvas = document.createElement("canvas");
-      const renderer = new THREE.WebGLRenderer({
-        canvas,
-        antialias,
-        alpha: true,
-        powerPreference: "high-performance",
-      });
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({
+          canvas,
+          antialias,
+          alpha: true,
+          powerPreference: "high-performance",
+        });
+      } catch (err) {
+        console.warn("PixelBlast: WebGL context could not be created:", err?.message || err);
+        return;
+      }
       renderer.domElement.style.width = "100%";
       renderer.domElement.style.height = "100%";
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));

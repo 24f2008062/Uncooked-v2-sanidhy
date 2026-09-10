@@ -30,6 +30,22 @@ export async function GET(req) {
     });
 
     return jsonOk({ applications });
+    const formatted = applications.map((app) => {
+      let parsedNotes = null;
+      if (app.notes) {
+        try {
+          parsedNotes = JSON.parse(app.notes);
+        } catch {
+          parsedNotes = { text: app.notes };
+        }
+      }
+      return {
+        ...app,
+        parsedNotes,
+      };
+    });
+
+    return jsonOk({ applications: formatted });
   } catch (error) {
     return safeError(error, "Unable to fetch host applications");
   }

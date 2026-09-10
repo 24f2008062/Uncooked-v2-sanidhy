@@ -25,6 +25,13 @@ import {
   ShieldCheck,
   CheckCircle2,
   Mail,
+  Building,
+  Phone,
+  UserCheck,
+  Clock,
+  AlertCircle,
+  Sparkles,
+  ExternalLink,
 } from "lucide-react";
 
 const LightRays = dynamic(() => import("@/components/ui/LightRays"), {
@@ -32,6 +39,7 @@ const LightRays = dynamic(() => import("@/components/ui/LightRays"), {
   loading: () => null,
 });
 import DeferredWebGL from "@/components/ui/DeferredWebGL";
+import { GoogleMapsIcon } from "@/components/ui/GoogleMapsButton";
 
 function LinkedInIcon({ className = "w-4 h-4" }) {
   return (
@@ -147,11 +155,25 @@ export default function CreateEventView({ isModal = false, onClose }) {
 
   // Host Verification States
   const [isHostVerified, setIsHostVerified] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState("NOT_APPLIED"); // NOT_APPLIED | PENDING | APPROVED | REJECTED
+  const [applicationRejectionReason, setApplicationRejectionReason] = useState("");
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyGmail, setVerifyGmail] = useState("");
+  
+  // Verification Form Fields
+  const [verifyOrgName, setVerifyOrgName] = useState("");
+  const [verifyOrgType, setVerifyOrgType] = useState("College Club");
+  const [verifyApplicantName, setVerifyApplicantName] = useState("");
+  const [verifyApplicantRole, setVerifyApplicantRole] = useState("");
+  const [verifyEmail, setVerifyEmail] = useState("");
+  const [verifyPhone, setVerifyPhone] = useState("");
   const [verifyLinkedin, setVerifyLinkedin] = useState("");
+  const [verifyProofDoc, setVerifyProofDoc] = useState("");
+  const [verifyWebsite, setVerifyWebsite] = useState("");
   const [verifyInstagram, setVerifyInstagram] = useState("");
   const [verifyTwitter, setVerifyTwitter] = useState("");
+  const [verifyHostingReason, setVerifyHostingReason] = useState("");
+  
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyError, setVerifyError] = useState("");
   const [verifySuccess, setVerifySuccess] = useState("");
@@ -172,22 +194,36 @@ export default function CreateEventView({ isModal = false, onClose }) {
         const json = await res.json();
         const data = json?.data;
         if (isSubscribed && data) {
-          if (data.verified) {
-            setIsHostVerified(true);
+          const verified = Boolean(data.verified);
+          setIsHostVerified(verified);
+          const appStatus = data.applicationStatus || (verified ? "APPROVED" : (data.application?.status || "NOT_APPLIED"));
+          setApplicationStatus(appStatus);
+          
+          if (data.application?.rejectionReason) {
+            setApplicationRejectionReason(data.application.rejectionReason);
           }
-          if (data.userEmail) {
-            setVerifyGmail((prev) => prev || data.userEmail);
+          if (data.application?.organizationName) {
+            setVerifyOrgName(data.application.organizationName);
           }
-          if (data.application?.notes) {
-            try {
-              const notes = JSON.parse(data.application.notes);
-              if (notes.gmail) setVerifyGmail(notes.gmail);
-              if (notes.linkedin) setVerifyLinkedin(notes.linkedin);
-              if (notes.instagram) setVerifyInstagram(notes.instagram);
-              if (notes.twitter) setVerifyTwitter(notes.twitter);
-            } catch {
-              // notes not in json format, proceed
-            }
+          if (data.application?.organizationType) {
+            setVerifyOrgType(data.application.organizationType);
+          }
+
+          const notes = data.application?.parsedNotes;
+          if (notes) {
+            if (notes.applicantName) setVerifyApplicantName(notes.applicantName);
+            if (notes.applicantRole) setVerifyApplicantRole(notes.applicantRole);
+            if (notes.contactEmail) setVerifyEmail(notes.contactEmail);
+            if (notes.contactPhone) setVerifyPhone(notes.contactPhone);
+            if (notes.linkedinUrl) setVerifyLinkedin(notes.linkedinUrl);
+            if (notes.proofDocumentUrl) setVerifyProofDoc(notes.proofDocumentUrl);
+            if (notes.websiteUrl) setVerifyWebsite(notes.websiteUrl);
+            if (notes.instagram) setVerifyInstagram(notes.instagram);
+            if (notes.twitter) setVerifyTwitter(notes.twitter);
+            if (notes.hostingReason) setVerifyHostingReason(notes.hostingReason);
+          } else {
+            if (data.userEmail) setVerifyEmail((prev) => prev || data.userEmail);
+            if (data.userName) setVerifyApplicantName((prev) => prev || data.userName);
           }
         }
       } catch {
@@ -322,19 +358,40 @@ export default function CreateEventView({ isModal = false, onClose }) {
     setVerifyError("");
     setVerifySuccess("");
 
-    const cleanGmail = verifyGmail.trim().toLowerCase();
+    const cleanOrgName = verifyOrgName.trim();
+    const cleanApplicantName = verifyApplicantName.trim();
+    const cleanApplicantRole = verifyApplicantRole.trim();
+    const cleanEmail = verifyEmail.trim().toLowerCase();
+    const cleanPhone = verifyPhone.trim();
     const cleanLinkedin = verifyLinkedin.trim();
+    const cleanHostingReason = verifyHostingReason.trim();
 
-    if (!cleanGmail) {
-      setVerifyError("Gmail address is mandatory.");
+    if (!cleanOrgName || cleanOrgName.length < 2) {
+      setVerifyError("Organization or Club name is required.");
       return;
     }
-    if (!cleanGmail.endsWith("@gmail.com") && !cleanGmail.endsWith("@googlemail.com")) {
-      setVerifyError("A valid Gmail address (@gmail.com) is mandatory.");
+    if (!cleanApplicantName || cleanApplicantName.length < 2) {
+      setVerifyError("Your full name as representative is required.");
       return;
     }
-    if (!cleanLinkedin || cleanLinkedin.length < 3) {
-      setVerifyError("LinkedIn profile is mandatory.");
+    if (!cleanApplicantRole || cleanApplicantRole.length < 2) {
+      setVerifyError("Your role/designation in the organization is required (e.g., President, Lead Organizer).");
+      return;
+    }
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      setVerifyError("A valid contact email address is required.");
+      return;
+    }
+    if (!cleanPhone || cleanPhone.replace(/\D/g, "").length < 8) {
+      setVerifyError("A valid contact phone number with country code is required.");
+      return;
+    }
+    if (!cleanLinkedin || cleanLinkedin.length < 5) {
+      setVerifyError("LinkedIn or professional profile URL is required.");
+      return;
+    }
+    if (!cleanHostingReason || cleanHostingReason.length < 10) {
+      setVerifyError("Please describe the events you plan to host (minimum 10 characters).");
       return;
     }
 
@@ -345,17 +402,25 @@ export default function CreateEventView({ isModal = false, onClose }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          gmail: cleanGmail,
-          linkedin: cleanLinkedin,
+          organizationName: cleanOrgName,
+          organizationType: verifyOrgType,
+          applicantName: cleanApplicantName,
+          applicantRole: cleanApplicantRole,
+          contactEmail: cleanEmail,
+          contactPhone: cleanPhone,
+          linkedinUrl: cleanLinkedin,
+          proofDocumentUrl: verifyProofDoc.trim(),
+          websiteUrl: verifyWebsite.trim(),
           instagram: verifyInstagram.trim(),
           twitter: verifyTwitter.trim(),
+          hostingReason: cleanHostingReason,
         }),
       });
 
       const payload = await res.json();
 
       if (res.status === 401) {
-        setVerifyError("Please log in first to verify as a host.");
+        setVerifyError("Please log in first to apply for host verification.");
         setVerifyBusy(false);
         return;
       }
@@ -366,14 +431,15 @@ export default function CreateEventView({ isModal = false, onClose }) {
         return;
       }
 
-      setIsHostVerified(true);
-      setVerifySuccess("Host identity verified! You are now authorized to publish events.");
+      setIsHostVerified(false);
+      setApplicationStatus("PENDING");
+      setVerifySuccess("Application submitted! An administrator will review your credentials before event hosting privileges are enabled.");
       setError("");
 
       setTimeout(() => {
         setShowVerifyModal(false);
         setVerifySuccess("");
-      }, 1500);
+      }, 2500);
     } catch {
       setVerifyError("Network error while submitting verification. Please check your connection.");
     } finally {
@@ -384,6 +450,18 @@ export default function CreateEventView({ isModal = false, onClose }) {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     setError("");
+
+    // Lock event hosting before verification approval
+    if (!isHostVerified) {
+      if (applicationStatus === "PENDING") {
+        setError("Your host verification application is currently under admin review. Event creation is locked until an administrator approves your application.");
+      } else {
+        setError("Host verification required. You must be an approved organizer to create and publish events.");
+        setShowVerifyModal(true);
+      }
+      return;
+    }
+
     setBusy(true);
 
     try {
@@ -734,6 +812,7 @@ export default function CreateEventView({ isModal = false, onClose }) {
               </div>
 
               {/* 4. Host Verification Action Button */}
+              {/* 4. Host Verification Status Badge */}
               {isHostVerified ? (
                 <button
                   type="button"
@@ -744,6 +823,26 @@ export default function CreateEventView({ isModal = false, onClose }) {
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span>Host Verified</span>
                 </button>
+              ) : applicationStatus === "PENDING" ? (
+                <button
+                  type="button"
+                  onClick={() => setShowVerifyModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-semibold text-amber-300 transition-all cursor-pointer shadow-sm"
+                  title="Your host application is under admin review"
+                >
+                  <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+                  <span>Under Admin Review</span>
+                </button>
+              ) : applicationStatus === "REJECTED" ? (
+                <button
+                  type="button"
+                  onClick={() => setShowVerifyModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-xs font-semibold text-red-300 transition-all cursor-pointer shadow-sm"
+                  title="Your host application was rejected. Click to review & re-apply"
+                >
+                  <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                  <span>Verification Rejected</span>
+                </button>
               ) : (
                 <button
                   type="button"
@@ -753,9 +852,75 @@ export default function CreateEventView({ isModal = false, onClose }) {
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-300 group-hover:scale-110 transition-transform" />
                   <span>Verify Host</span>
+                  <span>Verify Host to Publish</span>
                 </button>
               )}
             </div>
+
+            {/* Verification Notice Banner */}
+            {!isHostVerified && (
+              <div className="pt-1">
+                {applicationStatus === "PENDING" ? (
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs flex items-start justify-between gap-3 shadow-lg">
+                    <div className="flex items-start gap-2.5">
+                      <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-amber-300">Host Application Under Admin Review</div>
+                        <p className="text-white/70 text-[11px] mt-0.5 leading-relaxed">
+                          Your verification application is currently pending admin approval. You can prepare your event draft below, but live publishing will remain locked until an administrator approves your application.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowVerifyModal(true)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-bold shrink-0 transition-colors cursor-pointer self-center"
+                    >
+                      View Submission
+                    </button>
+                  </div>
+                ) : applicationStatus === "REJECTED" ? (
+                  <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-200 text-xs flex items-start justify-between gap-3 shadow-lg">
+                    <div className="flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-red-300">Host Verification Rejected</div>
+                        <p className="text-white/70 text-[11px] mt-0.5 leading-relaxed">
+                          {applicationRejectionReason ? (
+                            <>Admin Feedback: <span className="text-red-100 font-medium">{applicationRejectionReason}</span></>
+                          ) : (
+                            "Your verification application was rejected by the administration. Please update your details and re-apply."
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowVerifyModal(true)}
+                      className="px-3 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-200 text-[11px] font-bold shrink-0 transition-colors cursor-pointer self-center"
+                    >
+                      Update & Re-apply
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-pink-500/10 border border-amber-500/20 text-white/80 text-xs flex items-center justify-between gap-3 shadow-lg">
+                    <div className="flex items-center gap-2.5">
+                      <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="text-xs">
+                        <span className="font-bold text-white">Host Verification Required:</span> An administrator must approve your host credentials before you can publish live events.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowVerifyModal(true)}
+                      className="px-3.5 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black text-[11px] font-bold shrink-0 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    >
+                      Apply Now →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Event Name Input (Luma Style Big Typography) */}
             <div className="pt-2">
@@ -855,36 +1020,72 @@ export default function CreateEventView({ isModal = false, onClose }) {
                 <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 shrink-0">
                   <MapPin className="w-4 h-4" />
                 </div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-white/90 flex items-center justify-between">
-                    <span>{location || "Add Event Location"}</span>
-                    {!isEditingLocation && (
-                      <span className="text-[11px] text-white/40 hover:text-white">Edit</span>
-                    )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-white/90 flex items-center justify-between gap-2">
+                    <span className="truncate">{location || "Add Event Location"}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const query = location.trim() || [city, state].filter(Boolean).join(", ") || "Lucknow";
+                          const targetUrl = location.trim().startsWith("http") && (location.includes("google.com/maps") || location.includes("maps.app.goo.gl"))
+                            ? location.trim()
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+                          window.open(targetUrl, "_blank", "noopener,noreferrer");
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-medium text-white/80 hover:text-white transition-all active:scale-95 cursor-pointer shadow-sm"
+                        title="Search or verify location on Google Maps"
+                      >
+                        <GoogleMapsIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span>Google Maps</span>
+                        <ExternalLink className="w-2.5 h-2.5 text-white/40" />
+                      </button>
+                      {!isEditingLocation && (
+                        <span className="text-[11px] text-white/40 hover:text-white">Edit</span>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs text-white/40">
-                    Offline location or virtual meeting link
+                  <p className="text-xs text-white/40 mt-0.5">
+                    Offline venue address or virtual meeting link
                   </p>
                 </div>
               </div>
 
               {isEditingLocation && (
-                <div className="mt-3 pt-3 border-t border-white/10 flex gap-2">
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. Campus Innovation Center, Lucknow or Google Meet URL"
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-white/30"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingLocation(false)}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white cursor-pointer"
-                  >
-                    Done
-                  </button>
+                <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="e.g. Campus Innovation Center, Lucknow or Google Maps URL"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-white/30"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingLocation(false)}
+                      className="px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-white/50 pt-1">
+                    <span>Paste venue address or Google Maps link</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const query = location.trim() || [city, state].filter(Boolean).join(", ") || "Lucknow";
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, "_blank", "noopener,noreferrer");
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200 transition-colors cursor-pointer"
+                    >
+                      <GoogleMapsIcon className="w-3 h-3" />
+                      <span>{location.trim() ? "Verify on Google Maps" : "Search Google Maps"}</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1116,6 +1317,41 @@ export default function CreateEventView({ isModal = false, onClose }) {
                   <span>Create Event</span>
                 )}
               </button>
+              {isHostVerified ? (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={busy}
+                  className="w-full py-4 rounded-full font-bold text-sm bg-white text-black hover:bg-zinc-200 transition-all duration-200 shadow-2xl active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {busy ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Creating Event…</span>
+                    </>
+                  ) : (
+                    <span>Create Event</span>
+                  )}
+                </button>
+              ) : applicationStatus === "PENDING" ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-4 rounded-full font-bold text-sm bg-zinc-900/90 text-amber-300/80 border border-amber-500/30 transition-all shadow-xl cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                  <span>Pending Admin Approval — Event Publishing Locked</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowVerifyModal(true)}
+                  className="w-full py-4 rounded-full font-bold text-sm bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-300 text-black transition-all duration-200 shadow-2xl active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>{applicationStatus === "REJECTED" ? "Update Verification to Publish Event" : "Verify Host to Publish Event"}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1210,25 +1446,33 @@ export default function CreateEventView({ isModal = false, onClose }) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="bg-[#181020] border border-white/15 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 text-white relative max-h-[90vh] overflow-y-auto"
+              className="bg-[#181020] border border-white/15 rounded-3xl p-6 sm:p-7 max-w-xl w-full shadow-2xl space-y-5 text-white relative max-h-[90vh] overflow-y-auto"
             >
               {/* Modal Header */}
-              <div className="flex items-start justify-between gap-4 pb-2 border-b border-white/10">
+              <div className="flex items-start justify-between gap-4 pb-3 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-lg">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                      <span>Host Verification</span>
-                      {isHostVerified && (
+                      <span>Host Verification & Approval</span>
+                      {isHostVerified ? (
                         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                          Verified
+                          Approved
                         </span>
-                      )}
+                      ) : applicationStatus === "PENDING" ? (
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          Under Review
+                        </span>
+                      ) : applicationStatus === "REJECTED" ? (
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+                          Needs Revision
+                        </span>
+                      ) : null}
                     </h3>
                     <p className="text-xs text-white/50 mt-0.5">
-                      Enter your account details to verify your identity and publish events.
+                      Submit your organization and representative credentials for administrator approval.
                     </p>
                   </div>
                 </div>
@@ -1244,6 +1488,23 @@ export default function CreateEventView({ isModal = false, onClose }) {
               </div>
 
               {/* Status or Error Banner */}
+              {applicationStatus === "PENDING" && !verifySuccess && (
+                <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Your application is currently pending admin review. You can update your details below if needed.</span>
+                </div>
+              )}
+
+              {applicationStatus === "REJECTED" && applicationRejectionReason && !verifySuccess && (
+                <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-200 text-xs space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-red-300">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Previous Rejection Feedback:</span>
+                  </div>
+                  <p className="text-white/80 pl-5">{applicationRejectionReason}</p>
+                </div>
+              )}
+
               {verifyError && (
                 <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-200 text-xs flex items-center gap-2">
                   <span>⚠️</span>
@@ -1260,97 +1521,235 @@ export default function CreateEventView({ isModal = false, onClose }) {
 
               {/* Form Inputs */}
               <form onSubmit={handleVerifySubmit} className="space-y-4">
-                
-                {/* 1. Gmail (Mandatory) */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-white/90 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-red-400" />
-                      <span>Gmail Address</span>
-                    </label>
-                    <span className="text-[10px] uppercase font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
-                      Mandatory *
-                    </span>
+                {/* 1. Organization Information */}
+                <div className="p-3.5 bg-white/[0.03] border border-white/10 rounded-2xl space-y-3">
+                  <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Building className="w-3.5 h-3.5" />
+                    <span>Organization & Club Profile</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                        <span>Organization / Club Name</span>
+                        <span className="text-[10px] text-amber-400 font-mono">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={verifyOrgName}
+                        onChange={(e) => setVerifyOrgName(e.target.value)}
+                        placeholder="e.g. IEEE Student Branch, Robotics Club"
+                        required
+                        className="w-full bg-white/5 border border-white/15 focus:border-amber-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                        <span>Organization Type</span>
+                        <span className="text-[10px] text-amber-400 font-mono">*</span>
+                      </label>
+                      <select
+                        value={verifyOrgType}
+                        onChange={(e) => setVerifyOrgType(e.target.value)}
+                        className="w-full bg-[#1e1428] border border-white/15 focus:border-amber-400/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-colors"
+                      >
+                        <option value="College Club">College Club</option>
+                        <option value="University Department">University Department</option>
+                        <option value="Student Initiative">Student Initiative</option>
+                        <option value="Company">Company</option>
+                        <option value="NGO">NGO / Non-profit</option>
+                        <option value="Independent">Independent Organizer</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
                   </div>
-                  <input
-                    type="email"
-                    value={verifyGmail}
-                    onChange={(e) => setVerifyGmail(e.target.value)}
-                    placeholder="yourname@gmail.com"
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                      <span>Official Website / Portal</span>
+                      <span className="text-[10px] text-white/40 font-mono">Optional</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={verifyWebsite}
+                      onChange={(e) => setVerifyWebsite(e.target.value)}
+                      placeholder="https://yourclub.edu or portfolio link"
+                      className="w-full bg-white/5 border border-white/15 focus:border-amber-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Representative Identity */}
+                <div className="p-3.5 bg-white/[0.03] border border-white/10 rounded-2xl space-y-3">
+                  <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>Representative Contact Identity</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                        <span>Representative Full Name</span>
+                        <span className="text-[10px] text-amber-400 font-mono">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={verifyApplicantName}
+                        onChange={(e) => setVerifyApplicantName(e.target.value)}
+                        placeholder="e.g. Jane Doe"
+                        required
+                        className="w-full bg-white/5 border border-white/15 focus:border-purple-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                        <span>Role in Organization</span>
+                        <span className="text-[10px] text-amber-400 font-mono">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={verifyApplicantRole}
+                        onChange={(e) => setVerifyApplicantRole(e.target.value)}
+                        placeholder="e.g. President, Event Lead, Convener"
+                        required
+                        className="w-full bg-white/5 border border-white/15 focus:border-purple-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                        <span>Official Contact Email</span>
+                        <span className="text-[10px] text-amber-400 font-mono">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={verifyEmail}
+                        onChange={(e) => setVerifyEmail(e.target.value)}
+                        placeholder="contact@college.edu or name@gmail.com"
+                        required
+                        className="w-full bg-white/5 border border-white/15 focus:border-purple-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                        <span>Contact Phone (with Country Code)</span>
+                        <span className="text-[10px] text-amber-400 font-mono">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={verifyPhone}
+                        onChange={(e) => setVerifyPhone(e.target.value)}
+                        placeholder="+91 9876543210"
+                        required
+                        className="w-full bg-white/5 border border-white/15 focus:border-purple-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Credentials & Proof Links */}
+                <div className="p-3.5 bg-white/[0.03] border border-white/10 rounded-2xl space-y-3">
+                  <h4 className="text-xs font-bold text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Credentials & Proof Documents</span>
+                  </h4>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                      <span>LinkedIn Profile URL</span>
+                      <span className="text-[10px] text-amber-400 font-mono">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={verifyLinkedin}
+                      onChange={(e) => setVerifyLinkedin(e.target.value)}
+                      placeholder="https://linkedin.com/in/yourprofile"
+                      required
+                      className="w-full bg-white/5 border border-white/15 focus:border-blue-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                    />
+                    <p className="text-[11px] text-white/40">
+                      Required for administrative background identity verification.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                      <span>Proof Document URL (College ID / Auth Letter)</span>
+                      <span className="text-[10px] text-amber-400 font-mono">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={verifyProofDoc}
+                      onChange={(e) => setVerifyProofDoc(e.target.value)}
+                      placeholder="Link to Google Drive / Notion / Cloud PDF of student ID or club letter"
+                      required
+                      className="w-full bg-white/5 border border-white/15 focus:border-blue-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                    />
+                    <p className="text-[11px] text-white/40">
+                      Upload proof of affiliation (Student ID, Faculty Letter, Club Charter, or Company Certificate) to Google Drive and paste the public link.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                        <span>Instagram Handle</span>
+                        <span className="text-[10px] text-white/40 font-mono">Optional</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={verifyInstagram}
+                        onChange={(e) => setVerifyInstagram(e.target.value)}
+                        placeholder="@clubhandle"
+                        className="w-full bg-white/5 border border-white/15 focus:border-pink-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                        <span>Twitter / X Handle</span>
+                        <span className="text-[10px] text-white/40 font-mono">Optional</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={verifyTwitter}
+                        onChange={(e) => setVerifyTwitter(e.target.value)}
+                        placeholder="@clubhandle"
+                        className="w-full bg-white/5 border border-white/15 focus:border-cyan-400/60 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Event Purpose */}
+                <div className="p-3.5 bg-white/[0.03] border border-white/10 rounded-2xl space-y-2">
+                  <label className="text-xs font-semibold text-white/90 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-amber-300 font-bold uppercase tracking-wider text-[11px]">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Event Hosting Purpose & Planned Events</span>
+                    </span>
+                    <span className="text-[10px] text-amber-400 font-mono">*</span>
+                  </label>
+                  <textarea
+                    value={verifyHostingReason}
+                    onChange={(e) => setVerifyHostingReason(e.target.value)}
+                    rows={3}
+                    placeholder="Tell administrators what types of events, hackathons, or workshops you plan to host on Opportia..."
                     required
-                    className="w-full bg-white/5 border border-white/15 focus:border-amber-400/60 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                    className="w-full bg-white/5 border border-white/15 focus:border-amber-400/60 rounded-xl p-3 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors resize-none"
                   />
                   <p className="text-[11px] text-white/40">
-                    Must be a valid Google / Gmail account (@gmail.com) for official verification.
+                    Brief description (minimum 10 characters) explaining your audience and upcoming events.
                   </p>
-                </div>
-
-                {/* 2. LinkedIn (Mandatory) */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-white/90 flex items-center gap-1.5">
-                      <LinkedInIcon className="w-3.5 h-3.5 text-blue-400" />
-                      <span>LinkedIn Profile</span>
-                    </label>
-                    <span className="text-[10px] uppercase font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
-                      Mandatory *
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={verifyLinkedin}
-                    onChange={(e) => setVerifyLinkedin(e.target.value)}
-                    placeholder="https://linkedin.com/in/yourprofile or username"
-                    required
-                    className="w-full bg-white/5 border border-white/15 focus:border-blue-400/60 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
-                  />
-                  <p className="text-[11px] text-white/40">
-                    Required to verify professional or student organization identity.
-                  </p>
-                </div>
-
-                {/* 3. Instagram (Optional) */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-white/90 flex items-center gap-1.5">
-                      <InstagramIcon className="w-3.5 h-3.5 text-pink-400" />
-                      <span>Instagram Account</span>
-                    </label>
-                    <span className="text-[10px] uppercase font-semibold text-white/40 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
-                      Optional
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={verifyInstagram}
-                    onChange={(e) => setVerifyInstagram(e.target.value)}
-                    placeholder="@handle or https://instagram.com/handle"
-                    className="w-full bg-white/5 border border-white/15 focus:border-pink-400/60 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 4. Twitter / X (Optional) */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-white/90 flex items-center gap-1.5">
-                      <TwitterIcon className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Twitter / X Account</span>
-                    </label>
-                    <span className="text-[10px] uppercase font-semibold text-white/40 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
-                      Optional
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={verifyTwitter}
-                    onChange={(e) => setVerifyTwitter(e.target.value)}
-                    placeholder="@handle or https://x.com/handle"
-                    className="w-full bg-white/5 border border-white/15 focus:border-cyan-400/60 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none transition-colors"
-                  />
                 </div>
 
                 {/* Action Buttons */}
-                <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-white/10">
+                <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => setShowVerifyModal(false)}
@@ -1366,12 +1765,20 @@ export default function CreateEventView({ isModal = false, onClose }) {
                     {verifyBusy ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Verifying…</span>
+                        <span>Submitting Application…</span>
                       </>
                     ) : (
                       <>
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>{isHostVerified ? "Update Verification" : "Verify & Activate Host"}</span>
+                        <span>
+                          {isHostVerified
+                            ? "Update Verification Details"
+                            : applicationStatus === "PENDING"
+                            ? "Update Application"
+                            : applicationStatus === "REJECTED"
+                            ? "Re-submit for Approval"
+                            : "Submit for Admin Approval"}
+                        </span>
                       </>
                     )}
                   </button>
