@@ -15,6 +15,7 @@ import {
   Ticket,
   Briefcase,
   ShieldCheck,
+  ShieldAlert,
   Calendar,
   ArrowRight,
   Loader2,
@@ -555,13 +556,24 @@ export default function DashboardPage() {
                         <p className="text-sm text-text-secondary">
                           Your host credentials are active. You can create and publish campus events.
                         </p>
-                        <Link
-                          href="/create"
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md"
-                          style={{ background: "linear-gradient(135deg, #ec4899 0%, #f97316 100%)" }}
-                        >
-                          Create an Event
-                        </Link>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <Link
+                            href="/create"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md"
+                            style={{ background: "linear-gradient(135deg, #ec4899 0%, #f97316 100%)" }}
+                          >
+                            Create an Event
+                          </Link>
+                          {profile?.role === "SUPER_ADMIN" && (
+                            <Link
+                              href="/admin/dashboard"
+                              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-300 bg-rose-500/15 border border-rose-500/30 hover:bg-rose-500/25 transition-colors shadow-sm"
+                            >
+                              <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                              Super Admin Console
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-3">
