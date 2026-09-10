@@ -103,8 +103,8 @@ function LoginForm() {
         
         {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-           <div className="absolute top-[10%] -left-32 w-[500px] h-[500px] bg-[rgba(244,114,182,0.04)] rounded-full blur-[100px]" />
-           <div className="absolute bottom-[10%] -right-32 w-[500px] h-[500px] bg-[rgba(249,115,22,0.03)] rounded-full blur-[100px]" />
+           <div className="absolute top-[10%] -left-32 w-[500px] h-[500px] bg-[rgba(244,114,182,0.04)] rounded-full blur-xl md:blur-[100px] opacity-40 md:opacity-100" />
+           <div className="absolute bottom-[10%] -right-32 w-[500px] h-[500px] bg-[rgba(249,115,22,0.03)] rounded-full blur-xl md:blur-[100px] opacity-40 md:opacity-100" />
         </div>
 
         <motion.div 
@@ -190,7 +190,7 @@ function LoginForm() {
                   placeholder="you@university.edu"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-5 py-3.5 text-[15px] rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6] group-hover:border-[#333]"
+                  className="w-full px-5 py-3.5 text-base rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6] group-hover:border-[#333]"
                 />
               </div>
 
@@ -202,7 +202,7 @@ function LoginForm() {
                   placeholder="Password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-5 py-3.5 pr-12 text-[15px] rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6] group-hover:border-[#333]"
+                  className="w-full px-5 py-3.5 pr-12 text-base rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6] group-hover:border-[#333]"
                 />
                 <button
                   type="button"

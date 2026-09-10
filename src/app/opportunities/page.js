@@ -179,7 +179,7 @@ export default function OpportunitiesPage() {
 
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 relative overflow-hidden">
         {/* Background Ambient Glows */}
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-purple-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-purple-500/10 rounded-full blur-2xl md:blur-[140px] opacity-50 md:opacity-100 pointer-events-none" />
 
         <DeferredWebGL
           className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0"

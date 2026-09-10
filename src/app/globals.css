@@ -819,3 +819,39 @@ img {
 }
 
 
+
+/* ============================================================================
+   MOBILE SMOOTHNESS
+   ============================================================================ */
+
+@media (max-width: 767px) {
+  /* Cheaper compositing while scrolling */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Notch / home-indicator safe padding for sticky chrome */
+  .navbar {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Avoid accidental horizontal rubber-band jank from 100vw + padding */
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

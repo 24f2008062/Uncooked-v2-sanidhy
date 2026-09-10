@@ -127,7 +127,7 @@ export default function FeedbackSection() {
   return (
     <section id="feedback-section" className="relative w-full py-20 overflow-hidden bg-primary transition-colors duration-300">
       {/* Background Glow */}
-      <div className="absolute top-10 right-10 w-[600px] h-[350px] bg-orange-500/5 blur-[130px] rounded-full pointer-events-none" />
+      <div className="absolute top-10 right-10 w-[600px] h-[350px] bg-orange-500/5 blur-2xl md:blur-[130px] opacity-50 md:opacity-100 rounded-full pointer-events-none" />
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-4 md:px-8 xl:px-12">
         {/* Section Header */}

@@ -127,7 +127,7 @@ export default function HostApplyPage() {
     <>
       <Navbar forceDarkTop />
       <main className="min-h-screen bg-primary pt-28 pb-24 relative overflow-hidden">
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[280px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[280px] bg-emerald-500/10 rounded-full blur-2xl md:blur-[140px] opacity-50 md:opacity-100 pointer-events-none" />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 relative z-10">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent-orange)] mb-2">
             Host verification

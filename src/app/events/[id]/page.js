@@ -125,7 +125,7 @@ export default function EventDetailsPage() {
       <Navbar forceDarkTop />
       <LazyAgentWidget />
       <main className="min-h-screen bg-primary pt-28 pb-24 relative overflow-hidden">
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-orange-500/10 rounded-full blur-2xl md:blur-[140px] opacity-50 md:opacity-100 pointer-events-none" />
 
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <Link

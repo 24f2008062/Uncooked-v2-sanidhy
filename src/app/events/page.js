@@ -231,7 +231,7 @@ export default function EventsPage() {
 
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 relative overflow-hidden">
         {/* Background Ambient Glows */}
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-orange-500/10 rounded-full blur-2xl md:blur-[140px] opacity-50 md:opacity-100 pointer-events-none" />
 
         {/* LightRays — deferred WebGL (desktop, motion OK, in-view) */}
         <DeferredWebGL

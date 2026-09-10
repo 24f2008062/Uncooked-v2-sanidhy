@@ -316,7 +316,7 @@ export default function DashboardPage() {
           />
         </DeferredWebGL>
 
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[320px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[320px] bg-orange-500/10 rounded-full blur-2xl md:blur-[140px] opacity-50 md:opacity-100 pointer-events-none" />
 
         <div className="max-w-[1150px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Header */}
