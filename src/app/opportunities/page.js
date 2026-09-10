@@ -13,7 +13,9 @@ import Link from "next/link";
 
 const LightRays = dynamic(() => import("@/components/ui/LightRays"), {
   ssr: false,
+  loading: () => null,
 });
+import DeferredWebGL from "@/components/ui/DeferredWebGL";
 import { 
   Search, 
   Briefcase, 
@@ -179,8 +181,10 @@ export default function OpportunitiesPage() {
         {/* Background Ambient Glows */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-purple-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-        {/* LightRays WebGL shader animation (static, no cursor movement) */}
-        <div className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0">
+        <DeferredWebGL
+          className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0"
+          fallback={null}
+        >
           <LightRays
             raysOrigin="top-center"
             raysColor={theme === "light" ? "#a855f7" : "#ffffff"}
@@ -196,7 +200,7 @@ export default function OpportunitiesPage() {
             lightMode={theme === "light"}
             className={theme === "light" ? "opacity-50" : "opacity-90"}
           />
-        </div>
+        </DeferredWebGL>
 
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           

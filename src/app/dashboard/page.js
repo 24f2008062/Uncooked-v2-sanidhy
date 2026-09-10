@@ -35,6 +35,7 @@ const PixelBlast = dynamic(
     loading: () => null,
   }
 );
+import DeferredWebGL from "@/components/ui/DeferredWebGL";
 
 const QRCodeSVG = dynamic(
   () => import("qrcode.react").then((mod) => mod.QRCodeSVG),
@@ -295,8 +296,12 @@ export default function DashboardPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-primary pt-28 pb-24 relative overflow-hidden">
-        {/* Interactive Orange PixelBlast Background */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <DeferredWebGL
+          className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
+          fallback={
+            <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-transparent" />
+          }
+        >
           <PixelBlast
             variant="square"
             pixelSize={3.5}
@@ -309,7 +314,7 @@ export default function DashboardPage() {
             enableRipples={true}
             className="w-full h-full opacity-70 dark:opacity-55"
           />
-        </div>
+        </DeferredWebGL>
 
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[320px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
 

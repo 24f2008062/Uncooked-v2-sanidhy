@@ -5,8 +5,8 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import InteractiveMesh from "./InteractiveMesh";
 import BlurText from "@/components/ui/BlurText";
+import DeferredWebGL from "@/components/ui/DeferredWebGL";
 
 const GridScan = dynamic(() => import("@/components/ui/GridScan"), {
   ssr: false,
@@ -140,10 +140,28 @@ export default function HeroSection() {
         }}
       />
 
-      {/* Grid Scan Background */}
-      <div className="hidden lg:block absolute inset-0 z-0 opacity-60">
-        <GridScan linesColor="#f97316" scanColor="#fb923c" enableWebcam={false} showPreview={false} scanOpacity={0.8} />
-      </div>
+      {/* Grid Scan Background — desktop only, deferred until in view */}
+      <DeferredWebGL
+        className="hidden lg:block absolute inset-0 z-0 opacity-60"
+        minWidth={1024}
+        fallback={
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 70% 55% at 50% 40%, rgba(249,115,22,0.08) 0%, transparent 65%)",
+            }}
+          />
+        }
+      >
+        <GridScan
+          linesColor="#f97316"
+          scanColor="#fb923c"
+          enableWebcam={false}
+          showPreview={false}
+          scanOpacity={0.8}
+        />
+      </DeferredWebGL>
 
       {/* Structured Static Cards - Desktop & Tablet */}
       <div className="absolute top-20 bottom-0 left-0 right-0 max-w-[1600px] mx-auto hidden md:flex justify-between items-center px-4 md:px-8 xl:px-12 pointer-events-none z-10 pt-8">

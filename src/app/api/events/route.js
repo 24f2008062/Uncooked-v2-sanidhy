@@ -4,7 +4,7 @@ import { enforceMutationGuards, requireRoles } from "@/server/http/guards";
 import { logAuditEvent } from "@/server/auth/audit";
 import { hashIp, getClientIp } from "@/server/http/ip";
 import { rateLimitAsync, rateLimitHeaders } from "@/server/http/rateLimit";
-import { publicEvent } from "@/server/services/eventsPublic";
+import { publicEventListItem } from "@/server/services/eventsPublic";
 
 export async function GET(req) {
   try {
@@ -15,7 +15,8 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const search = searchParams.get("search");
-    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50", 10) || 50, 1), 50);
+    // Default 24 cards — detail text lives on /api/events/[id]
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "24", 10) || 24, 1), 48);
 
     const whereClause = {
       archived: false,
@@ -44,16 +45,42 @@ export async function GET(req) {
       where: whereClause,
       take: limit,
       orderBy: { date: "asc" },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        category: true,
+        tags: true,
+        date: true,
+        location: true,
+        zone: true,
+        city: true,
+        state: true,
+        country: true,
+        description: true, // trimmed to blurb in list DTO
+        bannerUrl: true,
+        ticketType: true,
+        price: true,
+        capacity: true,
+        waitlistEnabled: true,
+        status: true,
         _count: { select: { registrations: true } },
         createdBy: { select: { name: true, fullName: true, role: true } },
       },
     });
 
-    return jsonOk({
-      events: events.map((event) => publicEvent(event, { registrationCount: event._count.registrations })),
-      count: events.length,
-    });
+    return jsonOk(
+      {
+        events: events.map((event) =>
+          publicEventListItem(event, { registrationCount: event._count.registrations })
+        ),
+        count: events.length,
+      },
+      200,
+      {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+      }
+    );
   } catch (error) {
     return safeError(error, "Unable to load events");
   }

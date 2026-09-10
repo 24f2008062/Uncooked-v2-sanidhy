@@ -14,7 +14,9 @@ import Image from "next/image";
 
 const LightRays = dynamic(() => import("@/components/ui/LightRays"), {
   ssr: false,
+  loading: () => null,
 });
+import DeferredWebGL from "@/components/ui/DeferredWebGL";
 import { 
   Search, 
   Calendar, 
@@ -231,8 +233,11 @@ export default function EventsPage() {
         {/* Background Ambient Glows */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-        {/* LightRays WebGL shader animation (static, no cursor movement) */}
-        <div className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0">
+        {/* LightRays — deferred WebGL (desktop, motion OK, in-view) */}
+        <DeferredWebGL
+          className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0"
+          fallback={null}
+        >
           <LightRays
             raysOrigin="top-center"
             raysColor={theme === "light" ? "#ea580c" : "#ffffff"}
@@ -248,7 +253,7 @@ export default function EventsPage() {
             lightMode={theme === "light"}
             className={theme === "light" ? "opacity-50" : "opacity-90"}
           />
-        </div>
+        </DeferredWebGL>
 
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
