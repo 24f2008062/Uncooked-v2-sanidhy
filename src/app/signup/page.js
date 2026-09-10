@@ -358,6 +358,7 @@ export default function SignupPage() {
                  src="/events/EVENT IMAGE.jpg"
                  alt="OPPORTIA Event Platform"
                  fill
+                 sizes="(max-width: 1024px) 100vw, 50vw"
                  className="object-cover"
                  priority
                />

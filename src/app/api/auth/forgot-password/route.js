@@ -51,6 +51,8 @@ export async function POST(req) {
         token,
         purpose: "PASSWORD_RESET",
         expires,
+        claimedAt: null,
+        consumedAt: null,
       },
     });
 

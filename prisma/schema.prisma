@@ -81,9 +81,12 @@ model VerificationToken {
   token      String
   expires    DateTime
   purpose    String
+  claimedAt  DateTime?
+  consumedAt DateTime?
 
   @@unique([identifier, token, purpose])
   @@index([expires])
+  @@index([identifier, purpose])
 }
 
 model PlatformSetting {

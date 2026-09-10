@@ -23,6 +23,7 @@ function ResetForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -34,15 +35,18 @@ function ResetForm() {
     setLoading(true);
     setMessage("");
     setErrorMsg("");
+    setErrorCode("");
 
     if (!token || !email) {
       setErrorMsg("Invalid or missing password reset link parameters.");
+      setErrorCode("INVALID_REQUEST");
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
       setErrorMsg("Passwords do not match. Please verify both password fields.");
+      setErrorCode("WEAK_PASSWORD");
       setLoading(false);
       return;
     }
@@ -56,6 +60,7 @@ function ResetForm() {
       const payload = await res.json();
 
       if (!res.ok) {
+        setErrorCode(payload.error?.code || "");
         setErrorMsg(payload.error?.message || "Password reset failed. The token may be invalid or expired.");
         setLoading(false);
       } else {
@@ -69,6 +74,7 @@ function ResetForm() {
     } catch (err) {
       console.error("Reset password error:", err);
       setErrorMsg("An unexpected error occurred. Please try again.");
+      setErrorCode("INTERNAL_ERROR");
       setLoading(false);
     }
   };
@@ -114,9 +120,21 @@ function ResetForm() {
               </div>
 
               {errorMsg && (
-                <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 shrink-0 text-red-400" />
-                  <span className="leading-relaxed">{errorMsg}</span>
+                <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs space-y-2">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 shrink-0 text-red-400" />
+                    <span className="leading-relaxed">{errorMsg}</span>
+                  </div>
+                  {["RESET_TOKEN_EXPIRED", "RESET_TOKEN_ALREADY_USED", "INVALID_RESET_TOKEN"].includes(errorCode) && (
+                    <div className="pt-2 border-t border-red-500/20">
+                      <Link
+                        href="/forgot-password"
+                        className="inline-flex items-center gap-1.5 text-xs text-[var(--accent-orange)] underline font-medium hover:opacity-80"
+                      >
+                        Request a new reset link &rarr;
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -260,6 +278,7 @@ function ResetForm() {
                 src="/events/EVENT IMAGE.jpg"
                 alt="OPPORTIA Platform Showcase"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
                 priority
               />

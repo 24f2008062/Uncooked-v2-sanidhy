@@ -420,7 +420,13 @@ const GridScan = ({
     const container = containerRef.current;
     if (!container) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch (err) {
+      console.warn("GridScan: WebGL context could not be created:", err?.message || err);
+      return;
+    }
     rendererRef.current = renderer;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -565,7 +571,9 @@ const GridScan = ({
       }
       renderer.dispose();
       renderer.forceContextLoss();
-      container.removeChild(renderer.domElement);
+      if (container && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [
     sensitivity,

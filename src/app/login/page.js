@@ -268,6 +268,14 @@ function LoginForm() {
                  className="object-cover"
                  priority
                />
+                <Image 
+                  src="/events/EVENT IMAGE.jpg"
+                  alt="OPPORTIA Product Showcase"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
+                  priority
+                />
              </div>
           </div>
         </motion.div>

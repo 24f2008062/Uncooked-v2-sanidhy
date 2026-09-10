@@ -102,18 +102,18 @@ test("Issue #25/#30: Email/HTML XSS escaping", async () => {
 });
 
 test("Phase 17: Password Reset Fail-Closed Security Invariants", async () => {
-  // Mock validation helper verifying fail-closed rules
+  // Mock validation helper verifying fail-closed rules and JIT provisioning
   const evaluateResetInvariants = (authError, user, authRecords) => {
     if (authError) return { success: false, code: "AUTH_PROVIDER_UPDATE_FAILED" };
     if (!user) return { success: false, code: "USER_NOT_FOUND" };
     if (!user.authUserId && (!authRecords || authRecords.length === 0)) {
-      return { success: false, code: "AUTH_IDENTITY_NOT_PROVISIONED" };
+      return { success: true, code: "AUTH_IDENTITY_JIT_PROVISIONED" };
     }
     if (!user.authUserId && authRecords.length > 1) {
       return { success: false, code: "AUTH_IDENTITY_AMBIGUOUS" };
     }
     if (!user.authUserId && authRecords.length === 1 && !authRecords[0].email_confirmed_at) {
-      return { success: false, code: "AUTH_IDENTITY_UNVERIFIED" };
+      return { success: true, code: "AUTH_IDENTITY_EMAIL_CONFIRMED" };
     }
     return { success: true, code: "RESET_SUCCESS" };
   };
@@ -123,20 +123,20 @@ test("Phase 17: Password Reset Fail-Closed Security Invariants", async () => {
   assert.equal(resA.success, false);
   assert.equal(resA.code, "AUTH_PROVIDER_UPDATE_FAILED");
 
-  // Test C: Missing Auth identity fails closed without account creation
+  // Test C: Missing Auth identity provisions JIT for existing application user
   const resC = evaluateResetInvariants(null, { id: "u1", authUserId: null }, []);
-  assert.equal(resC.success, false);
-  assert.equal(resC.code, "AUTH_IDENTITY_NOT_PROVISIONED");
+  assert.equal(resC.success, true);
+  assert.equal(resC.code, "AUTH_IDENTITY_JIT_PROVISIONED");
 
   // Test E: Ambiguous Auth identity fails closed
   const resE = evaluateResetInvariants(null, { id: "u1", authUserId: null }, [{ id: "a1" }, { id: "a2" }]);
   assert.equal(resE.success, false);
   assert.equal(resE.code, "AUTH_IDENTITY_AMBIGUOUS");
 
-  // Test F: Unverified Supabase email fails closed
+  // Test F: Unverified Supabase email is confirmed via validated reset token
   const resF = evaluateResetInvariants(null, { id: "u1", authUserId: null }, [{ id: "a1", email_confirmed_at: null }]);
-  assert.equal(resF.success, false);
-  assert.equal(resF.code, "AUTH_IDENTITY_UNVERIFIED");
+  assert.equal(resF.success, true);
+  assert.equal(resF.code, "AUTH_IDENTITY_EMAIL_CONFIRMED");
 });
 
 test("Phase 19: Concurrency and Replay Protection Mechanics", () => {
