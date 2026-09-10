@@ -20,6 +20,7 @@ import {
   LayoutDashboard,
   CalendarPlus,
   ShieldCheck,
+  ShieldAlert,
   Monitor,
 } from "lucide-react";
 import { useTheme } from "@/components/theme/ThemeProvider";
@@ -150,9 +151,21 @@ export default function Navbar({ forceDarkTop = false }) {
     currentUser?.email ||
     "";
 
+  const userRole = String(
+    userProfile?.role ||
+    currentUser?.app_metadata?.role ||
+    currentUser?.user_metadata?.role ||
+    currentUser?.role ||
+    ""
+  ).toUpperCase();
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+
   const navLinks = [
     { label: t("nav.events", "Events"), href: "/events" },
     ...(isLoggedIn ? [{ label: t("nav.dashboard", "Dashboard"), href: "/dashboard" }] : []),
+    ...(isSuperAdmin
+      ? [{ label: t("nav.adminPanel", "Admin Panel"), href: "/admin/dashboard", isAdmin: true }]
+      : []),
     { label: t("nav.opportunities", "Opportunities"), href: "/opportunities" },
     { label: t("nav.createEvent", "Host an Event"), href: "/host" },
     { label: t("footer.about", "About"), href: "/about" },
@@ -192,21 +205,28 @@ export default function Navbar({ forceDarkTop = false }) {
         {/* Desktop Nav Links (Centered in page) */}
         <div className="hidden md:flex items-center gap-0.5 lg:gap-1 absolute left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href));
             const isDashboard = link.href === "/dashboard";
+            const isAdmin = Boolean(link.isAdmin);
             return (
               <Link
                 key={link.label}
                 href={link.href}
                 className={`px-2.5 lg:px-3.5 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-xl transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${
                   isActive
-                    ? "bg-[var(--accent-orange)]/10 text-[var(--text-primary)] border border-[var(--accent-orange)]/30 shadow-sm font-semibold"
+                    ? isAdmin
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm font-semibold"
+                      : "bg-[var(--accent-orange)]/10 text-[var(--text-primary)] border border-[var(--accent-orange)]/30 shadow-sm font-semibold"
+                    : isAdmin
+                    ? "text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)]"
                 }`}
               >
-                {isDashboard && (
+                {isAdmin ? (
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                ) : isDashboard ? (
                   <LayoutDashboard className="w-3.5 h-3.5 text-[var(--accent-orange)] shrink-0" />
-                )}
+                ) : null}
                 <span>{link.label}</span>
               </Link>
             );
@@ -238,6 +258,18 @@ export default function Navbar({ forceDarkTop = false }) {
                 <LayoutDashboard className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
                 <span>Dashboard</span>
               </Link>
+
+              {/* Super Admin Quick Button */}
+              {isSuperAdmin && (
+                <Link
+                  href="/admin/dashboard"
+                  className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:text-white hover:bg-rose-500/20 hover:border-rose-500/50 flex items-center gap-1.5 transition-all shadow-sm group"
+                  title="Super Admin Control Panel"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform shrink-0" />
+                  <span>Admin Panel</span>
+                </Link>
+              )}
 
               {/* Profile Avatar Trigger & Dropdown Menu */}
               <div className="relative" ref={dropdownRef}>
@@ -343,6 +375,23 @@ export default function Navbar({ forceDarkTop = false }) {
 
                       {/* Consolidated Actions: Dashboard, Profile, Settings, Host, Logout */}
                       <div className="pt-2 border-t border-[var(--glass-inner-border)] space-y-0.5">
+                        {/* Super Admin Quick Link */}
+                        {isSuperAdmin && (
+                          <Link
+                            href="/admin/dashboard"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/10 border border-rose-500/25 text-rose-300 hover:bg-rose-500/20 hover:text-white transition-colors mb-1"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                              <span>{t("nav.adminPanel", "Super Admin Panel")}</span>
+                            </div>
+                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                              Admin
+                            </span>
+                          </Link>
+                        )}
+
                         {/* 1. Dashboard */}
                         <Link
                           href="/dashboard"
@@ -500,11 +549,17 @@ export default function Navbar({ forceDarkTop = false }) {
                   <Link
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="text-2xl font-medium flex items-center gap-2.5 text-[var(--text-primary)] hover:text-[var(--accent-orange)] transition-colors"
+                    className={`text-2xl font-medium flex items-center gap-2.5 transition-colors ${
+                      link.isAdmin
+                        ? "text-rose-400 hover:text-rose-300"
+                        : "text-[var(--text-primary)] hover:text-[var(--accent-orange)]"
+                    }`}
                   >
-                    {link.label === "Dashboard" && (
+                    {link.isAdmin ? (
+                      <ShieldAlert className="w-6 h-6 text-rose-400" />
+                    ) : link.label === "Dashboard" ? (
                       <LayoutDashboard className="w-6 h-6 text-[var(--accent-orange)]" />
-                    )}
+                    ) : null}
                     <span>{link.label}</span>
                   </Link>
                 </motion.div>
@@ -578,8 +633,19 @@ export default function Navbar({ forceDarkTop = false }) {
                       </div>
                     </div>
 
-                    {/* 3 Action Buttons */}
+                    {/* Action Buttons */}
                     <div className="pt-2 border-t border-[var(--border-subtle)] space-y-1.5">
+                      {isSuperAdmin && (
+                        <Link
+                          href="/admin/dashboard"
+                          onClick={() => setMobileOpen(false)}
+                          className="btn-secondary text-rose-400 border-rose-500/30 hover:bg-rose-500/15 w-full flex items-center justify-center gap-2 py-2.5 text-xs font-semibold"
+                        >
+                          <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                          <span>Super Admin Panel</span>
+                        </Link>
+                      )}
+
                       <Link
                         href="/profile"
                         onClick={() => setMobileOpen(false)}
