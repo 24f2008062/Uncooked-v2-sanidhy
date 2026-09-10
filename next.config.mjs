@@ -35,6 +35,20 @@ function getSecurityHeaders() {
   ];
 }
 
+/** Optional @next/bundle-analyzer — only loaded when ANALYZE=true (via npx). */
+async function withOptionalAnalyzer(config) {
+  if (process.env.ANALYZE !== "true") return config;
+  try {
+    const { default: bundleAnalyzer } = await import("@next/bundle-analyzer");
+    return bundleAnalyzer({ enabled: true })(config);
+  } catch {
+    console.warn(
+      "[next.config] ANALYZE=true but @next/bundle-analyzer is not installed. Use: npm run analyze"
+    );
+    return config;
+  }
+}
+
 const nextConfig = {
   poweredByHeader: false,
   compress: true,
@@ -72,8 +86,18 @@ const nextConfig = {
         source: "/(.*)",
         headers: getSecurityHeaders(),
       },
+      // A — CDN-friendly caching for hashed Next build assets (Cloudflare / Vercel edge)
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
     ];
   },
 };
 
-export default nextConfig;
+export default await withOptionalAnalyzer(nextConfig);

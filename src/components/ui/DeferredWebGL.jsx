@@ -5,9 +5,10 @@ import { useMotionCapability } from "@/lib/motionCapability";
 
 /**
  * Mounts heavy WebGL/canvas children only when:
- * - desktop viewport
- * - not prefers-reduced-motion
- * - element is (or was) near the viewport
+ * - motion + network allow (see motionCapability)
+ * - desktop, OR allowMobile=true (lite path)
+ * - element is near the viewport
+ * - on mobile lite path: after idle so LCP/INP stay clean
  * Unmounts when far off-screen to free GPU.
  */
 export default function DeferredWebGL({
@@ -15,14 +16,46 @@ export default function DeferredWebGL({
   className = "",
   rootMargin = "200px 0px",
   minWidth = 768,
+  allowMobile = false,
+  mobileIdleMs = 1400,
   fallback = null,
 }) {
-  const { ready, webgl } = useMotionCapability({ minWidth });
+  const { ready, webgl, desktop } = useMotionCapability({ minWidth, allowMobile });
   const ref = useRef(null);
   const [inView, setInView] = useState(false);
+  const [idleOk, setIdleOk] = useState(false);
 
   useEffect(() => {
     if (!ready || !webgl) {
+      setIdleOk(false);
+      return undefined;
+    }
+    // Desktop: mount as soon as capability says yes.
+    if (desktop || !allowMobile) {
+      setIdleOk(true);
+      return undefined;
+    }
+    // Mobile lite: wait for idle so first paint / scroll stay smooth.
+    let cancelled = false;
+    const enable = () => {
+      if (!cancelled) setIdleOk(true);
+    };
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(enable, { timeout: mobileIdleMs });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback?.(id);
+      };
+    }
+    const t = setTimeout(enable, Math.min(mobileIdleMs, 1800));
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [ready, webgl, desktop, allowMobile, mobileIdleMs]);
+
+  useEffect(() => {
+    if (!ready || !webgl || !idleOk) {
       setInView(false);
       return undefined;
     }
@@ -39,9 +72,9 @@ export default function DeferredWebGL({
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [ready, webgl, rootMargin]);
+  }, [ready, webgl, idleOk, rootMargin]);
 
-  const show = ready && webgl && inView;
+  const show = ready && webgl && idleOk && inView;
 
   return (
     <div ref={ref} className={className} aria-hidden={!show}>

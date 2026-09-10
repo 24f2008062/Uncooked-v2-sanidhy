@@ -233,10 +233,11 @@ export default function EventsPage() {
         {/* Background Ambient Glows */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-orange-500/10 rounded-full blur-2xl md:blur-[140px] opacity-50 md:opacity-100 pointer-events-none" />
 
-        {/* LightRays — deferred WebGL (desktop, motion OK, in-view) */}
+        {/* LightRays — deferred WebGL; mobile lite after idle (DPR capped) */}
         <DeferredWebGL
           className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0"
-          fallback={null}
+          allowMobile
+          fallback={<div className="mobile-rays-fallback mobile-rays-fallback--orange" aria-hidden />}
         >
           <LightRays
             raysOrigin="top-center"
@@ -259,30 +260,22 @@ export default function EventsPage() {
           
           {/* Centered Header */}
           <div className="mb-10 text-center max-w-3xl mx-auto">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl sm:text-5xl font-bold tracking-tight text-text-primary mb-3 text-center"
-            >
+            {/* CSS fade (not Framer) — cheaper above-the-fold on mobile */}
+            <h1 className="animate-fade-up text-4xl sm:text-5xl font-bold tracking-tight text-text-primary mb-3 text-center">
               {t("events.title", "Discover Campus Events")}
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-text-secondary text-sm sm:text-base max-w-3xl leading-relaxed mx-auto text-center mb-8"
+            <p
+              className="animate-fade-up text-text-secondary text-sm sm:text-base max-w-3xl leading-relaxed mx-auto text-center mb-8"
+              style={{ animationDelay: "80ms" }}
             >
               {t("events.subtitle", "Explore hackathons, workshops, cultural fests, sports leagues, and party meetups across 120+ active campuses.")}
-            </motion.p>
+            </p>
 
             {/* Top Minimal Stats Bar */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-wrap justify-center items-center gap-8 md:gap-16 p-4 rounded-2xl bg-card/60 border border-border-subtle/80 max-w-2xl mx-auto shadow-lg"
+            <div
+              className="animate-fade-up flex flex-wrap justify-center items-center gap-8 md:gap-16 p-4 rounded-2xl bg-card/60 border border-border-subtle/80 max-w-2xl mx-auto shadow-lg"
+              style={{ animationDelay: "140ms" }}
             >
               <div className="flex flex-col items-center relative">
                 <span className="text-lg md:text-xl font-bold font-mono text-text-primary">
@@ -304,7 +297,7 @@ export default function EventsPage() {
                 </span>
                 <span className="text-xs text-text-secondary font-mono">{t("nav.events", "Campus Events")}</span>
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Search & Category Filter Controls Bar */}

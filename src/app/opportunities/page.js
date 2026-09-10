@@ -183,7 +183,8 @@ export default function OpportunitiesPage() {
 
         <DeferredWebGL
           className="absolute top-0 left-0 w-full h-[750px] overflow-hidden pointer-events-none z-0"
-          fallback={null}
+          allowMobile
+          fallback={<div className="mobile-rays-fallback mobile-rays-fallback--purple" aria-hidden />}
         >
           <LightRays
             raysOrigin="top-center"
@@ -206,23 +207,16 @@ export default function OpportunitiesPage() {
           
           {/* Header */}
           <div className="mb-10 text-center max-w-3xl mx-auto">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl sm:text-5xl font-bold tracking-tight text-text-primary mb-3 text-center"
-            >
+            <h1 className="animate-fade-up text-4xl sm:text-5xl font-bold tracking-tight text-text-primary mb-3 text-center">
               {t("opportunities.title", "Work Opportunities")}
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-text-secondary text-sm sm:text-base max-w-3xl leading-relaxed mx-auto text-center"
+            <p
+              className="animate-fade-up text-text-secondary text-sm sm:text-base max-w-3xl leading-relaxed mx-auto text-center"
+              style={{ animationDelay: "80ms" }}
             >
               {t("opportunities.subtitle", "Discover internships, freelance gigs, full-time roles, and bounties posted directly by our tech partners and campus startups.")}
-            </motion.p>
+            </p>
           </div>
 
           {/* Search & Category Filter Controls Bar */}
