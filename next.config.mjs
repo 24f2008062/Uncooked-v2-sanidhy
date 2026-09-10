@@ -86,16 +86,6 @@ const nextConfig = {
         source: "/(.*)",
         headers: getSecurityHeaders(),
       },
-      // A — CDN-friendly caching for hashed Next build assets (Cloudflare / Vercel edge)
-      {
-        source: "/_next/static/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
     ];
   },
 };

@@ -11,6 +11,7 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getRealClientDevice } from "@/lib/deviceDetector";
 import {
+  Shield,
   Check,
   CheckCircle2,
   AlertCircle,
@@ -671,9 +672,12 @@ function SettingsPageInner() {
 
               {/* SECTION: Password & Security */}
               <section className="space-y-3 pt-6 border-t border-border-subtle">
-                <h2 className="text-base font-bold text-text-primary tracking-tight">
-                  {t("settings.security.title", "Password & Security")}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <h2 className="text-base font-bold text-text-primary tracking-tight">
+                    {t("settings.security.title", "Password & Security")}
+                  </h2>
+                </div>
 
                 <div className="rounded-2xl bg-card border border-border-subtle divide-y divide-border-subtle">
                   {/* Account Password */}
