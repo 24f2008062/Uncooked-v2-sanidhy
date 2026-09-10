@@ -68,9 +68,9 @@ export async function assertEventBroadcastAccess(user, eventId, { write = false 
   const host = isEventHost(user, event);
   if (write) {
     if (!host) {
-      const err = new Error("Event not found");
-      err.status = 404;
-      err.code = "NOT_FOUND";
+      const err = new Error("Only the event host or an admin can broadcast messages to attendees.");
+      err.status = 403;
+      err.code = "FORBIDDEN";
       throw err;
     }
     return { event, canWrite: true };

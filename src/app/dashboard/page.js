@@ -27,6 +27,7 @@ import {
   QrCode,
   Users,
   LogIn,
+  Megaphone,
 } from "lucide-react";
 
 const PixelBlast = dynamic(
@@ -188,8 +189,12 @@ export default function DashboardPage() {
     fetch("/api/events")
       .then((res) => res.json())
       .then((payload) => {
-        if (payload.success && Array.isArray(payload.data) && payload.data.length > 0) {
-          const rows = payload.data;
+        const rows = Array.isArray(payload.data)
+          ? payload.data
+          : Array.isArray(payload.data?.events)
+          ? payload.data.events
+          : [];
+        if (rows.length > 0) {
           setLiveEvents(
             rows.map((row) => ({
               id: row.id,
@@ -214,9 +219,16 @@ export default function DashboardPage() {
   const registrations = passes.length ? passes : profile?.registrations || [];
   const apps = profile?.opportunityApps || [];
   const host = profile?.hostApplication;
+  const hostedEvents = profile?.eventsCreated || [];
   const isHost =
     String(profile?.role || session?.user?.role || "").toUpperCase() === "ORGANIZER" ||
     String(profile?.role || session?.user?.role || "").toUpperCase() === "SUPER_ADMIN";
+    String(profile?.role || session?.user?.role || "").toUpperCase() === "SUPER_ADMIN" ||
+    hostedEvents.length > 0;
+  const totalHostedAttendees = hostedEvents.reduce(
+    (acc, ev) => acc + (ev._count?.registrations ?? 0),
+    0
+  );
 
   const handleOpenBooking = (event) => {
     if (status !== "authenticated") {
@@ -352,12 +364,21 @@ export default function DashboardPage() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
               {/* Quick Summary Metrics */}
               {status === "authenticated" && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className={`grid grid-cols-1 ${isHost ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"} gap-4`}>
                   <div className="p-5 rounded-3xl bg-card border border-border-subtle">
                     <Ticket className="w-4 h-4 text-[var(--accent-orange)] mb-3" />
                     <p className="text-2xl font-bold text-text-primary">{registrations.length}</p>
                     <p className="text-xs text-text-secondary">{t("dashboard.stats.passes", "Event passes")}</p>
                   </div>
+                  {isHost && (
+                    <div className="p-5 rounded-3xl bg-card border border-border-subtle">
+                      <Calendar className="w-4 h-4 text-orange-400 mb-3" />
+                      <p className="text-2xl font-bold text-text-primary">{hostedEvents.length}</p>
+                      <p className="text-xs text-text-secondary">
+                        Hosted events ({totalHostedAttendees} guests)
+                      </p>
+                    </div>
+                  )}
                   <div className="p-5 rounded-3xl bg-card border border-border-subtle">
                     <Briefcase className="w-4 h-4 text-purple-400 mb-3" />
                     <p className="text-2xl font-bold text-text-primary">{apps.length}</p>
@@ -365,10 +386,174 @@ export default function DashboardPage() {
                   </div>
                   <div className="p-5 rounded-3xl bg-card border border-border-subtle">
                     <ShieldCheck className="w-4 h-4 text-emerald-400 mb-3" />
-                    <p className="text-2xl font-bold text-text-primary">{host?.status || t("common.none", "None")}</p>
+                    <p className="text-2xl font-bold text-text-primary">
+                      {profile?.role === "SUPER_ADMIN" ? "Super Admin" : host?.status || (isHost ? "Active Host" : t("common.none", "None"))}
+                    </p>
                     <p className="text-xs text-text-secondary">{t("dashboard.stats.hostStatus", "Host verification")}</p>
                   </div>
                 </div>
+              )}
+
+              {/* SECTION: Events You Host */}
+              {(isHost || hostedEvents.length > 0) && (
+                <section className="p-6 sm:p-8 rounded-3xl bg-card border border-border-subtle" id="hosted-events-section">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                          <ShieldCheck className="w-5 h-5 text-[var(--accent-orange)]" /> Events You Host
+                        </h2>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/30 font-mono">
+                          {hostedEvents.length}
+                        </span>
+                      </div>
+                      <p className="text-xs text-text-secondary mt-1">
+                        Monitor published campus events, scan attendee tickets, and dispatch broadcasts.
+                      </p>
+                    </div>
+                    <Link
+                      href="/create"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5 shrink-0 active:scale-98 cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Create New Event</span>
+                    </Link>
+                  </div>
+
+                  {hostedEvents.length === 0 ? (
+                    <div className="text-center py-10 px-4 rounded-2xl bg-background/50 border border-border-subtle">
+                      <Calendar className="w-10 h-10 text-text-secondary mx-auto mb-3 opacity-40" />
+                      <p className="text-sm font-bold text-text-primary">No hosted events yet</p>
+                      <p className="text-xs text-text-secondary mt-1 max-w-sm mx-auto">
+                        Your host credentials are active! Share your club workshops, tech fests, or campus socials with students.
+                      </p>
+                      <Link
+                        href="/create"
+                        className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold shadow-md hover:from-orange-600 hover:to-amber-600 transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Create Your First Event</span>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {hostedEvents.map((ev) => {
+                        const regCount = ev._count?.registrations ?? 0;
+                        const cap = Math.max(1, ev.capacity || 1);
+                        const fillPct = Math.min(100, Math.round((regCount / cap) * 100));
+                        const whenDate = ev.date ? new Date(ev.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
+                        const whenTime = ev.date
+                          ? new Date(ev.date).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+                          : "";
+                        const isFreeEvent = ev.ticketType !== "Paid";
+
+                        return (
+                          <div
+                            key={ev.id}
+                            className="rounded-2xl bg-background border border-border-subtle overflow-hidden flex flex-col transition-all duration-200 hover:border-white/20 group"
+                          >
+                            {/* Event Banner */}
+                            <div className="relative w-full h-36 overflow-hidden bg-white/5">
+                              <Image
+                                src={ev.bannerUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600&auto=format&fit=crop"}
+                                alt={ev.title}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                sizes="(max-width: 768px) 100vw, 33vw"
+                              />
+                              <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black/60 backdrop-blur-md text-white border border-white/10">
+                                  {ev.category || ev.type || "Event"}
+                                </span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
+                                  {ev.status || "Active"}
+                                </span>
+                              </div>
+                              <div className="absolute top-2.5 right-2.5">
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md border ${
+                                    isFreeEvent
+                                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                                      : "bg-orange-500/20 text-orange-300 border-orange-500/30"
+                                  }`}
+                                >
+                                  {isFreeEvent ? "Free RSVP" : `₹${ev.price}`}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Event Details */}
+                            <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                              <div>
+                                <Link
+                                  href={`/events/${encodeURIComponent(ev.id)}`}
+                                  className="text-sm font-bold text-text-primary line-clamp-1 group-hover:text-[var(--accent-orange)] transition-colors"
+                                >
+                                  {ev.title}
+                                </Link>
+
+                                <div className="space-y-1 mt-2 text-[11px] text-text-secondary">
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <Calendar className="w-3 h-3 text-[var(--accent-orange)] shrink-0" />
+                                    <span>{whenDate} {whenTime && `• ${whenTime}`}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <MapPin className="w-3 h-3 text-purple-400 shrink-0" />
+                                    <span className="truncate">{ev.location}</span>
+                                  </div>
+                                </div>
+
+                                {/* Registration Capacity Progress Meter */}
+                                <div className="mt-3 p-2.5 rounded-xl bg-card border border-border-subtle space-y-1.5">
+                                  <div className="flex items-center justify-between text-[11px]">
+                                    <span className="text-text-secondary flex items-center gap-1">
+                                      <Users className="w-3 h-3 text-blue-400" /> Registrations
+                                    </span>
+                                    <span className="font-bold text-text-primary font-mono">
+                                      {regCount} / {ev.capacity}
+                                    </span>
+                                  </div>
+                                  <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-500"
+                                      style={{ width: `${fillPct}%` }}
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between text-[10px] text-text-muted font-mono">
+                                    <span>{Math.max(0, ev.capacity - regCount)} spots left</span>
+                                    <span>{fillPct}% filled</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="pt-2 border-t border-border-subtle grid grid-cols-3 gap-1.5">
+                                <Link
+                                  href={`/events/${encodeURIComponent(ev.id)}`}
+                                  className="py-1.5 px-2 rounded-lg bg-card hover:bg-card-hover border border-border-subtle text-[11px] font-semibold text-text-primary flex items-center justify-center gap-1 transition-colors text-center cursor-pointer"
+                                >
+                                  Manage
+                                </Link>
+                                <Link
+                                  href={`/host/scanner/${encodeURIComponent(ev.id)}`}
+                                  className="py-1.5 px-2 rounded-lg bg-[var(--accent-orange)]/15 hover:bg-[var(--accent-orange)]/25 text-[var(--accent-orange)] border border-[var(--accent-orange)]/30 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors text-center cursor-pointer"
+                                >
+                                  <QrCode className="w-3 h-3" /> Scanner
+                                </Link>
+                                <Link
+                                  href={`/events/${encodeURIComponent(ev.id)}#broadcasts`}
+                                  className="py-1.5 px-2 rounded-lg bg-card hover:bg-card-hover border border-border-subtle text-[11px] font-semibold text-amber-400 flex items-center justify-center gap-1 transition-colors text-center cursor-pointer"
+                                >
+                                  <Megaphone className="w-3 h-3" /> Broadcast
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
               )}
 
               {/* SECTION: Live Campus Events (Direct Ticket Pass Creation) */}

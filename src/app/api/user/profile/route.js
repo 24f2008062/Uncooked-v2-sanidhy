@@ -39,6 +39,9 @@ export async function GET() {
         eventsCreated: {
           where: { archived: false },
           orderBy: { createdAt: "desc" },
+          include: {
+            _count: { select: { registrations: true } },
+          },
         },
         hostApplication: true,
         opportunityApps: {
