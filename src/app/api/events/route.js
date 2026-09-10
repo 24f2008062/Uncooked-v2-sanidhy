@@ -4,7 +4,7 @@ import { enforceMutationGuards, requireRoles } from "@/server/http/guards";
 import { logAuditEvent } from "@/server/auth/audit";
 import { hashIp, getClientIp } from "@/server/http/ip";
 import { rateLimitAsync, rateLimitHeaders } from "@/server/http/rateLimit";
-import { publicEventListItem } from "@/server/services/eventsPublic";
+import { publicEventListItem, publicEvent } from "@/server/services/eventsPublic";
 
 export async function GET(req) {
   try {
@@ -92,7 +92,6 @@ export async function POST(req) {
     if (blocked) return blocked;
 
     const auth = await requireRoles(["ORGANIZER"]);
-    if (auth.error) return auth.error;
     if (auth.error) {
       if (auth.error.status === 403) {
         return jsonError(

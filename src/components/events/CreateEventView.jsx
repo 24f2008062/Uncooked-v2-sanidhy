@@ -1302,21 +1302,6 @@ export default function CreateEventView({ isModal = false, onClose }) {
 
             {/* Big Create Event Action Button */}
             <div className="pt-3">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={busy}
-                className="w-full py-4 rounded-full font-bold text-sm bg-white text-black hover:bg-zinc-200 transition-all duration-200 shadow-2xl active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-              >
-                {busy ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Creating Event…</span>
-                  </>
-                ) : (
-                  <span>Create Event</span>
-                )}
-              </button>
               {isHostVerified ? (
                 <button
                   type="button"
