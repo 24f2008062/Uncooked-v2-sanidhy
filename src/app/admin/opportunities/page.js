@@ -70,8 +70,11 @@ export default function AdminOpportunitiesPage() {
       params.set("sortOrder", sortOrder);
 
       const res = await fetch(`/api/v2/admin/opportunities?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch opportunities");
-      const data = await res.json();
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload.error?.message || payload.error || "Failed to fetch opportunities");
+      }
+      const data = payload.data || payload;
       setOpportunities(data.opportunities || []);
     } catch (err) {
       setError(err.message);
@@ -133,9 +136,10 @@ export default function AdminOpportunitiesPage() {
     setShowInspectorModal(true);
     try {
       const res = await fetch(`/api/v2/admin/opportunities/${opp.id}`);
+      const payload = await res.json().catch(() => ({}));
+      const data = payload.data || payload;
       if (res.ok) {
-        const data = await res.json();
-        setInspectorData(data.opportunity);
+        setInspectorData(data.opportunity || null);
       }
     } catch (err) {
       console.error("Error fetching opportunity detail", err);

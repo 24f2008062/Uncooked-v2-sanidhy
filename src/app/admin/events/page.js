@@ -42,6 +42,8 @@ export default function AdminEventsPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInspectorModal, setShowInspectorModal] = useState(false);
+  const [inspectorData, setInspectorData] = useState(null);
+  const [inspectorLoading, setInspectorLoading] = useState(false);
 
   // Form State (Create/Edit)
   const [formData, setFormData] = useState({
@@ -73,8 +75,11 @@ export default function AdminEventsPage() {
       params.set("sortOrder", sortOrder);
 
       const res = await fetch(`/api/v2/admin/events?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch events");
-      const data = await res.json();
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload.error?.message || payload.error || "Failed to fetch events");
+      }
+      const data = payload.data || payload;
       setEvents(data.events || []);
     } catch (err) {
       setError(err.message);
@@ -86,6 +91,26 @@ export default function AdminEventsPage() {
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  // Open Inspector Modal
+  const handleOpenInspector = async (evt) => {
+    setSelectedEvent(evt);
+    setInspectorData(null);
+    setShowInspectorModal(true);
+    setInspectorLoading(true);
+    try {
+      const res = await fetch(`/api/v2/admin/events/${evt.id}`);
+      const payload = await res.json().catch(() => ({}));
+      const data = payload.data || payload;
+      if (res.ok) {
+        setInspectorData(data.event || null);
+      }
+    } catch (err) {
+      console.error("Error fetching event details", err);
+    } finally {
+      setInspectorLoading(false);
+    }
+  };
 
   // Handle Sort Change
   const handleSort = (field) => {
@@ -151,8 +176,8 @@ export default function AdminEventsPage() {
         body: JSON.stringify(formData),
       });
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to create event");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || errData.error || "Failed to create event");
       }
       setShowCreateModal(false);
       fetchEvents();
@@ -175,8 +200,8 @@ export default function AdminEventsPage() {
         body: JSON.stringify(formData),
       });
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to update event");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || errData.error || "Failed to update event");
       }
       setShowEditModal(false);
       setSelectedEvent(null);
@@ -198,6 +223,12 @@ export default function AdminEventsPage() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) fetchEvents();
+      if (res.ok) {
+        fetchEvents();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error?.message || errData.error || "Failed to update status");
+      }
     } catch (err) {
       console.error("Failed to update status", err);
     }
@@ -211,6 +242,12 @@ export default function AdminEventsPage() {
         method: "DELETE",
       });
       if (res.ok) fetchEvents();
+      if (res.ok) {
+        fetchEvents();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error?.message || errData.error || "Failed to delete event");
+      }
     } catch (err) {
       alert("Failed to delete event");
     }
@@ -266,6 +303,7 @@ export default function AdminEventsPage() {
               <option value="Active">Active</option>
               <option value="Paused">Paused</option>
               <option value="Draft">Draft</option>
+              <option value="Completed">Completed</option>
               <option value="Cancelled">Cancelled</option>
             </select>
           </div>
@@ -279,9 +317,14 @@ export default function AdminEventsPage() {
             >
               <option value="">All Categories</option>
               <option value="Tech">Tech & Coding</option>
+              <option value="Tech">Tech & Hackathons</option>
               <option value="Campus">Campus & Student</option>
               <option value="Cultural">Cultural & Arts</option>
               <option value="Workshop">Workshops</option>
+              <option value="Workshop">Workshops & Bootcamps</option>
+              <option value="Programming">Programming & AI</option>
+              <option value="Startups">Startups & Mixers</option>
+              <option value="Gaming">Sports & Gaming</option>
             </select>
           </div>
         </div>
@@ -418,9 +461,27 @@ export default function AdminEventsPage() {
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => handleOpenInspector(evt)}
+                            title="Inspect Attendees & Details"
+                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252536] text-gray-300 hover:text-amber-400 transition cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+
+                          <a
+                            href={`/events/${evt.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="View Public Event Page"
+                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252536] text-gray-300 hover:text-emerald-400 transition inline-flex items-center justify-center cursor-pointer"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+
+                          <button
                             onClick={() => handleToggleStatus(evt)}
                             title={evt.status === "Active" ? "Pause Event" : "Activate Event"}
-                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252536] text-gray-300 hover:text-amber-400 transition"
+                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252536] text-gray-300 hover:text-amber-400 transition cursor-pointer"
                           >
                             {evt.status === "Active" ? <PauseCircle className="w-3.5 h-3.5" /> : <PlayCircle className="w-3.5 h-3.5 text-emerald-400" />}
                           </button>
@@ -428,7 +489,7 @@ export default function AdminEventsPage() {
                           <button
                             onClick={() => handleOpenEdit(evt)}
                             title="Edit Event"
-                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252536] text-gray-300 hover:text-blue-400 transition"
+                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#252536] text-gray-300 hover:text-blue-400 transition cursor-pointer"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
@@ -436,7 +497,7 @@ export default function AdminEventsPage() {
                           <button
                             onClick={() => handleDeleteEvent(evt)}
                             title="Delete Event"
-                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-red-500/20 text-gray-300 hover:text-red-400 transition"
+                            className="p-1.5 rounded-lg bg-[#1a1a24] hover:bg-red-500/20 text-gray-300 hover:text-red-400 transition cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -600,6 +661,127 @@ export default function AdminEventsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EVENT INSPECTOR MODAL */}
+      {showInspectorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#121218] border border-[#262636] rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#222232] pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-amber-400" />
+                  <span>{selectedEvent?.title}</span>
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {selectedEvent?.category || "General"} &bull; Created by {inspectorData?.createdBy?.fullName || inspectorData?.createdBy?.email || "Organizer"}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowInspectorModal(false)}
+                className="text-gray-400 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {inspectorLoading ? (
+              <div className="p-8 text-center text-xs text-gray-400 font-mono">Loading event details and attendees...</div>
+            ) : !inspectorData ? (
+              <div className="p-8 text-center text-xs text-red-400">Failed to load event details.</div>
+            ) : (
+              <div className="space-y-4 text-xs">
+                {/* Quick stats row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-[#161622] border border-[#222232] p-3 rounded-xl">
+                    <p className="text-[11px] text-gray-400">Status</p>
+                    <p className="text-white font-bold mt-0.5">{inspectorData.status}</p>
+                  </div>
+                  <div className="bg-[#161622] border border-[#222232] p-3 rounded-xl">
+                    <p className="text-[11px] text-gray-400">Registrations</p>
+                    <p className="text-amber-400 font-bold mt-0.5 font-mono">
+                      {inspectorData._count?.registrations || inspectorData.registrations?.length || 0} / {inspectorData.capacity}
+                    </p>
+                  </div>
+                  <div className="bg-[#161622] border border-[#222232] p-3 rounded-xl">
+                    <p className="text-[11px] text-gray-400">Location</p>
+                    <p className="text-white font-medium mt-0.5 truncate">{inspectorData.location || "TBA"}</p>
+                  </div>
+                  <div className="bg-[#161622] border border-[#222232] p-3 rounded-xl">
+                    <p className="text-[11px] text-gray-400">Price / Type</p>
+                    <p className="text-white font-bold mt-0.5">{inspectorData.price > 0 ? `₹${inspectorData.price}` : "Free Pass"}</p>
+                  </div>
+                </div>
+
+                {/* Attendee Roster */}
+                <div>
+                  <h4 className="text-xs font-bold text-gray-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Registered Attendees ({inspectorData.registrations?.length || 0})</span>
+                  </h4>
+
+                  {(!inspectorData.registrations || inspectorData.registrations.length === 0) ? (
+                    <div className="p-6 bg-[#161622] border border-[#222232] rounded-xl text-center text-gray-500 italic">
+                      No attendees registered yet for this event.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                      {inspectorData.registrations.map((reg) => (
+                        <div
+                          key={reg.id}
+                          className="p-3 bg-[#181824] border border-[#262636] rounded-xl flex items-center justify-between"
+                        >
+                          <div className="space-y-0.5">
+                            <p className="font-bold text-white">
+                              {reg.user?.fullName || reg.user?.email || "Attendee"}
+                            </p>
+                            <p className="text-[11px] text-gray-400">
+                              {reg.user?.email} {reg.user?.department ? `• ${reg.user.department}` : ""}
+                            </p>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                              reg.checkedIn
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                : "bg-gray-500/10 border-gray-500/20 text-gray-400"
+                            }`}>
+                              {reg.checkedIn ? "Checked In" : "Pass Issued"}
+                            </span>
+                            <p className="text-[10px] text-gray-500 font-mono">
+                              {new Date(reg.registeredAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer action links */}
+                <div className="pt-3 border-t border-[#222232] flex items-center justify-between">
+                  <a
+                    href={`/events/${inspectorData.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold"
+                  >
+                    <span>Open Public Event Page</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <button
+                    onClick={() => {
+                      setShowInspectorModal(false);
+                      handleOpenEdit(inspectorData);
+                    }}
+                    className="px-4 py-1.5 rounded-xl bg-[#1c1c28] text-gray-200 hover:bg-[#252536] text-xs font-semibold cursor-pointer"
+                  >
+                    Edit Event
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
