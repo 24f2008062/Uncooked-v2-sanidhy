@@ -261,13 +261,6 @@ function LoginForm() {
              </div>
              
              <div className="flex-1 relative w-full h-full mt-12">
-               <Image 
-                 src="/events/EVENT IMAGE.jpg"
-                 alt="OPPORTIA Product Showcase"
-                 fill
-                 className="object-cover"
-                 priority
-               />
                 <Image 
                   src="/events/EVENT IMAGE.jpg"
                   alt="OPPORTIA Product Showcase"
