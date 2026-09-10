@@ -16,8 +16,17 @@ import {
   CheckCircle2, 
   Award,
   Layers,
-  Heart
+  Heart,
+  ExternalLink
 } from "lucide-react";
+
+function LinkedInIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.25c-.96 0-1.74.78-1.74 1.74s.78 1.74 1.74 1.74 1.74-.78 1.74-1.74-.78-1.74-1.74-1.74Z" />
+    </svg>
+  );
+}
 
 const STATS = [
   { value: "Campus-first", label: "Events & hosts" },
@@ -69,22 +78,18 @@ const TIMELINE = [
 
 const TEAM = [
   {
-    name: "Alex Rivera",
-    role: "Founder & Lead Architect",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop",
-    bio: "Building zero noise event infrastructure for the next generation of campus leaders.",
+    name: "Shushant Shukla",
+    role: "Founder",
+    linkedin: "https://www.linkedin.com/in/shushantshukla/",
+    avatar: "https://ui-avatars.com/api/?name=Shushant+Shukla&background=ea580c&color=ffffff&bold=true&size=256",
+    bio: "Pioneering the zero-noise campus event ecosystem, driving product vision, and empowering student organizers nationwide.",
   },
   {
-    name: "Samantha Chen",
-    role: "Head of Design & UX",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=256&auto=format&fit=crop",
-    bio: "Crafting fluid, glassmorphic interfaces that turn chaotic event logistics into pure delight.",
-  },
-  {
-    name: "Devon Vance",
-    role: "VP of Ecosystem Growth",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&auto=format&fit=crop",
-    bio: "Empowering 500+ student organizers, startup cells, and tech societies globally.",
+    name: "Siddhartha Bhowmik",
+    role: "Co-Founder",
+    linkedin: "https://www.linkedin.com/in/siddhartha-bhowmik-121026205/",
+    avatar: "https://ui-avatars.com/api/?name=Siddhartha+Bhowmik&background=2563eb&color=ffffff&bold=true&size=256",
+    bio: "Engineering resilient campus event architectures, offline-first verification, and high-performance student telemetry.",
   },
 ];
 
@@ -221,17 +226,17 @@ export default function AboutPage() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-3xl mx-auto">
               {TEAM.map((member, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-card border border-border-subtle rounded-2xl p-6 flex flex-col items-center text-center hover:border-border-hover transition-colors"
+                  transition={{ delay: i * 0.15 }}
+                  className="bg-card border border-border-subtle hover:border-[var(--accent-orange)]/50 rounded-3xl p-7 sm:p-8 flex flex-col items-center text-center shadow-lg transition-all duration-300 group relative overflow-hidden"
                 >
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden mb-4 border-2 border-border-subtle">
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-border-subtle group-hover:border-[var(--accent-orange)] transition-colors shadow-md">
                     <Image
                       src={member.avatar}
                       alt={member.name}
@@ -239,15 +244,26 @@ export default function AboutPage() {
                       className="object-cover"
                     />
                   </div>
-                  <h4 className="text-base font-bold text-text-primary">
+                  <h4 className="text-xl font-bold text-text-primary mb-1">
                     {member.name}
                   </h4>
-                  <span className="text-xs font-medium text-[var(--accent-orange)] mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--accent-orange)] mb-3 px-3 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/25">
                     {member.role}
                   </span>
-                  <p className="text-xs text-text-secondary leading-relaxed">
+                  <p className="text-xs sm:text-sm text-text-secondary leading-relaxed mb-6 flex-1">
                     {member.bio}
                   </p>
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-[#0A66C2]/10 hover:bg-[#0A66C2] text-[#0A66C2] hover:text-white border border-[#0A66C2]/30 transition-all duration-200 shadow-sm group/btn cursor-pointer"
+                    title={`Connect with ${member.name} on LinkedIn`}
+                  >
+                    <LinkedInIcon className="w-3.5 h-3.5 fill-current" />
+                    <span>Connect on LinkedIn</span>
+                    <ExternalLink className="w-3 h-3 opacity-70 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                  </a>
                 </motion.div>
               ))}
             </div>
