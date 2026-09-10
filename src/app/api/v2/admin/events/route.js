@@ -22,8 +22,8 @@ export async function GET(req) {
 
     const events = await prisma.event.findMany({
       where: {
-        ...(status ? { status } : {}),
-        ...(category ? { category } : {}),
+        ...(status ? { status: { equals: status, mode: "insensitive" } } : {}),
+        ...(category ? { category: { contains: category, mode: "insensitive" } } : {}),
         ...(search
           ? {
               OR: [
