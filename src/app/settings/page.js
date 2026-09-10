@@ -12,6 +12,9 @@ import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getRealClientDevice } from "@/lib/deviceDetector";
 import {
   Shield,
+  Key,
+  Fingerprint,
+  ChevronsUpDown,
   Check,
   CheckCircle2,
   AlertCircle,
