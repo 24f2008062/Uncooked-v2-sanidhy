@@ -94,6 +94,9 @@ export async function POST(req, { params }) {
 
     return jsonOk({ item: bulletin, canWrite: true }, 201);
   } catch (error) {
+    if (error?.status === 403) {
+      return jsonError(error.message || "Forbidden", 403, error.code || "FORBIDDEN");
+    }
     if (error?.status === 404) {
       return jsonError(error.message || "Event not found", 404, error.code || "NOT_FOUND");
     }
