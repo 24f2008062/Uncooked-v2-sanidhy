@@ -5,6 +5,7 @@ import SupabaseProvider from "@/components/providers/SupabaseProvider";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import CookieNotice from "@/components/legal/CookieNotice";
 import LocationPrompt from "@/components/location/LocationPrompt";
+import WebVitalsReporter from "@/components/perf/WebVitalsReporter";
 import "./globals.css";
 
 const inter = Inter({
@@ -72,6 +73,7 @@ export default function RootLayout({ children }) {
               <ScrollToTop />
               <CookieNotice />
               <LocationPrompt />
+              <WebVitalsReporter />
               {children}
             </ThemeProvider>
           </LanguageProvider>

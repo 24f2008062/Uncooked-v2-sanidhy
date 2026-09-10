@@ -96,7 +96,7 @@ export default function AboutPage() {
 
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 overflow-hidden">
         {/* Background Ambient Glows */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-orange-500/10 rounded-full blur-2xl md:blur-[140px] opacity-50 md:opacity-100 pointer-events-none" />
 
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           

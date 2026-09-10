@@ -31,6 +31,7 @@ const LightRays = dynamic(() => import("@/components/ui/LightRays"), {
   ssr: false,
   loading: () => null,
 });
+import DeferredWebGL from "@/components/ui/DeferredWebGL";
 
 function LinkedInIcon({ className = "w-4 h-4" }) {
   return (
@@ -466,20 +467,21 @@ export default function CreateEventView({ isModal = false, onClose }) {
         }}
       />
 
-      {/* LightRays WebGL shader animation */}
-      <LightRays
-        raysOrigin="top-center"
-        raysColor={currentTheme.accentColor || "#ffffff"}
-        raysSpeed={1.2}
-        lightSpread={0.8}
-        rayLength={1.8}
-        pulsating={true}
-        noiseAmount={0.05}
-        distortion={0.08}
-        followMouse={false}
-        mouseInfluence={0.0}
-        className="opacity-45"
-      />
+      <DeferredWebGL className="absolute inset-0 pointer-events-none" fallback={null}>
+        <LightRays
+          raysOrigin="top-center"
+          raysColor={currentTheme.accentColor || "#ffffff"}
+          raysSpeed={1.2}
+          lightSpread={0.8}
+          rayLength={1.8}
+          pulsating={true}
+          noiseAmount={0.05}
+          distortion={0.08}
+          followMouse={false}
+          mouseInfluence={0.0}
+          className="opacity-45"
+        />
+      </DeferredWebGL>
 
       {/* Top-Right Stationary Dismiss Cross (✕) Button: strictly right-aligned, pinned at top-right of screen */}
       {!isModal && (

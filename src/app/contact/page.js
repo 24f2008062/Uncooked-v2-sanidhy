@@ -88,7 +88,7 @@ export default function ContactPage() {
 
       <main className="min-h-screen bg-primary transition-colors duration-300 pt-28 pb-24 relative overflow-hidden">
         {/* Background Ambient Glows */}
-        <div className="absolute top-20 right-1/4 w-[600px] h-[300px] bg-orange-500/10 rounded-full blur-[130px] pointer-events-none" />
+        <div className="absolute top-20 right-1/4 w-[600px] h-[300px] bg-orange-500/10 rounded-full blur-2xl md:blur-[130px] opacity-50 md:opacity-100 pointer-events-none" />
 
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           

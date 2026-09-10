@@ -1,0 +1,57 @@
+name: Lighthouse CI (advisory)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "next.config.mjs"
+      - "lighthouserc.json"
+      - "package-lock.json"
+
+concurrency:
+  group: lhci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXTAUTH_SECRET: ci-nextauth-secret-at-least-32-chars-long
+  TICKET_HMAC_SECRET: ci-ticket-hmac-secret-at-least-32-chars
+  NEXTAUTH_URL: http://127.0.0.1:3000
+  NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+  SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/opportia_ci?schema=public
+  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/opportia_ci?schema=public
+
+jobs:
+  lighthouse:
+    name: Lighthouse budgets (warn-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PHASE: phase-production-build
+
+      - name: Run Lighthouse CI
+        run: npx --yes @lhci/cli@0.14.x autorun

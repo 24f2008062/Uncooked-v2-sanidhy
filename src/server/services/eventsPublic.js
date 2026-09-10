@@ -15,8 +15,7 @@ function parseJsonArray(value) {
   }
 }
 
-export function publicEvent(event, { registrationCount = 0 } = {}) {
-  if (!event) return null;
+function basePublicEvent(event, { registrationCount = 0 } = {}) {
   const capacity = Number(event.capacity) || 0;
   const taken = Number(registrationCount) || 0;
   return {
@@ -31,9 +30,6 @@ export function publicEvent(event, { registrationCount = 0 } = {}) {
     city: event.city,
     state: event.state,
     country: event.country,
-    description: event.description,
-    schedule: event.schedule,
-    prizePool: event.prizePool,
     bannerUrl: event.bannerUrl,
     ticketType: event.ticketType,
     price: event.ticketType === "Paid" ? event.price : 0,
@@ -43,5 +39,32 @@ export function publicEvent(event, { registrationCount = 0 } = {}) {
     hostName: event.createdBy?.fullName || event.createdBy?.name || null,
     registrationCount: taken,
     spotsLeft: Math.max(0, capacity - taken),
+  };
+}
+
+/** Full public event (detail pages). */
+export function publicEvent(event, { registrationCount = 0 } = {}) {
+  if (!event) return null;
+  return {
+    ...basePublicEvent(event, { registrationCount }),
+    description: event.description,
+    schedule: event.schedule,
+    prizePool: event.prizePool,
+  };
+}
+
+/**
+ * Slim list card DTO — omits long text fields to keep /api/events small/fast.
+ * Detail remains on GET /api/events/[id].
+ */
+export function publicEventListItem(event, { registrationCount = 0 } = {}) {
+  if (!event) return null;
+  const base = basePublicEvent(event, { registrationCount });
+  // Short teaser only (UI cards); full description on detail endpoint.
+  const raw = String(event.description || "");
+  const blurb = raw.length > 160 ? `${raw.slice(0, 157)}…` : raw;
+  return {
+    ...base,
+    blurb,
   };
 }

@@ -26,12 +26,23 @@ export default function LocationPrompt() {
       /* ignore */
     }
 
-    // If no choice stored yet, show prompt after a short initial delay
+    // Defer prompt so it doesn't compete with first paint / login (esp. mobile).
     if (!storedChoice) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 1200);
-      return () => clearTimeout(timer);
+      const isMobile =
+        typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+      const delay = isMobile ? 4500 : 2500;
+      let idleId = null;
+      let timer = null;
+      const open = () => setIsOpen(true);
+      if ("requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(open, { timeout: delay });
+      } else {
+        timer = setTimeout(open, delay);
+      }
+      return () => {
+        if (idleId != null) window.cancelIdleCallback?.(idleId);
+        if (timer) clearTimeout(timer);
+      };
     }
 
     // Allow opening/toggling prompt programmatically from anywhere (e.g. settings or events)

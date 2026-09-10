@@ -85,8 +85,8 @@ function ResetForm() {
       <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 min-h-screen relative overflow-hidden">
         {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute top-[10%] -left-32 w-[500px] h-[500px] bg-[rgba(244,114,182,0.05)] rounded-full blur-[110px]" />
-          <div className="absolute bottom-[10%] -right-32 w-[500px] h-[500px] bg-[rgba(249,115,22,0.04)] rounded-full blur-[110px]" />
+          <div className="absolute top-[10%] -left-32 w-[500px] h-[500px] bg-[rgba(244,114,182,0.05)] rounded-full blur-xl md:blur-[110px] opacity-45 md:opacity-100" />
+          <div className="absolute bottom-[10%] -right-32 w-[500px] h-[500px] bg-[rgba(249,115,22,0.04)] rounded-full blur-xl md:blur-[110px] opacity-45 md:opacity-100" />
         </div>
 
         <motion.div
@@ -149,7 +149,7 @@ function ResetForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="New Password (min 12 chars)"
-                    className="w-full pl-11 pr-12 py-3.5 text-[14px] rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6]"
+                    className="w-full pl-11 pr-12 py-3.5 text-base rounded-2xl outline-none transition-all duration-300 bg-[#141414] border border-[#2a2a2a] text-white placeholder-gray-500 focus:border-[#f472b6] focus:ring-1 focus:ring-[#f472b6]"
                   />
                   <button
                     type="button"
@@ -171,7 +171,7 @@ function ResetForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm New Password"
-                    className={`w-full pl-11 pr-12 py-3.5 text-[14px] rounded-2xl outline-none transition-all duration-300 bg-[#141414] border ${
+                    className={`w-full pl-11 pr-12 py-3.5 text-base rounded-2xl outline-none transition-all duration-300 bg-[#141414] border ${
                       confirmPassword && password !== confirmPassword
                         ? "border-red-500/60 focus:border-red-500 focus:ring-red-500"
                         : confirmPassword && password === confirmPassword

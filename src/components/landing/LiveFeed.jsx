@@ -27,7 +27,7 @@ export default function LiveFeed() {
   return (
     <section id="live-feed" className="relative w-full py-20 overflow-hidden bg-primary transition-colors duration-300">
       {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-emerald-500/5 blur-xl md:blur-[120px] opacity-45 md:opacity-100 rounded-full pointer-events-none" />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center">
         

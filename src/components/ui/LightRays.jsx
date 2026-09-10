@@ -6,6 +6,13 @@ import './LightRays.css';
 
 const DEFAULT_COLOR = '#ffffff';
 
+/** Cap DPR on narrow viewports so mobile WebGL stays cheap. */
+const getMaxDpr = () => {
+  if (typeof window === 'undefined') return 1;
+  const narrow = window.matchMedia('(max-width: 767px)').matches;
+  return narrow ? 1 : 2;
+};
+
 const hexToRgb = (hex) => {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return m ? [parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255] : [1, 1, 1];
@@ -99,7 +106,7 @@ const LightRays = ({
       let renderer;
       try {
         renderer = new Renderer({
-          dpr: Math.min(window.devicePixelRatio, 2),
+          dpr: Math.min(window.devicePixelRatio || 1, getMaxDpr()),
           alpha: true
         });
       } catch (err) {
@@ -264,7 +271,7 @@ void main() {
       const updatePlacement = () => {
         if (!containerRef.current || !renderer) return;
 
-        renderer.dpr = Math.min(window.devicePixelRatio, 2);
+        renderer.dpr = Math.min(window.devicePixelRatio || 1, getMaxDpr());
 
         const { clientWidth: wCSS, clientHeight: hCSS } = containerRef.current;
         renderer.setSize(wCSS, hCSS);

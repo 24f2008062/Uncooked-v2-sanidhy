@@ -50,7 +50,7 @@ export default function CareerCatalyst() {
   return (
     <section id="career-catalyst" className="relative w-full py-20 overflow-hidden bg-primary transition-colors duration-300">
       {/* Ambient background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-purple-500/5 blur-[130px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-purple-500/5 blur-2xl md:blur-[130px] opacity-50 md:opacity-100 rounded-full pointer-events-none" />
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-4 md:px-8 xl:px-12">
         {/* Header */}

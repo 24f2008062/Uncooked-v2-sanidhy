@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isValidEventId, publicEvent } from "../../src/server/services/eventsPublic.js";
+import { isValidEventId, publicEvent, publicEventListItem } from "../../src/server/services/eventsPublic.js";
 import { assertSameOrigin } from "../../src/server/http/csrf.js";
 import { rateLimit } from "../../src/server/http/rateLimit.js";
 import { hashPassword, validatePasswordPolicy, verifyPassword } from "../../src/server/utils/passwordUtils.js";
@@ -41,6 +41,36 @@ test("publicEvent never includes creator email or attendee list", () => {
   assert.equal(view.spotsLeft, 96);
   assert.equal(view.createdBy, undefined);
   assert.ok(!JSON.stringify(view).includes("secret@uncooked.edu"));
+  assert.equal(view.description, "Hi");
+});
+
+test("publicEventListItem omits full description/schedule/prizePool", () => {
+  const long = "A".repeat(200);
+  const view = publicEventListItem(
+    {
+      id: "e2",
+      title: "Fest",
+      type: "Fest",
+      category: "Fest",
+      tags: null,
+      date: new Date(),
+      location: "Hall",
+      description: long,
+      schedule: "Day 1 secret schedule",
+      prizePool: "₹1L",
+      ticketType: "Free",
+      capacity: 10,
+      status: "Active",
+      createdBy: { name: "Host", fullName: "Host" },
+    },
+    { registrationCount: 1 }
+  );
+  assert.equal(view.description, undefined);
+  assert.equal(view.schedule, undefined);
+  assert.equal(view.prizePool, undefined);
+  assert.ok(view.blurb.endsWith("…"));
+  assert.ok(view.blurb.length <= 160);
+  assert.equal(view.spotsLeft, 9);
 });
 
 test("HMAC rejects tampered ticket signatures", () => {
