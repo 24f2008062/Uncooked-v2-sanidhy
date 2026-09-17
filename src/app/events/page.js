@@ -152,6 +152,28 @@ const COMPLETED_EVENTS = [
 
 const CATEGORIES = ["All", "Hackathons", "Cultural Fests", "Workshops", "Sports & Gaming", "Parties & Socials"];
 
+/** Map messy API categories/types onto the catalog filter pills. */
+function normalizeCatalogCategory(raw) {
+  const c = String(raw || "").toLowerCase();
+  if (!c) return "Events";
+  if (c.includes("hackathon") || c === "tech" || c.includes("tech &")) return "Hackathons";
+  if (c.includes("cultural") || c.includes("fest")) return "Cultural Fests";
+  if (
+    c.includes("workshop") ||
+    c.includes("programming") ||
+    c.includes("seminar") ||
+    c.includes("ai") ||
+    c.includes("machine learning")
+  ) {
+    return "Workshops";
+  }
+  if (c.includes("sport") || c.includes("gaming") || c.includes("esport")) return "Sports & Gaming";
+  if (c.includes("party") || c.includes("social") || c.includes("meetup") || c.includes("entertainment")) {
+    return "Parties & Socials";
+  }
+  return String(raw);
+}
+
 export default function EventsPage() {
   const { theme } = useTheme();
   const { t } = useLanguage();
@@ -176,7 +198,7 @@ export default function EventsPage() {
             rows.map((row) => ({
               id: row.id,
               title: row.title,
-              category: row.category || row.type || "Events",
+              category: normalizeCatalogCategory(row.category || row.type),
               host: row.hostName || "Campus host",
               date: row.date ? new Date(row.date).toLocaleDateString() : "",
               time: row.date ? new Date(row.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
