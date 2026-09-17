@@ -245,22 +245,31 @@ export default function EventsPage() {
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
     setBookingError("");
-    const res = await fetch("/api/registrations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId: activeModalEvent.id }),
-    });
-    const payload = await res.json();
-    if (res.status === 401) {
-      router.push("/login?redirectTo=/events");
-      return;
+    try {
+      const res = await fetch("/api/registrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: activeModalEvent.id }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        router.push("/login?redirectTo=/events");
+        return;
+      }
+      if (!res.ok) {
+        if (res.status === 409) {
+          setIsBooked(true);
+          return;
+        }
+        setBookingError(payload.error?.message || "Could not complete registration");
+        return;
+      }
+      setTicketPass(payload.data?.ticketPass || null);
+      setIsBooked(true);
+    } catch (err) {
+      console.error("[events] Booking submission error:", err);
+      setBookingError("Network error. Please try again.");
     }
-    if (!res.ok) {
-      setBookingError(payload.error?.message || "Could not complete registration");
-      return;
-    }
-    setTicketPass(payload.data?.ticketPass || null);
-    setIsBooked(true);
   };
 
   return (

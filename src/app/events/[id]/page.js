@@ -123,20 +123,36 @@ export default function EventDetailsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId: id }),
       });
-      const payload = await res.json();
+      const payload = await res.json().catch(() => ({}));
       if (res.status === 401) {
         router.push(`/login?redirectTo=/events/${encodeURIComponent(id)}`);
         return;
       }
       if (!res.ok) {
+        // If the registration already exists (e.g. 409 conflict), load the existing pass
+        if (res.status === 409) {
+          await load();
+          return;
+        }
         setError(payload.error?.message || "Could not complete registration");
         return;
       }
-      setMyRegistration({
-        id: payload.data.registrationId,
-        status: payload.data.status,
-        ticketPass: payload.data.ticketPass,
-      });
+      if (payload.data?.myRegistration) {
+        setMyRegistration(payload.data.myRegistration);
+      } else if (payload.data?.ticketPass) {
+        setMyRegistration({
+          id: payload.data.registrationId,
+          status: payload.data.status,
+          ticketPass: payload.data.ticketPass,
+        });
+      }
+      // Re-sync canonical state (spotsLeft, hostDashboard, etc.)
+      await load();
+    } catch (err) {
+      console.error("[register] Registration request error:", err);
+      // Attempt load in case registration committed before connection broke
+      await load();
+      setError((prev) => prev || "Could not complete registration. Please check your connection.");
     } finally {
       setBusy(false);
     }
@@ -580,7 +596,7 @@ export default function EventDetailsPage() {
                             <CheckCircle2 className="w-4 h-4" />
                             {myRegistration.status === "Waitlisted" ? "You are on the waitlist" : "You are registered"}
                           </div>
-                          {myRegistration.ticketPass?.qrPayload && (
+                          {myRegistration.ticketPass && (
                             <TicketPassCard
                               title={event.title}
                               status={myRegistration.status}
@@ -588,6 +604,7 @@ export default function EventDetailsPage() {
                               dateLabel={`${when.date} ${when.time}`}
                               payload={myRegistration.ticketPass.qrPayload}
                               passId={myRegistration.id}
+                              eventId={event.id}
                             />
                           )}
                           <Link href="/dashboard" className="block text-center text-xs font-semibold text-[var(--accent-orange)]">
