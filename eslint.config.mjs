@@ -10,6 +10,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local agent/worktree copies — not part of the app source of truth
+    ".kilo/**",
   ]),
   {
     rules: {

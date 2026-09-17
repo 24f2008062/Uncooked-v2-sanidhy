@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { HelpCircle, LifeBuoy, Send, CheckCircle2, Clock, AlertCircle, User, MessageSquare } from "lucide-react";
 
 export default function AdminSupportPage() {
@@ -11,25 +11,34 @@ export default function AdminSupportPage() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
 
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
       const res = await fetch("/api/v2/admin/support");
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(data.tickets || []);
-        if (data.tickets && data.tickets.length > 0 && !selectedTicket) {
-          setSelectedTicket(data.tickets[0]);
-          setNewStatus(data.tickets[0].status);
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = Array.isArray(data.tickets) ? data.tickets : [];
+      setTickets(list);
+      setSelectedTicket((prev) => {
+        if (prev) {
+          const refreshed = list.find((t) => t.id === prev.id);
+          return refreshed || prev;
         }
-      }
+        return list[0] || null;
+      });
     } catch (err) {
       console.warn("Failed to fetch tickets", err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTickets();
-  }, []);
+  }, [fetchTickets]);
+
+  useEffect(() => {
+    if (selectedTicket?.status) {
+      setNewStatus(selectedTicket.status);
+    }
+  }, [selectedTicket]);
 
   const handleSendReply = async (e) => {
     e.preventDefault();
