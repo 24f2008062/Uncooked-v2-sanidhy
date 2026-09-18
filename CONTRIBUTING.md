@@ -1,4 +1,5 @@
 # Contributing to Opportia (Uncooked V2)
+# Contributing to Opportia
 
 Thank you for contributing to **Opportia**! This guide details how to set up your local development environment, adhere to security practices, and submit high-quality contributions.
 
@@ -21,6 +22,8 @@ Before you begin, ensure your workstation has:
 ```bash
 git clone https://github.com/Uncooked-unfused/Uncooked-v2.git
 cd Uncooked-v2
+git clone https://github.com/Uncooked-unfused/Opportia.git
+cd Opportia
 npm install
 ```
 

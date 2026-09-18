@@ -32,7 +32,7 @@ function serviceUnavailable(pathname) {
   return new NextResponse("Service unavailable", { status: 503 });
 }
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
   if (
@@ -200,6 +200,9 @@ export async function middleware(request) {
   return response;
 }
 
+export default proxy;
+
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };
+

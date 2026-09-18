@@ -32,6 +32,7 @@ export async function loadEventOrNull(eventId) {
       createdById: true,
       archived: true,
       status: true,
+      subHosts: { select: { userId: true, role: true } },
     },
   });
 }
@@ -39,7 +40,11 @@ export async function loadEventOrNull(eventId) {
 export function isEventHost(user, event) {
   if (!user || !event) return false;
   if (isSuperAdmin(user)) return true;
-  return Boolean(event.createdById && event.createdById === user.id);
+  if (event.createdById && event.createdById === user.id) return true;
+  if (Array.isArray(event.subHosts)) {
+    return event.subHosts.some((sh) => sh.userId === user.id);
+  }
+  return false;
 }
 
 export async function isEventMember(userId, eventId) {
@@ -68,7 +73,7 @@ export async function assertEventBroadcastAccess(user, eventId, { write = false 
   const host = isEventHost(user, event);
   if (write) {
     if (!host) {
-      const err = new Error("Only the event host or an admin can broadcast messages to attendees.");
+      const err = new Error("Only the event host or assigned staff can broadcast messages to attendees.");
       err.status = 403;
       err.code = "FORBIDDEN";
       throw err;

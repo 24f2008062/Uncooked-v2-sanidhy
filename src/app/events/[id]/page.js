@@ -11,6 +11,7 @@ import Footer from "@/components/layout/Footer";
 import LazyAgentWidget from "@/components/ui/LazyAgentWidget";
 import TicketPassCard from "@/components/events/TicketPassCard";
 import EventBroadcastPanel from "@/components/events/EventBroadcastPanel";
+import EventSubHostsPanel from "@/components/events/EventSubHostsPanel";
 import GoogleMapsButton from "@/components/ui/GoogleMapsButton";
 import {
   ArrowLeft,
@@ -338,6 +339,17 @@ export default function EventDetailsPage() {
                     enabled={authStatus === "authenticated"}
                     isHost={isHost}
                   />
+
+                  {/* Co-Hosts & Staff Management */}
+                  {isHost && (
+                    <EventSubHostsPanel
+                      eventId={id}
+                      isCreator={Boolean(hostDashboard?.isCreator)}
+                      isSubHost={Boolean(hostDashboard?.isSubHost)}
+                      initialSubHosts={hostDashboard?.subHosts || []}
+                      onUpdated={() => load()}
+                    />
+                  )}
 
                   {/* Host Attendee Management Roster */}
                   {isHost && (
