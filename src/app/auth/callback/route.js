@@ -43,8 +43,9 @@ export async function GET(request) {
             },
           });
 
+          let dbUser = existing;
           if (!existing) {
-            await prisma.user.create({
+            dbUser = await prisma.user.create({
               data: {
                 id: authUser.id,
                 authUserId: authUser.id,
@@ -60,10 +61,22 @@ export async function GET(request) {
               },
             });
           } else if (!existing.authUserId) {
-            await prisma.user.update({
+            dbUser = await prisma.user.update({
               where: { id: existing.id },
               data: { authUserId: authUser.id },
             });
+          }
+
+          try {
+            const { syncAuthAppMetadata } = await import("@/lib/supabase/admin");
+            await syncAuthAppMetadata(authUser.id, {
+              role: dbUser?.role || "USER",
+              accountStatus: "ACTIVE",
+              lockedUntil: null,
+              tokenVersion: dbUser?.tokenVersion || 0,
+            });
+          } catch {
+            // Service role might be unconfigured in dev; non-fatal
           }
         } catch (dbErr) {
           console.error("[OAUTH_CALLBACK] Error syncing user profile:", dbErr.message);

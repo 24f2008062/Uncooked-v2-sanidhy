@@ -41,13 +41,37 @@ export default function SupabaseProvider({ children }) {
         data: { session: activeSession },
         error,
       } = await supabase.auth.getSession();
-      if (error || !activeSession) {
-        setSession({ data: null, status: "unauthenticated" });
-        return null;
+      if (!error && activeSession) {
+        const formatted = formatSession(activeSession);
+        setSession({ data: formatted, status: "authenticated" });
+        return formatted;
       }
-      const formatted = formatSession(activeSession);
-      setSession({ data: formatted, status: "authenticated" });
-      return formatted;
+
+      // Fallback: Check if server-side session exists via /api/user/profile
+      try {
+        const profileRes = await fetch("/api/user/profile");
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          if (profileData.success && profileData.data?.user) {
+            const u = profileData.data.user;
+            const serverSession = {
+              user: {
+                id: u.id,
+                email: u.email,
+                name: u.fullName || u.name || u.email,
+                role: u.role || "USER",
+              },
+            };
+            setSession({ data: serverSession, status: "authenticated" });
+            return serverSession;
+          }
+        }
+      } catch {
+        /* ignore network/server profile fetch failures */
+      }
+
+      setSession({ data: null, status: "unauthenticated" });
+      return null;
     } catch {
       setSession({ data: null, status: "unauthenticated" });
       return null;
