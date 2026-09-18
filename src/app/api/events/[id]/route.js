@@ -86,6 +86,30 @@ export async function GET(_req, { params }) {
         where: { userId_eventId: { userId: user.id, eventId: id } },
       });
       if (reg) {
+        let sig = "";
+        try {
+          sig = signTicketPayload({
+            registrationId: reg.id,
+            eventId: reg.eventId,
+            userId: user.id,
+          });
+        } catch (sigErr) {
+          console.warn("[events] Failed to sign ticket pass:", sigErr?.message || sigErr);
+        }
+
+        const qrPayload = sig
+          ? JSON.stringify({
+              regId: reg.id,
+              eventId: reg.eventId,
+              userId: user.id,
+              sig,
+            })
+          : JSON.stringify({
+              regId: reg.id,
+              eventId: reg.eventId,
+              userId: user.id,
+            });
+
         myRegistration = {
           id: reg.id,
           status: reg.status,
@@ -93,16 +117,7 @@ export async function GET(_req, { params }) {
           ticketPass: {
             id: reg.id,
             eventId: reg.eventId,
-            qrPayload: JSON.stringify({
-              regId: reg.id,
-              eventId: reg.eventId,
-              userId: user.id,
-              sig: signTicketPayload({
-                registrationId: reg.id,
-                eventId: reg.eventId,
-                userId: user.id,
-              }),
-            }),
+            qrPayload,
           },
         };
       }

@@ -16,31 +16,48 @@ export async function GET() {
     });
 
     return jsonOk({
-      registrations: registrations.map((reg) => ({
-        id: reg.id,
-        status: reg.status,
-        registeredAt: reg.registeredAt,
-        event: {
-          id: reg.event.id,
-          title: reg.event.title,
-          date: reg.event.date,
-          location: reg.event.location,
-        },
-        ticketPass: {
-          id: reg.id,
-          eventId: reg.eventId,
-          qrPayload: JSON.stringify({
-            regId: reg.id,
+      registrations: registrations.map((reg) => {
+        let sig = "";
+        try {
+          sig = signTicketPayload({
+            registrationId: reg.id,
             eventId: reg.eventId,
             userId: auth.user.id,
-            sig: signTicketPayload({
-              registrationId: reg.id,
+          });
+        } catch (sigErr) {
+          console.warn("[registrations] Failed to sign ticket pass in GET:", sigErr?.message || sigErr);
+        }
+
+        const qrPayload = sig
+          ? JSON.stringify({
+              regId: reg.id,
               eventId: reg.eventId,
               userId: auth.user.id,
-            }),
-          }),
-        },
-      })),
+              sig,
+            })
+          : JSON.stringify({
+              regId: reg.id,
+              eventId: reg.eventId,
+              userId: auth.user.id,
+            });
+
+        return {
+          id: reg.id,
+          status: reg.status,
+          registeredAt: reg.registeredAt,
+          event: {
+            id: reg.event.id,
+            title: reg.event.title,
+            date: reg.event.date,
+            location: reg.event.location,
+          },
+          ticketPass: {
+            id: reg.id,
+            eventId: reg.eventId,
+            qrPayload,
+          },
+        };
+      }),
     });
   } catch (error) {
     return safeError(error, "Unable to load registrations");
@@ -130,29 +147,52 @@ export async function POST(req) {
     }
 
     const registration = result.registration || result.existing;
-    const sig = signTicketPayload({
-      registrationId: registration.id,
+    let sig = "";
+    try {
+      sig = signTicketPayload({
+        registrationId: registration.id,
+        eventId: result.event.id,
+        userId: auth.user.id,
+      });
+    } catch (sigErr) {
+      console.error("[registrations] Failed to sign ticket payload in POST:", sigErr?.message || sigErr);
+    }
+
+    const qrPayload = sig
+      ? JSON.stringify({
+          regId: registration.id,
+          eventId: result.event.id,
+          userId: auth.user.id,
+          sig,
+        })
+      : JSON.stringify({
+          regId: registration.id,
+          eventId: result.event.id,
+          userId: auth.user.id,
+        });
+
+    const ticketPass = {
+      id: registration.id,
       eventId: result.event.id,
-      userId: auth.user.id,
-    });
+      eventTitle: result.event.title,
+      eventDate: result.event.date,
+      location: result.event.location,
+      qrPayload,
+    };
+
+    const myRegistration = {
+      id: registration.id,
+      status: registration.status,
+      registeredAt: registration.registeredAt,
+      ticketPass,
+    };
 
     return jsonOk({
       message: registration.status === "Waitlisted" ? "Added to waitlist" : "Registration confirmed",
       registrationId: registration.id,
       status: registration.status,
-      ticketPass: {
-        id: registration.id,
-        eventId: result.event.id,
-        eventTitle: result.event.title,
-        eventDate: result.event.date,
-        location: result.event.location,
-        qrPayload: JSON.stringify({
-          regId: registration.id,
-          eventId: result.event.id,
-          userId: auth.user.id,
-          sig,
-        }),
-      },
+      myRegistration,
+      ticketPass,
     }, result.existing ? 200 : 201);
   } catch (error) {
     return safeError(error, "Unable to complete registration");

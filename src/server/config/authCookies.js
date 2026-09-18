@@ -25,6 +25,7 @@ export function hardenSupabaseCookieOptions(options = {}) {
     path: options.path || "/",
     sameSite: options.sameSite || "lax",
     httpOnly: true,
+    httpOnly: options.httpOnly ?? false,
     secure: isProd ? true : Boolean(options.secure),
   };
 }

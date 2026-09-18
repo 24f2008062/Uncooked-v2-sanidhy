@@ -62,3 +62,17 @@ test("QR pass rejects tampered signature or mismatched event", () => {
   assert.equal(isForgedValid, false);
 });
 
+test("HMAC sign and verify works gracefully even if TICKET_HMAC_SECRET is unset", () => {
+  const savedHmac = process.env.TICKET_HMAC_SECRET;
+  delete process.env.TICKET_HMAC_SECRET;
+  try {
+    const tuple = { registrationId: "reg-fallback-1", eventId: "ev-1", userId: "usr-1" };
+    const sig = signTicketPayload(tuple);
+    assert.ok(typeof sig === "string" && sig.length > 0);
+    assert.equal(verifyTicketPayload({ ...tuple, sig }), true);
+    assert.equal(verifyTicketPayload({ ...tuple, userId: "tampered", sig }), false);
+  } finally {
+    process.env.TICKET_HMAC_SECRET = savedHmac;
+  }
+});
+

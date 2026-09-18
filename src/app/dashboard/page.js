@@ -262,31 +262,37 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId: selectedEventForBooking.id }),
       });
-      const payload = await res.json();
+      const payload = await res.json().catch(() => ({}));
 
       if (res.status === 401) {
         router.push("/login?redirectTo=/dashboard");
         return;
       }
 
-      if (!res.ok) {
+      if (!res.ok && res.status !== 409) {
         setBookingError(payload.error?.message || "Could not complete registration.");
         return;
       }
 
       const pass = payload.data?.ticketPass || null;
-      setNewlyCreatedPass({
-        ...pass,
-        eventTitle: selectedEventForBooking.title,
-        date: selectedEventForBooking.date,
-        location: selectedEventForBooking.location,
-      });
+      if (pass) {
+        setNewlyCreatedPass({
+          ...pass,
+          eventTitle: selectedEventForBooking.title,
+          date: selectedEventForBooking.date,
+          location: selectedEventForBooking.location,
+        });
+      }
 
-      // Refresh registrations
-      const regRes = await fetch("/api/registrations");
-      const regData = await regRes.json();
-      if (regData.success && regData.data?.registrations) {
-        setPasses(regData.data.registrations);
+      // Refresh registrations gracefully without failing the booking
+      try {
+        const regRes = await fetch("/api/registrations");
+        const regData = await regRes.json().catch(() => ({}));
+        if (regData.success && regData.data?.registrations) {
+          setPasses(regData.data.registrations);
+        }
+      } catch (refreshErr) {
+        console.warn("[dashboard] Background registrations refresh:", refreshErr);
       }
     } catch {
       setBookingError("Unable to create ticket right now. Please try again.");
