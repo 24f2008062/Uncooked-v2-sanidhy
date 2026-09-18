@@ -29,5 +29,7 @@ describe("event host check", () => {
     assert.equal(isEventHost(null, event), false);
     assert.equal(isEventHost({ id: "u1", role: "USER" }, null), false);
     assert.equal(isEventHost({ id: "u3", role: "ORGANIZER" }, event), false); // non-creator organizer cannot broadcast to other host's event
+    const eventWithSubHosts = { createdById: "u1", subHosts: [{ userId: "staff1" }] };
+    assert.equal(isEventHost({ id: "staff1", role: "USER" }, eventWithSubHosts), true);
   });
 });

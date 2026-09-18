@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { jsonError, jsonOk, safeError } from "@/server/http/envelope";
 import { getCurrentUser } from "@/server/auth/authentication";
-import { isSuperAdmin } from "@/server/auth/authorization";
+import { getEventHostAccess } from "@/server/auth/eventHost";
 import { isValidEventId, publicEvent } from "@/server/services/eventsPublic";
 import { signTicketPayload } from "@/server/tickets/hmac";
 
@@ -20,7 +20,6 @@ export async function GET(_req, { params }) {
       },
       include: {
         _count: { select: { registrations: true } },
-        createdBy: { select: { name: true, fullName: true } },
         createdBy: { select: { id: true, name: true, fullName: true } },
       },
     });
@@ -31,16 +30,12 @@ export async function GET(_req, { params }) {
 
     let myRegistration = null;
     const user = await getCurrentUser();
-    const isHost = Boolean(
-      user && (
-        isSuperAdmin(user) ||
-        (event.createdById && event.createdById === user.id)
-      )
-    );
+    const access = user ? await getEventHostAccess(event, user) : { allowed: false, isHost: false, isCreator: false, isSubHost: false };
+    const isHost = access.isHost;
 
     let hostDashboard = null;
     if (isHost) {
-      const [checkedInCount, attendees] = await Promise.all([
+      const [checkedInCount, attendees, subHostsList] = await Promise.all([
         prisma.registration.count({
           where: { eventId: id, checkInStatus: true },
         }),
@@ -63,6 +58,21 @@ export async function GET(_req, { params }) {
             },
           },
         }),
+        prisma.eventSubHost.findMany({
+          where: { eventId: id },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                fullName: true,
+                email: true,
+                department: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        }),
       ]);
 
       hostDashboard = {
@@ -70,6 +80,17 @@ export async function GET(_req, { params }) {
         checkedInCount,
         capacity: event.capacity,
         spotsLeft: Math.max(0, event.capacity - event._count.registrations),
+        isCreator: access.isCreator,
+        isSubHost: access.isSubHost,
+        subHosts: subHostsList.map((sh) => ({
+          id: sh.id,
+          userId: sh.userId,
+          role: sh.role,
+          name: sh.user?.fullName || sh.user?.name || "Staff Member",
+          email: sh.user?.email || "",
+          department: sh.user?.department || "",
+          createdAt: sh.createdAt,
+        })),
         attendees: attendees.map((att) => ({
           id: att.id,
           status: att.status,

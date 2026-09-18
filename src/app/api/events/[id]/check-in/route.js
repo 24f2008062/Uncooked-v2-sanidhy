@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { jsonError, jsonOk, readJson, safeError } from "@/server/http/envelope";
 import { enforceMutationGuards, requireUser } from "@/server/http/guards";
-import { isSuperAdmin } from "@/server/auth/authorization";
+import { getEventHostAccess } from "@/server/auth/eventHost";
 import { verifyTicketPayload } from "@/server/tickets/hmac";
 import { isValidEventId } from "@/server/services/eventsPublic";
 import { logAuditEvent } from "@/server/auth/audit";
@@ -10,7 +10,7 @@ import { getClientIp, hashIp } from "@/server/http/ip";
 /**
  * GET /api/events/[id]/check-in
  * Fetch attendee roster and live check-in statistics for host scanner.
- * Authz: event creator (ORGANIZER) or SUPER_ADMIN.
+ * Authz: event creator (ORGANIZER), assigned sub-host/staff, or SUPER_ADMIN.
  */
 export async function GET(req, { params }) {
   try {
@@ -41,11 +41,9 @@ export async function GET(req, { params }) {
       return jsonError("Event not found", 404, "NOT_FOUND");
     }
 
-    const allowed =
-      isSuperAdmin(auth.user) ||
-      (String(auth.user.role).toUpperCase() === "ORGANIZER" && event.createdById === auth.user.id);
-    if (!allowed) {
-      return jsonError("Only the event host or an admin can access door scanner data.", 403, "FORBIDDEN");
+    const access = await getEventHostAccess(event, auth.user);
+    if (!access.allowed) {
+      return jsonError("Only the event host or assigned staff can access door scanner data.", 403, "FORBIDDEN");
     }
 
     const registrations = await prisma.registration.findMany({
@@ -100,7 +98,7 @@ export async function GET(req, { params }) {
 
 /**
  * Door scanner: verify HMAC pass or manual host check-in and mark registration checked in.
- * Authz: event creator (ORGANIZER) or SUPER_ADMIN.
+ * Authz: event creator (ORGANIZER), assigned sub-host/staff, or SUPER_ADMIN.
  */
 export async function POST(req, { params }) {
   try {
@@ -136,12 +134,9 @@ export async function POST(req, { params }) {
       return jsonError("Event not found", 404, "NOT_FOUND");
     }
 
-    // Align with event page isHost: creator or SUPER_ADMIN (not role-only).
-    const allowed =
-      isSuperAdmin(auth.user) ||
-      (event.createdById && event.createdById === auth.user.id);
-    if (!allowed) {
-      return jsonError("Only the event host or an admin can check guests in.", 403, "FORBIDDEN");
+    const access = await getEventHostAccess(event, auth.user);
+    if (!access.allowed) {
+      return jsonError("Only the event host or assigned staff can check guests in.", 403, "FORBIDDEN");
     }
 
     const registration = await prisma.registration.findFirst({

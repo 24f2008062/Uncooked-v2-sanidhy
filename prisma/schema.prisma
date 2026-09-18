@@ -57,6 +57,7 @@ model User {
   auditLogs            AuditLog[]               @relation("AdminAuditLogs")
   consents             ConsentRecord[]
   eventsCreated        Event[]                  @relation("EventCreator")
+  subHostEvents        EventSubHost[]           @relation("EventSubHosts")
   notificationInbox    NotificationRecipient[]
 
   @@index([role, createdAt])
@@ -138,6 +139,7 @@ model Event {
 
   createdBy       User?     @relation("EventCreator", fields: [createdById], references: [id], onDelete: SetNull)
   registrations   Registration[]
+  subHosts        EventSubHost[]
   ticketTiers     TicketTier[]
   coupons         Coupon[]
   bulletins       BulletinUpdate[]
@@ -146,6 +148,21 @@ model Event {
   @@index([status, date])
   @@index([category, status])
   @@index([createdById])
+}
+
+model EventSubHost {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  role      String   @default("SUB_HOST") // SUB_HOST | CHECKIN_STAFF
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation("EventSubHosts", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([eventId])
 }
 
 model TicketTier {
