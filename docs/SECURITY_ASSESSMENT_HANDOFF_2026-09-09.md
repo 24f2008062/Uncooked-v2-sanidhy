@@ -7,6 +7,7 @@
 **Prepared by:** Engineering (automated + manual probe)  
 **App version:** `next@16.3.2` on Vercel (`bom1` / India edge)  
 **Repo:** Uncooked-unfused/Uncooked-v2 (`main`)
+**Repo:** Uncooked-unfused/Opportia (`main`)
 
 ---
 

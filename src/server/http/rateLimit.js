@@ -34,6 +34,7 @@ function memoryLimit(key, limit, windowMs) {
 
 /**
  * Sync limiter for Edge middleware. Always memory-backed.
+ * Sync limiter for Edge Proxy. Always memory-backed.
  */
 export function rateLimit(key, limit, windowMs) {
   return memoryLimit(key, limit, windowMs);

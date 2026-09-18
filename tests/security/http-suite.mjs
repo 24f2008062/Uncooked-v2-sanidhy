@@ -66,32 +66,15 @@ async function jsonPost(path, payload, opts = {}) {
 
 async function login(email, password) {
   const jar = new CookieJar();
-  const csrf = await req("/api/auth/csrf", { jar, origin: ORIGIN });
-  const csrfToken = csrf.json?.csrfToken;
-  assert.ok(csrfToken, "csrf token missing");
-  const body = new URLSearchParams({
-    csrfToken,
-    email,
-    password,
-    json: "true",
-    redirect: "false",
-    callbackUrl: ORIGIN,
-  });
-  const loginRes = await req("/api/auth/callback/credentials", {
-    method: "POST",
-    jar,
-    origin: ORIGIN,
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
+  const loginRes = await jsonPost("/api/auth/login", { email, password }, { jar, origin: ORIGIN });
   if (loginRes.status >= 400) {
     throw new Error(`login failed ${loginRes.status} ${JSON.stringify(loginRes.json)}`);
   }
-  const session = await req("/api/auth/session", { jar, origin: ORIGIN });
-  if (!session.json?.user?.email) {
+  const session = await req("/api/user/profile", { jar, origin: ORIGIN });
+  if (!session.json?.data?.user?.email) {
     throw new Error(`session missing after login: ${JSON.stringify(session.json)}`);
   }
-  return { jar, user: session.json.user };
+  return { jar, user: session.json.data.user };
 }
 
 const results = [];
